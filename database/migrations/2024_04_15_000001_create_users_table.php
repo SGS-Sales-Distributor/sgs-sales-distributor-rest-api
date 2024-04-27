@@ -13,53 +13,75 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_type', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_type_id', true)
+            ->primary()
+            ->index();
+            $table->string('user_type_name', 255)
+            ->nullable(false)
+            ->index();
+            $table->string('created_by', 255)
+            ->nullable(true);
+            $table->string('updated_by', 255)
+            ->nullable(true);
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('user_status', function (Blueprint $table) {
             $table->unsignedBigInteger('id', true)
             ->primary()
             ->index();
-            $table->string('name', 255)
+            $table->string('status', 255)
             ->nullable(false)
             ->index();
-            $table->timestamp('modtime')
-            ->nullable(false)
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'));
+            $table->string('created_by', 255)
+            ->nullable(true);
+            $table->string('updated_by', 255)
+            ->nullable(true);
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('user_info', function (Blueprint $table) {
-            $table->unsignedBigInteger('id', true)
+            $table->unsignedBigInteger('user_id', true)
             ->primary()
             ->index();
-            $table->string('number', 10)
+            $table->string('user_number', 10)
             ->nullable(false)
             ->index();
-            $table->string('nik', 20)
+            $table->string('user_nik', 20)
             ->unique()
             ->nullable(true)
             ->index();
-            $table->string('fullname', 200)
+            $table->string('user_fullname', 200)
             ->nullable(false)
             ->index();
-            $table->string('phone', 20)
+            $table->string('user_phone', 20)
             ->unique()
             ->nullable(false)
             ->index();
-            $table->string('email', 255)
+            $table->string('user_email', 255)
             ->unique()
             ->nullable(false)
             ->index();
-            $table->string('username', 50)
+            $table->string('user_name', 50)
             ->unique()
             ->nullable(false)
             ->index();
-            $table->string('password', 100)
+            $table->string('user_password', 100)
             ->nullable(false);
-            $table->integer('type_id', false, true)
-            ->default(0)
+            $table->foreignId('user_type_id')
             ->index()
-            ->nullable(false);
-            $table->integer('status', false, true)
-            ->default(1)
             ->nullable(false)
-            ->index();
+            ->references('user_type_id')
+            ->on('user_type')
+            ->cascadeOnDelete();
+            $table->foreignId('user_status')
+            ->index()
+            ->nullable(false)
+            ->references('id')
+            ->on('user_status')
+            ->cascadeOnDelete();
             $table->integer('cabang_id', false, true)
             ->nullable(true);
             $table->integer('store_id', false, true)
@@ -68,9 +90,12 @@ return new class extends Migration
             ->index();
             $table->string('status_ba', 50)
             ->nullable(true);
-            $table->timestamp('modtime', 0)
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'))
-            ->nullable(false);
+            $table->string('created_by', 255)
+            ->nullable(true);
+            $table->string('updated_by', 255)
+            ->nullable(true);
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -94,9 +119,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_type');
-        Schema::dropIfExists('user_info');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('user_info');
+        Schema::dropIfExists('user_status');
+        Schema::dropIfExists('user_type');
     }
 };

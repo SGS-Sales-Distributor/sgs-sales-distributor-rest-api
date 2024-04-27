@@ -13,6 +13,6 @@ class UserTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        UserType::factory()->count(3)->create();
+        UserType::factory()->count(5)->create();
     }
 }

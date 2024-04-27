@@ -21,8 +21,9 @@ class UserTypeFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->jobTitle(),
-            'modtime' => Carbon::now(timezone: env('APP_TIMEZONE')),
+            'user_type_name' => $this->faker->jobTitle(),
+            'created_by' => $this->faker->name(),
+            'updated_by' => $this->faker->name(),
         ];
     }
 }

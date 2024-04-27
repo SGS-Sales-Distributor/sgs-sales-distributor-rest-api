@@ -26,62 +26,90 @@ class BasicAuthRepository extends Repository implements BasicAuthInterface
 
     public function login(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => ['required', 'lowercase', 'string', 'email', 'max:255'],
-            'password' => ['required', 'string'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'unique' => ':attribute is unique field!',
-            'min' => ':attribute should be :min in characters',
-            'max' => ':attribute could not more than :max characters',
-            'confirmed' => ':attribute confirmation does not match!',  
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => ['required', 'lowercase', 'string', 'email', 'max:255'],
+                'password' => ['required', 'string'],
+            ],
+            [
+                'required' => ':attribute is required!',
+                'unique' => ':attribute is unique field!',
+                'min' => ':attribute should be :min in characters',
+                'max' => ':attribute could not more than :max characters',
+                'confirmed' => ':attribute confirmation does not match!',  
+            ]);
+    
+            if ($validator->fails()) {
+                return $this->clientErrorResponse(
+                    statusCode: 422,
+                    success: false,
+                    msg: $validator->errors()->first(),
+                );
+            }
+    
+            $credentials = $request->only('email', 'password');
+    
+            if (!Auth::attempt($credentials)) {
+                return $this->clientErrorResponse(
+                    statusCode: 401,
+                    success: false,
+                    msg: "Failed to authorize.",
+                );
+            }
+    
+            $salesman = User::where(
+                'email', 
+                $request->email
+            )->firstOrFail();
+    
+            if (!$salesman) {
+                return $this->clientErrorResponse(
+                    statusCode: 404, 
+                    success: false, 
+                    msg: "User not found.",
+                );
+            }
+    
+            if (!Hash::check($request->input('password'), $salesman->password)) {
+                return $this->serverErrorResponse(
+                    statusCode: 500, 
+                    success: false, 
+                    msg: "Password doesn't match.",
+                );
+            }
+    
+            $request->session()->regenerate();
+            
+            return $this->successResponse(
+                statusCode: 200,
+                success: true,
+                msg: "Successfully logged in as {$salesman->email}",
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
 
-        if ($validator->fails()) {
-            return $this->clientErrorResponse(
-                statusCode: 422,
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
                 success: false,
-                msg: $validator->errors()->first(),
+                msg: $e->getMessage(),
             );
-        }
+        } catch (\Error $e) {
+            DB::rollBack();
 
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
-            return $this->clientErrorResponse(
-                statusCode: 401,
+            return $this->errorResponse(
+                statusCode: 500,
                 success: false,
-                msg: "Failed to authorize.",
+                msg: $e->getMessage(),
             );
-        }
-
-        $salesman = User::where(
-            'email', 
-            $request->email
-        )->firstOrFail();
-
-        if (!$salesman) {
-            return $this->clientErrorResponse(
-                statusCode: 404, 
-                success: false, 
-                msg: "User not found.",
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
             );
-        }
-
-        if (!Hash::check($request->input('password'), $salesman->password)) {
-            return $this->serverErrorResponse(
-                statusCode: 500, 
-                success: false, 
-                msg: "Password doesn't match.",
-            );
-        }
-
-        return $this->successResponse(
-            statusCode: 200,
-            success: true,
-            msg: "Successfully logged in as {$salesman->email}",
-        );
+        } 
     }
 
 
@@ -167,6 +195,10 @@ class BasicAuthRepository extends Repository implements BasicAuthInterface
     {
         try {
             Auth::logout();
+
+            $request->session()->invalidate();
+
+            $request->session()->regenerateToken();
 
             return $this->successResponse(
                 statusCode: 200,

@@ -4,32 +4,37 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
-    public $timestamps = false;
+    public $timestamps = true;
+
+    protected $primaryKey = 'user_id';
 
     protected $table = "user_info";
 
     protected $fillable = [
-        'id',
-        'number',
-        'nik',
-        'fullname',
-        'phone',
-        'email',
-        'username',
-        'password',
-        'type_id',
-        'status',
+        'user_number',
+        'user_nik',
+        'user_fullname',
+        'user_phone',
+        'user_email',
+        'user_name',
+        'user_password',
+        'user_type_id',
+        'user_status',
         'cabang_id',
         'store_id',
         'status_ba',
-        'modtime',
+        'created_by',
+        'updated_by'
     ];
 
     /**
@@ -51,7 +56,39 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'modtime' => 'datetime:Y-m-d H:i:s',
+            'deleted_at' => 'datetime:Y-m-d H:i:s',
         ];
+    }
+
+    /**
+     * Many to One relationship with UserStatus model.
+     */
+    public function status(): BelongsTo
+    {
+        return $this->belongsTo(UserStatus::class, 'user_status');
+    }
+
+    /**
+     * Many to One relationship with UserType model.
+     */
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(UserType::class, 'user_type_id');
+    }
+
+    /**
+     * One to Many relationship with ProfilVisit model.
+     */
+    public function visits(): HasMany
+    {
+        return $this->hasMany(ProfilVisit::class, 'user');
+    }
+
+    /**
+     * One to Many relationship with MasterCallPlan model.
+     */
+    public function masterCallPlans(): HasMany
+    {
+        return $this->hasMany(MasterCallPlan::class, 'user_id');
     }
 }
