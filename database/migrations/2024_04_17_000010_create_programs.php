@@ -30,10 +30,8 @@ return new class extends Migration
             ->nullable(false)
             ->index();
             $table->date('periode_start')
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
             ->nullable(true);
             $table->date('periode_end')
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
             ->nullable(true);
             $table->string('created_by', 255)
             ->nullable(true);

@@ -6,25 +6,25 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class MasterTypeProgramController extends Controller
+class ProgramController extends Controller
 {
     public function getAllData(): JsonResponse
     {
-        return $this->masterTypeProgramInterface->getAll();
+        return $this->programInterface->getAll();
     }
 
     public function getAllDataByQuery(Request $request): JsonResponse
     {
-        return $this->masterTypeProgramInterface->getAllByQuery($request);
+        return $this->programInterface->getAllByQuery($request);
     }
 
     public function getAllDataByPeriodeFilter(Request $request): JsonResponse
     {
-        return $this->masterTypeProgramInterface->getAllByPeriodeFilter($request);
+        return $this->programInterface->getAllByPeriodeFilter($request);
     }
 
     public function getOneData(int $id): JsonResponse
     {
-        return $this->masterTypeProgramInterface->getOne($id);
+        return $this->programInterface->getOne($id);
     }
 }

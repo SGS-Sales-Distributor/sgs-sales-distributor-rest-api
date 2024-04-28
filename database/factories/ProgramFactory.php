@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Program;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,6 +27,8 @@ class ProgramFactory extends Factory
             'name_program' => $this->faker->word(),
             'keterangan' => $this->faker->text(),
             'active' => $this->faker->randomNumber(1, false),
+            'periode_start' => $this->faker->date(),
+            'periode_end' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
             'created_by' => $this->faker->name(),
             'updated_by' => $this->faker->name(),
         ];
