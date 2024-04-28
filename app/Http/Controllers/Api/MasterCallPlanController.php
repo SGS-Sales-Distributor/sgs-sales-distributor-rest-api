@@ -3,19 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Repositories\MasterCallPlanInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MasterCallPlanController extends Controller
 {
-    protected MasterCallPlanInterface $masterCallPlanInterface;
-
-    public function __construct(MasterCallPlanInterface $masterCallPlanInterface)
-    {
-        $this->masterCallPlanInterface = $masterCallPlanInterface;
-    }
-
     public function getAllData(): JsonResponse
     {
         return $this->masterCallPlanInterface->getAll();

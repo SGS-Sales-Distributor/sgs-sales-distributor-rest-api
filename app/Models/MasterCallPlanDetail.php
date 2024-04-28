@@ -14,11 +14,12 @@ class MasterCallPlanDetail extends Model
 
     public $timestamps = true;
 
-    protected $primaryKey = 'call_plan_id';
+    protected $primaryKey = 'id';
 
     protected $table = 'master_call_plan_detail';
 
     protected $fillable = [
+        'call_plan_id',
         'store_id',
         'date',
         'created_by',
@@ -46,6 +47,9 @@ class MasterCallPlanDetail extends Model
         return $this->belongsTo(MasterCallPlan::class, 'call_plan_id');
     }
 
+    /**
+     * Many to One relationship with StoreInfoDistri model.
+     */
     public function store(): BelongsTo
     {
         return $this->belongsTo(StoreInfoDistri::class, 'store_id');

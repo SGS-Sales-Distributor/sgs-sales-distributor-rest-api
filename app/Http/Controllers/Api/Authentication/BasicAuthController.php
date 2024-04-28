@@ -3,19 +3,11 @@
 namespace App\Http\Controllers\Api\Authentication;
 
 use App\Http\Controllers\Controller;
-use App\Repositories\BasicAuthentication\BasicAuthInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BasicAuthController extends Controller
 {
-    protected BasicAuthInterface $basicAuthInterface;
-
-    public function __construct(BasicAuthInterface $basicAuthInterface)
-    {
-        $this->basicAuthInterface = $basicAuthInterface;
-    }
-
     /**
      * Login as existing salesman account.
      */

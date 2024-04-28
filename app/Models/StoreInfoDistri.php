@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StoreInfoDistri extends Model
@@ -91,6 +92,14 @@ class StoreInfoDistri extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(OrderCustomerSales::class, 'store_id');
+    }
+
+    /**
+     * One to Many relationship of OrderCustomerDetails through OrderCustomerSales model.
+     */
+    public function orderDetails(): HasManyThrough
+    {
+        return $this->hasManyThrough(OrderCustomerSalesDetail::class, OrderCustomerSales::class, 'store_id', 'orderId');
     }
 
     /**

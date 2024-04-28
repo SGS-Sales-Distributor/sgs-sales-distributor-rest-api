@@ -4,7 +4,6 @@ namespace App\Repositories;
 
 use App\Models\MasterCallPlan;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -15,13 +14,17 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 {   
     public function getAll(): JsonResponse
     {
-        $masterCallPlanCache = Cache::remember('masterCallPlan', $this::DEFAULT_CACHE_TTL, function() {
-            return DB::table('master_call_plan')
-                ->select('master_call_plan.*', 'user_info.*', 'master_call_plan_detail.*')
-                ->join('user_info', 'master_call_plan.user_id', '=' , 'user_info.user_id')
-                ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
-                ->orderBy('master_call_plan.id', 'asc')
-                ->paginate(50);    
+        $masterCallPlanCache = Cache::remember(
+            'masterCallPlan', 
+            $this::DEFAULT_CACHE_TTL, 
+            function() 
+        {
+            return MasterCallPlan::with([
+                'user',
+                'details',
+            ])
+            ->orderBy('id', 'asc')
+            ->paginate($this::DEFAULT_PAGINATE);
         });
 
         return $this->successResponse(
@@ -34,21 +37,27 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
     public function getAllByQuery(Request $request): JsonResponse
     {
-        $searchByQuery = $request->query('query');
+        $searchByQuery = $request->query('q');
 
-        $masterCallPlanByQueryCache = Cache::remember('masterCallPlanByQuery', $this::DEFAULT_CACHE_TTL, function() use ($searchByQuery) {
-            return DB::table('master_call_plan')
-            ->select('master_call_plan.*', 'user_info.*', 'master_call_plan_detail.*')
-            ->join('user_info', 'master_call_plan.user_id', '=' , 'user_info.user_id')
-            ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
-            ->when($searchByQuery, function (QueryBuilder $query) use ($searchByQuery){
-                $query->where('user_info.user_fullname', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('user_info.user_nik', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('user_info.user_email', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('user_info.user_name', 'LIKE', '%' . $searchByQuery . '%');
+        $masterCallPlanByQueryCache = Cache::remember(
+            'masterCallPlanByQuery', 
+            $this::DEFAULT_CACHE_TTL, 
+            function() use ($searchByQuery) 
+        {
+            return MasterCallPlan::with([
+                'user',
+                'details',
+            ])
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->whereHas('user', function (Builder $subQuery) use ($searchByQuery) {
+                    $subQuery->where('user_fullname', 'LIKE', '%' .$searchByQuery . '%')
+                    ->orWhere('user_nik', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('user_email', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('user_name', 'LIKE', '%' . $searchByQuery . '%');
+                });
             })
-            ->orderBy('master_call_plan.id', 'asc')
-            ->paginate(50);
+            ->orderBy('id', 'asc')
+            ->paginate($this::DEFAULT_PAGINATE);
         });
 
         return $this->successResponse(
@@ -61,39 +70,112 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
     public function getAllByDateFilter(Request $request): JsonResponse
     {
-        $filterByDate = $request->input('date');
+        $searchByDateQuery = $request->query('q');
 
-        $masterCallPlanByDateFilterCache = Cache::remember('masterCallPlanByDateFilter', $this::DEFAULT_CACHE_TTL, function() use ($filterByDate) {
-            return DB::table('master_call_plan')
-            ->select('master_call_plan.*', 'user_info.*', 'master_call_plan_detail.*')
-            ->join('user_info', 'master_call_plan.user_id', '=' , 'user_info.user_id')
-            ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
-            ->when($filterByDate, function (QueryBuilder $query) use ($filterByDate){
-                $query->where('master_call_plan_detail.date', '=', $filterByDate);
-            })
-            ->orderBy('master_call_plan.id', 'asc')
-            ->paginate(50);
+        $filterByDateRange = $this->dateRangeFilter->parseDateRange($searchByDateQuery);
+
+        $filterByDate = $this->dateRangeFilter->parseDate($searchByDateQuery);
+
+        $filterByYearRange = $this->dateRangeFilter->parseYearRange($searchByDateQuery);
+
+        $filterByYear = $this->dateRangeFilter->parseYear($searchByDateQuery);
+
+        $masterCallPlanByDateFilterCache = Cache::remember(
+            'masterCallPlanByDateFilter', 
+            $this::DEFAULT_CACHE_TTL, 
+            function() use (
+                $filterByDateRange, 
+                $filterByDate,
+                $filterByYearRange,
+                $filterByYear,
+            ) 
+        {
+            if ($filterByDateRange)
+            {
+                return MasterCallPlan::with([
+                    'user', 
+                    'details'
+                ])
+                ->when($filterByDateRange, function (Builder $query) use ($filterByDateRange) {
+                    $query->whereHas('details', function (Builder $subQuery) use ($filterByDateRange) {
+                        $subQuery->whereBetween('date', $filterByDateRange);
+                    });
+                })
+                ->orderBy('id', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+
+            if ($filterByDate)
+            {
+                return MasterCallPlan::with([
+                    'user', 
+                    'details'
+                ])
+                ->when($filterByDate, function (Builder $query) use ($filterByDate) {
+                    $query->whereHas('details', function (Builder $subQuery) use ($filterByDate) {
+                        $subQuery->whereDate('date', '=', $filterByDate);
+                    });
+                })
+                ->orderBy('id', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+
+            if ($filterByYearRange)
+            {
+                return MasterCallPlan::with([
+                    'user', 
+                    'details'
+                ])
+                ->when($filterByYearRange, function (Builder $query) use ($filterByYearRange) {
+                    $query->whereHas('details', function (Builder $subQuery) use ($filterByYearRange) {
+                        $subQuery->whereBetween('date', $filterByYearRange);
+                    });
+                })
+                ->orderBy('id', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+
+            if ($filterByYear)
+            {
+                return MasterCallPlan::with([
+                    'user', 
+                    'details'
+                ])
+                ->when($filterByYear, function (Builder $query) use ($filterByYear) {
+                    $query->whereHas('details', function (Builder $subQuery) use ($filterByYear) {
+                        $subQuery->whereYear('date', $filterByYear);
+                    });
+                })
+                ->orderBy('id', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch master call plan with date filter '{$filterByDate}'.", 
+            msg: "Successfully fetch master call plan with date filter {$request->input('q')}", 
             resource: $masterCallPlanByDateFilterCache,
         );
     }
 
     public function getOne(int $id): JsonResponse
     {
-        $masterCallPlan = MasterCallPlan::with(['user', 'details'])
-            ->where('id', $id)
-            ->firstOrFail();
+        $masterCallPlanCache = Cache::remember(
+            "masterCallPlan:{$id}", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($id) 
+        {
+           return MasterCallPlan::with(['user', 'details'])
+           ->where('id', $id)
+           ->firstOrFail();  
+        });
         
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
             msg: "Successfully fetch master call plan {$id}.", 
-            resource: $masterCallPlan,
+            resource: $masterCallPlanCache,
         );
     }
 

@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\Authentication\BasicAuthController;
 use App\Http\Controllers\Api\MasterCallPlanController;
+use App\Http\Controllers\Api\MasterStatusController;
 use App\Http\Controllers\Api\MasterTargetNooController;
+use App\Http\Controllers\Api\MasterTypeProgramController;
 use App\Http\Controllers\Api\StoreInfoDistriController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,12 +35,24 @@ Route::group([
     // master target noo routes.
     Route::get('/master-target-noos', [MasterTargetNooController::class, 'getAllData']);
     Route::get('/master-target-noos/search', [MasterTargetNooController::class, 'getAllDataByQuery']);
-    Route::get('/master-target-noos/filter', [MasterTargetNooController::class, 'getAllDataByDateFilter']);
+    Route::get('/master-target-noos/filter', [MasterTargetNooController::class, 'getAllDataByYearFilter']);
     Route::get('/master-target-noos/{id}', [MasterTargetNooController::class, 'getOneData']);
+
+    // master type program routes.
+    Route::get('/master-type-programs', [MasterTypeProgramController::class, 'getAllData']);
+    Route::get('/master-type-programs/search', [MasterTypeProgramController::class, 'getAllDataByQuery']);
+    Route::get('/master-type-programs/filter', [MasterTypeProgramController::class, 'getAllDataByPeriodeFilter']);
+    Route::get('/master-type-programs/{id}', [MasterTypeProgramController::class, 'getOneData']);
+
+    // master status routes.
+    Route::get('master-statuses', [MasterStatusController::class, 'getAllData']);
+    Route::get('master-statuses/search', [MasterStatusController::class, 'getAllDataByQuery']);
+    Route::get('master-statuses/filter', [MasterStatusController::class, 'getAllDataByOrderDateFilter']);
+    Route::get('master-statuses/{id}', [MasterStatusController::class, 'getOneData']);
 
     // store info distri routes.
     Route::get('/store-info-distris', [StoreInfoDistriController::class, 'getAllData']);
     Route::get('/store-info-distris/search', [StoreInfoDistriController::class, 'getAllDataByQuery']);
-    Route::get('/store-info-distris/filter', [StoreInfoDistriController::class, 'getAllDataByTypeFilter']);
+    Route::get('/store-info-distris/filter', [StoreInfoDistriController::class, 'getAllDataByOrderDateFilter']);
     Route::get('/store-info-distris/{id}', [StoreInfoDistriController::class, 'getOneData']);
 });

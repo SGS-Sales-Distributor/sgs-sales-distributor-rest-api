@@ -11,7 +11,7 @@ interface MasterTargetNooInterface
 
     public function getAllByQuery(Request $request): JsonResponse;
 
-    public function getAllByDateFilter(Request $request): JsonResponse;
+    public function getAllByYearFilter(Request $request): JsonResponse;
 
     public function getOne(int $id): JsonResponse;
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MasterTypeProgram extends Model
@@ -40,6 +41,14 @@ class MasterTypeProgram extends Model
      */
     public function programs(): HasMany
     {
-        return $this->hasMany(Program::class, 'type_program_id');
+        return $this->hasMany(Program::class, 'id_type_program');
+    }
+
+    /**
+     * One to Many relationship of ProgramDetails through Program model.
+     */
+    public function programDetails(): HasManyThrough
+    {
+        return $this->hasManyThrough(ProgramDetail::class, Program::class, 'id_type_program', 'id_program');
     }
 }

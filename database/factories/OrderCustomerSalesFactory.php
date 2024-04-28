@@ -22,7 +22,7 @@ class OrderCustomerSalesFactory extends Factory
     {
         return [
             'no_order' => $this->faker->unique()->regexify('[A-Z]{5}[0-9]{5}'),
-            'tgl_order' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
+            'tgl_order' => $this->faker->date(),
             'tipe' => $this->faker->randomElement(['SO', 'LLB']),
             'company' => $this->faker->randomNumber(2, false),
             'top' => strval($this->faker->randomNumber(2, false)),

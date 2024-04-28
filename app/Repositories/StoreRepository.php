@@ -4,23 +4,26 @@ namespace App\Repositories;
 
 use App\Models\StoreInfoDistri;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class StoreRepository extends Repository implements StoreInterface
 {
     public function getAll(): JsonResponse
     {
-        $storeInfoDistriCache = Cache::remember('storeInfoDistri', $this::DEFAULT_CACHE_TTL, function () {
+        $storeInfoDistriCache = Cache::remember(
+            'storeInfoDistri', 
+            $this::DEFAULT_CACHE_TTL, 
+            function () 
+        {
             return StoreInfoDistri::with([
                 'type', 
                 'cabang', 
                 'visits', 
                 'owners', 
-                'orders', 
+                'orders',
+                'orderDetails',
                 'masterCallPlanDetails'
             ])
             ->whereHas('owners')
@@ -38,15 +41,20 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getAllByQuery(Request $request): JsonResponse
     {
-        $searchByQuery = $request->query('query');
+        $searchByQuery = $request->query('q');
 
-        $storeInfoDistriByQueryCache = Cache::remember('storeInfoDistriByQuery', function () use ($searchByQuery) {
+        $storeInfoDistriByQueryCache = Cache::remember(
+            'storeInfoDistriByQuery', 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($searchByQuery) 
+        {
             return StoreInfoDistri::with([
                 'type', 
                 'cabang', 
                 'visits', 
                 'owners', 
-                'orders', 
+                'orders',
+                'orderDetails',
                 'masterCallPlanDetails'
             ])
             ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
@@ -54,17 +62,23 @@ class StoreRepository extends Repository implements StoreInterface
                 ->orWhere('store_alias', 'LIKE', '%' . $searchByQuery . '%')
                 ->orWhere('store_phone', 'LIKE', '%' . $searchByQuery . '%')
                 ->orWhere('store_code', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhereHas('store_cabang', function (EloquentBuilder $query) use ($searchByQuery) {
-                    $query->where('kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
+                ->orWhereHas('cabang', function (EloquentBuilder $subQuery) use ($searchByQuery) {
+                    $subQuery->where('kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
                     ->orWhere('store_cabang.kode_cabang', 'LIKE', '%' . $searchByQuery . '%');
                 })
-                ->orWhereHas('store_info_distri_person', function (EloquentBuilder $query) use ($searchByQuery) {
-                    $query->where('owner', 'LIKE', '%' . $searchByQuery . '%')
+                ->orWhereHas('owners', function (EloquentBuilder $subQuery) use ($searchByQuery) {
+                    $subQuery->where('owner', 'LIKE', '%' . $searchByQuery . '%')
                     ->orWhere('nik_owner', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('email_owner', 'LIKE', '%' . $searchByQuery . '%');
+                    ->orWhere('email_owner', 'LIKE', '%' . $searchByQuery . '%');
+                })
+                ->orWhereHas('orders', function (EloquentBuilder $subQuery) use ($searchByQuery) {
+                    $subQuery->where('no_order', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('cust_code', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('ship_code', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('whs_code', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('whs_code_to', 'LIKE', '%' . $searchByQuery . '%');
                 });
             })
-            ->whereHas('owners')
             ->orderBy('store_id', 'asc')
             ->paginate($this::DEFAULT_PAGINATE);
         });
@@ -77,52 +91,94 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
-    public function getAllByTypeFilter(Request $request): JsonResponse
+    public function getAllByOrderDateFilter(Request $request): JsonResponse
     {
-        $filterByType = $request->input('type');
+        $searchByOrderDateQuery = $request->query('q');
 
-        $storeInfoDistriByTypeFilterCache = Cache::remember('storeInfoDistriByTypeFilter', function () use ($filterByType) {
-            return DB::table('store_info_distri')
-            ->select('store_info_distri.*', 'store_type.*', 'store_cabang.*', 'profil_visit.*', 'store_info_distri_person.*', 'order_customer_sales.*', 'master_call_plan_detail.*')
-            ->join('store_type', 'store_info_distri.store_type_id', '=' , 'store_type.store_type_id')
-            ->join('store_cabang', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
-            ->join('profil_visit', 'store_info_distri.store_id', '=', 'profil_visit.store_id')
-            ->join('store_info_distri_person', 'store_info_distri.store_id', '=', 'store_info_distri_person.store_id')
-            ->join('order_customer_sales', 'store_info_distri.store_id', '=', 'order_customer_sales.store_id')
-            ->join('master_call_plan_detail', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
-            ->when($filterByType, function (Builder $query) use ($filterByType) {
-                $query->where('store_type.store_type_name', '=', $filterByType);
-            })
-            ->orderBy('store_info_distri.store_id', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
+        $filterByDateRange = $this->dateRangeFilter->parseDateRange($searchByOrderDateQuery);
+
+        $filterByDate = $this->dateRangeFilter->parseDate($searchByOrderDateQuery);
+
+        $storeInfoDistriByTypeFilterCache = Cache::remember(
+            'storeInfoDistriByTypeFilter', 
+            $this::DEFAULT_CACHE_TTL,
+            function () use (
+                $filterByDateRange, 
+                $filterByDate,
+            ) 
+        {
+            if ($filterByDateRange)
+            {
+                return StoreInfoDistri::with([
+                    'type',
+                    'cabang',
+                    'visits',
+                    'owners',
+                    'orders',
+                    'orderDetails',
+                    'masterCallPlanDetails',
+                ])->when($filterByDateRange, function (EloquentBuilder $query) use ($filterByDateRange) {
+                    $query->whereHas('orders', function (EloquentBuilder $subQuery) use ($filterByDateRange) {
+                        $subQuery->whereBetween('tgl_order', $filterByDateRange);
+                    });
+                })
+                ->orderBy('store_id', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+
+            if ($filterByDate)
+            {
+                return StoreInfoDistri::with([
+                    'type',
+                    'cabang',
+                    'visits',
+                    'owners',
+                    'orders',
+                    'orderDetails',
+                    'masterCallPlanDetails',
+                ])->when($filterByDate, function (EloquentBuilder $query) use ($filterByDate) {
+                    $query->whereHas('orders', function (EloquentBuilder $subQuery) use ($filterByDate) {
+                        $subQuery->whereDate('tgl_order', $filterByDate);
+                    });
+                })
+                ->orderBy('store_id', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch store info distri with store type filter '{$filterByType}'.", 
+            msg: "Successfully fetch store info distri with store type filter {$request->input('type')}.", 
             resource: $storeInfoDistriByTypeFilterCache,
         );
     }
 
     public function getOne(int $id): JsonResponse
     {
-        $store = StoreInfoDistri::with([
-            'type',
-            'cabang',
-            'visits', 
-            'owners',
-            'orders',
-            'masterCallPlanDetails', 
-        ])
-        ->where('store_id', $id)
-        ->firstOrFail();
+        $storeCache = Cache::remember(
+            "store:{$id}", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($id) 
+        {
+            return StoreInfoDistri::with([
+                'type',
+                'cabang',
+                'visits', 
+                'owners',
+                'orders',
+                'orderDetails',
+                'masterCallPlanDetails', 
+            ])
+            ->where('store_id', $id)
+            ->firstOrFail();
+        });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
             msg: "Successfully fetch store info distri {$id}.", 
-            resource: $store,
+            resource: $storeCache,
         );
     }
 }

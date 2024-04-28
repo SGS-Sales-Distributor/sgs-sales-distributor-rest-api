@@ -15,15 +15,6 @@ use Illuminate\Validation\Rules\Password;
 
 class BasicAuthRepository extends Repository implements BasicAuthInterface
 {
-    protected RandomDigitNumber $randomDigitNumber;
-
-    public function __construct(
-        RandomDigitNumber $randomDigitNumber,
-    )
-    {
-        $this->randomDigitNumber = $randomDigitNumber;
-    }
-
     public function login(Request $request): JsonResponse
     {
         try {
