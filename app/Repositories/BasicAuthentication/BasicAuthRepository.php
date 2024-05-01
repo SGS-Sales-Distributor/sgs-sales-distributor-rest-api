@@ -68,13 +68,12 @@ class BasicAuthRepository extends Repository implements BasicAuthInterface
                     msg: "Password doesn't match.",
                 );
             }
-    
-            $request->session()->regenerate();
             
             return $this->successResponse(
                 statusCode: 200,
                 success: true,
                 msg: "Successfully logged in as {$salesman->email}",
+                resource: $salesman,
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -186,10 +185,6 @@ class BasicAuthRepository extends Repository implements BasicAuthInterface
     {
         try {
             Auth::logout();
-
-            $request->session()->invalidate();
-
-            $request->session()->regenerateToken();
 
             return $this->successResponse(
                 statusCode: 200,

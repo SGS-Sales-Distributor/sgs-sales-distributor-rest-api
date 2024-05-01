@@ -46,47 +46,46 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id', true)
             ->primary()
             ->index();
-            $table->string('user_number', 10)
+            $table->string('number', 10)
             ->nullable(false)
             ->index();
-            $table->string('user_nik', 20)
+            $table->string('nik', 20)
             ->unique()
             ->nullable(true)
             ->index();
-            $table->string('user_fullname', 200)
+            $table->string('fullname', 200)
             ->nullable(false)
             ->index();
-            $table->string('user_phone', 20)
+            $table->string('phone', 20)
             ->unique()
             ->nullable(false)
             ->index();
-            $table->string('user_email', 255)
+            $table->string('email', 255)
             ->unique()
             ->nullable(false)
             ->index();
-            $table->string('user_name', 50)
+            $table->string('name', 50)
             ->unique()
             ->nullable(false)
             ->index();
-            $table->string('user_password', 100)
+            $table->string('password', 100)
             ->nullable(false);
-            $table->foreignId('user_type_id')
+            $table->foreignId('type_id')
             ->index()
-            ->nullable(false)
+            ->nullable(true)
             ->references('user_type_id')
             ->on('user_type')
             ->cascadeOnDelete();
-            $table->foreignId('user_status')
+            $table->foreignId('status')
+            ->nullable(true)
             ->index()
-            ->nullable(false)
             ->references('id')
             ->on('user_status')
             ->cascadeOnDelete();
             $table->integer('cabang_id', false, true)
             ->nullable(true);
             $table->integer('store_id', false, true)
-            ->default(0)
-            ->nullable(false)
+            ->nullable(true)
             ->index();
             $table->string('status_ba', 50)
             ->nullable(true);

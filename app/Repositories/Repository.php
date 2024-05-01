@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Handlers\DateRangeFilter;
+use App\Handlers\JwtAuthToken;
 use App\Handlers\RandomDigitNumber;
 use App\Traits\ApiResponse;
 
@@ -16,13 +17,16 @@ abstract class Repository
 
     protected RandomDigitNumber $randomDigitNumber;
     protected DateRangeFilter $dateRangeFilter;
+    protected JwtAuthToken $jwtAuthToken;
 
     public function __construct(
         RandomDigitNumber $randomDigitNumber,
         DateRangeFilter $dateRangeFilter,
+        JwtAuthToken $jwtAuthToken,
     )
     {
         $this->randomDigitNumber = $randomDigitNumber;
         $this->dateRangeFilter = $dateRangeFilter;
+        $this->jwtAuthToken = $jwtAuthToken;
     }
 }

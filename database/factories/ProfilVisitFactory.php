@@ -26,7 +26,7 @@ class ProfilVisitFactory extends Factory
                 return \App\Models\StoreInfoDistri::all()->random()->store_id;
             },
             'user' => function() {
-                return \App\Models\User::all()->random()->user_fullname;
+                return \App\Models\User::all()->random()->fullname;
             },
             'photo_visit' => $this->faker->image(
                 width: 640,

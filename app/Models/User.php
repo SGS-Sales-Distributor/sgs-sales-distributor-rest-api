@@ -21,15 +21,15 @@ class User extends Authenticatable
     protected $table = "user_info";
 
     protected $fillable = [
-        'user_number',
-        'user_nik',
-        'user_fullname',
-        'user_phone',
-        'user_email',
-        'user_name',
-        'user_password',
-        'user_type_id',
-        'user_status',
+        'number',
+        'nik',
+        'fullname',
+        'phone',
+        'email',
+        'name',
+        'password',
+        'type_id',
+        'status',
         'cabang_id',
         'store_id',
         'status_ba',
@@ -65,7 +65,7 @@ class User extends Authenticatable
      */
     public function status(): BelongsTo
     {
-        return $this->belongsTo(UserStatus::class, 'user_status');
+        return $this->belongsTo(UserStatus::class, 'status');
     }
 
     /**
@@ -73,7 +73,7 @@ class User extends Authenticatable
      */
     public function type(): BelongsTo
     {
-        return $this->belongsTo(UserType::class, 'user_type_id');
+        return $this->belongsTo(UserType::class, 'type_id');
     }
 
     /**

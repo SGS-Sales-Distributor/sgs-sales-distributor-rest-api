@@ -25,20 +25,17 @@ return new class extends Migration
             $table->string('user', 100)
             ->nullable(true)
             ->index();
-            $table->string('photo_visit', 100)
+            $table->mediumText('photo_visit')
             ->nullable(true);
-            $table->string('photo_visit_out', 100)
+            $table->mediumText('photo_visit_out')
             ->nullable(true);
             $table->date('tanggal_visit')
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
             ->nullable(true)
             ->index();
             $table->time('time_in')
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'))
             ->nullable(true)
             ->index();
             $table->time('time_out')
-            ->default(Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'))
             ->nullable(true)
             ->index();
             $table->string('purchase_order_in', 255)
@@ -70,7 +67,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
             $table->foreign('user')
-            ->references('user_fullname')
+            ->references('fullname')
             ->on('user_info')
             ->cascadeOnDelete();
         });

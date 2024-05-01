@@ -29,17 +29,17 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_number' => $this->faker->regexify('[0-9]{2}[0-9]{2}[0-9]{2}[0-9]{2}[0-9]{2}'),
-            'user_nik' => $this->faker->unique()->numerify('####-####-####-####'),
-            'user_fullname' => $this->faker->name(),
-            'user_phone' => $this->faker->phoneNumber(),
-            'user_email' => $this->faker->unique()->safeEmail(),
-            'user_name' => $this->faker->unique()->word(),
-            'user_password' => Hash::make('password'),
-            'user_type_id' => function () {
+            'number' => $this->faker->regexify('[0-9]{2}[0-9]{2}[0-9]{2}[0-9]{2}[0-9]{2}'),
+            'nik' => $this->faker->unique()->numerify('####-####-####-####'),
+            'fullname' => $this->faker->name(),
+            'phone' => $this->faker->phoneNumber(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'name' => $this->faker->unique()->word(),
+            'password' => Hash::make('password'),
+            'type_id' => function () {
                 return \App\Models\UserType::all()->random()->user_type_id;
             },
-            'user_status' => function () {
+            'status' => function () {
                 return \App\Models\UserStatus::all()->random()->id;
             },
             'cabang_id' => $this->faker->randomNumber(2, false),

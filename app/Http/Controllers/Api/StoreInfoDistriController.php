@@ -13,6 +13,16 @@ class StoreInfoDistriController extends Controller
         return $this->storeInterface->getAll();
     }
 
+    public function getOneData(int $id): JsonResponse
+    {
+        return $this->storeInterface->getOne($id);
+    }
+
+    public function getAllVisitsData(int $id): JsonResponse
+    {
+        return $this->storeInterface->getAllVisits($id);
+    }
+
     public function getAllDataByQuery(Request $request): JsonResponse
     {
         return $this->storeInterface->getAllByQuery($request);
@@ -21,10 +31,5 @@ class StoreInfoDistriController extends Controller
     public function getAllDataByOrderDateFilter(Request $request): JsonResponse
     {
         return $this->storeInterface->getAllByOrderDateFilter($request);
-    }
-
-    public function getOneData(int $id): JsonResponse
-    {
-        return $this->storeInterface->getOne($id);
     }
 }

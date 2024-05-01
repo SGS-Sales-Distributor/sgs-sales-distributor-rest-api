@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Repositories\BasicAuthentication\BasicAuthInterface;
 use App\Repositories\BasicAuthentication\BasicAuthRepository;
+use App\Repositories\JwtAuthentication\JwtAuthInterface;
+use App\Repositories\JwtAuthentication\JwtAuthRepository;
 use App\Repositories\MasterCallPlanInterface;
 use App\Repositories\MasterCallPlanRepository;
 use App\Repositories\MasterStatusInterface;
@@ -14,6 +16,8 @@ use App\Repositories\ProductInfoInterface;
 use App\Repositories\ProductInfoRepository;
 use App\Repositories\ProgramInterface;
 use App\Repositories\ProgramRepository;
+use App\Repositories\SalesmanInterface;
+use App\Repositories\SalesmanRepository;
 use App\Repositories\StoreInterface;
 use App\Repositories\StoreRepository;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(JwtAuthInterface::class, JwtAuthRepository::class);
         $this->app->bind(BasicAuthInterface::class, BasicAuthRepository::class);
         $this->app->bind(MasterCallPlanInterface::class, MasterCallPlanRepository::class);
         $this->app->bind(MasterTargetNooInterface::class, MasterTargetNooRepository::class);
@@ -32,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProductInfoInterface::class, ProductInfoRepository::class);
         $this->app->bind(MasterStatusInterface::class, MasterStatusRepository::class);
         $this->app->bind(StoreInterface::class, StoreRepository::class);
+        $this->app->bind(SalesmanInterface::class, SalesmanRepository::class);
     }
 
     /**
