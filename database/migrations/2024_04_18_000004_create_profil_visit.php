@@ -14,30 +14,27 @@ return new class extends Migration
     {
         Schema::create('profil_visit', function (Blueprint $table) {
             $table->unsignedBigInteger('id', true)
-            ->primary()
-            ->index();
+            ->primary();
             $table->foreignId('store_id')
-            ->index()
             ->nullable(true)
             ->references('store_id')
             ->on('store_info_distri')
-            ->cascadeOnDelete();
+            ->cascadeOnDelete()
+            ->cascadeOnUpdate();
             $table->string('user', 100)
             ->nullable(true)
             ->index();
-            $table->mediumText('photo_visit')
+            $table->text('photo_visit')
             ->nullable(true);
-            $table->mediumText('photo_visit_out')
+            $table->text('photo_visit_out')
             ->nullable(true);
             $table->date('tanggal_visit')
             ->nullable(true)
             ->index();
             $table->time('time_in')
-            ->nullable(true)
-            ->index();
+            ->nullable(true);
             $table->time('time_out')
-            ->nullable(true)
-            ->index();
+            ->nullable(true);
             $table->string('purchase_order_in', 255)
             ->nullable(true);
             $table->string('condit_owner', 255)
@@ -69,7 +66,8 @@ return new class extends Migration
             $table->foreign('user')
             ->references('fullname')
             ->on('user_info')
-            ->cascadeOnDelete();
+            ->cascadeOnDelete()
+            ->cascadeOnUpdate();
         });
     }
 

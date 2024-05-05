@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('brand', function (Blueprint $table) {
             $table->string('brand_id', 10)
+            ->unique()
             ->index()
             ->nullable(false);
             $table->string('brand_name', 255)
@@ -32,6 +33,7 @@ return new class extends Migration
             $table->foreign('brand_group_id')
             ->references('brand_group_id')
             ->on('brand_group')
+            ->cascadeOnUpdate()
             ->cascadeOnDelete();
             $table->primary([
                 'brand_id',

@@ -24,15 +24,16 @@ return new class extends Migration
             $table->string('description', 255)
             ->nullable(true);
             $table->string('password', 255)
-            ->nullable(true);
+            ->nullable(false);
             $table->string('username', 50)
-            ->nullable(true)
+            ->unique()
+            ->nullable(false)
             ->index();
             $table->string('defaultpassword', 255)
             ->nullable(true);
             $table->string('nik', 50)
-            ->nullable(true)
-            ->index();
+            ->unique()
+            ->nullable(false);
             $table->integer('departmentId', false, true)
             ->nullable(true);
             $table->integer('unitId', false, true)
@@ -94,6 +95,7 @@ return new class extends Migration
             $table->foreign('user')
             ->references('user')
             ->on('master_user')
+            ->cascadeOnUpdate()
             ->cascadeOnDelete();
         });
     }

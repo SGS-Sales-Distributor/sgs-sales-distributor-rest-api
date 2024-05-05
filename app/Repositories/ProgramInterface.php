@@ -7,11 +7,21 @@ use Illuminate\Http\Request;
 
 interface ProgramInterface
 {
-    public function getAll(): JsonResponse;
-
-    public function getAllByQuery(Request $request): JsonResponse;
+    public function getAllData(Request $request): JsonResponse;
 
     public function getAllByPeriodeFilter(Request $request): JsonResponse;
+    
+    public function getOneData(int $id): JsonResponse;
 
-    public function getOne(int $id): JsonResponse;
+    public function getProgramTypeData(int $id): JsonResponse;
+
+    public function getProgramDetailsData(int $id): JsonResponse;
+
+    public function getOneProgramDetailData(int $id, int $detailId): JsonResponse;
+
+    public function storeOneData(Request $request): JsonResponse;
+
+    public function updateOneData(Request $request, int $id): JsonResponse;
+
+    public function removeOneData(int $id): JsonResponse;
 }

@@ -17,18 +17,15 @@ class BasicAuthController extends Controller
     }
 
     /**
-     * Register new salesman account.
-     */
-    public function register(Request $request): JsonResponse
-    {
-        return $this->basicAuthInterface->register($request);
-    }
-
-    /**
      * Logout from salesman account.
      */
     public function logout(Request $request): JsonResponse
     {
         return $this->basicAuthInterface->logout($request);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        return $this->basicAuthInterface->resetPassword($request);
     }
 }

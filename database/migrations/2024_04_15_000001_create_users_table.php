@@ -14,8 +14,7 @@ return new class extends Migration
     {
         Schema::create('user_type', function (Blueprint $table) {
             $table->unsignedBigInteger('user_type_id', true)
-            ->primary()
-            ->index();
+            ->primary();
             $table->string('user_type_name', 255)
             ->nullable(false)
             ->index();
@@ -29,8 +28,7 @@ return new class extends Migration
 
         Schema::create('user_status', function (Blueprint $table) {
             $table->unsignedBigInteger('id', true)
-            ->primary()
-            ->index();
+            ->primary();
             $table->string('status', 255)
             ->nullable(false)
             ->index();
@@ -44,22 +42,20 @@ return new class extends Migration
 
         Schema::create('user_info', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id', true)
-            ->primary()
-            ->index();
+            ->primary();
             $table->string('number', 10)
             ->nullable(false)
             ->index();
             $table->string('nik', 20)
             ->unique()
-            ->nullable(true)
-            ->index();
+            ->nullable(true);
             $table->string('fullname', 200)
+            ->unique()
             ->nullable(false)
             ->index();
             $table->string('phone', 20)
             ->unique()
-            ->nullable(false)
-            ->index();
+            ->nullable(true);
             $table->string('email', 255)
             ->unique()
             ->nullable(false)
@@ -71,22 +67,21 @@ return new class extends Migration
             $table->string('password', 100)
             ->nullable(false);
             $table->foreignId('type_id')
-            ->index()
             ->nullable(true)
             ->references('user_type_id')
             ->on('user_type')
-            ->cascadeOnDelete();
+            ->cascadeOnDelete()
+            ->cascadeOnUpdate();
             $table->foreignId('status')
             ->nullable(true)
-            ->index()
             ->references('id')
             ->on('user_status')
-            ->cascadeOnDelete();
+            ->cascadeOnDelete()
+            ->cascadeOnUpdate();
             $table->integer('cabang_id', false, true)
             ->nullable(true);
             $table->integer('store_id', false, true)
-            ->nullable(true)
-            ->index();
+            ->nullable(true);
             $table->string('status_ba', 50)
             ->nullable(true);
             $table->string('created_by', 255)

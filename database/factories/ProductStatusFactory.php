@@ -20,7 +20,7 @@ class ProductStatusFactory extends Factory
     public function definition(): array
     {
         return [
-            'product_status_name' => $this->faker->word(),
+            'product_status_name' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => $this->faker->name(),
             'updated_by' => $this->faker->name(),
         ];

@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -81,9 +82,6 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         $jwt = $request->decoded_token;
 
         $decryptUser = $this->jwtAuthToken->decryptUserData($jwt['user']);
-        
-        $salesman = User::where('email', $decryptUser['data']['email'])
-            ->firstOrFail();
 
         # convert into datetime with tz from env.
         $currentTime = new DateTimeImmutable(timezone: new DateTimeZone(env('APP_TIMEZONE')));
@@ -95,7 +93,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             success: true,
             msg: "Successfully fetch your data.",
             resource: [
-                'data' => $salesman,
+                'data' => $decryptUser,
                 'current_time' => $currentTime->getTimestamp(),
                 'token_expiration_time' => $jwt['exp'],
                 'current_datetime' => Carbon::now(timezone: env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),

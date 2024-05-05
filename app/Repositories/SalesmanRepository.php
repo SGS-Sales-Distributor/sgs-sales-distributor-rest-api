@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\MasterCallPlan;
 use App\Models\ProfilVisit;
 use App\Models\User;
 use Carbon\Carbon;
@@ -15,160 +16,152 @@ use Illuminate\Validation\Rules\Password;
 
 class SalesmanRepository extends Repository implements SalesmanInterface
 {
-    public function getAll(): JsonResponse
+    public function getAllData(Request $request): JsonResponse
     {
-        $salesmenCache = Cache::remember('salesmen', $this::DEFAULT_CACHE_TTL, function () {
+        $searchByQuery = $request->query('q');
+
+        $salesmenCache = Cache::remember(
+            "salesmenCache", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($searchByQuery)
+        {
             return User::with([
                 'status',
                 'type',
                 'visits',
                 'masterCallPlans',
             ])
-            ->whereHas('status')
-            ->orWhereHas('type')
-            ->orderBy('user_id', 'asc')
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->where('fullname', 'LIKE', '%' . $searchByQuery . '%')
+                ->orWhere('email', 'LIKE', '%' . $searchByQuery . '%');
+            })
+            ->orderBy('number', 'asc')
             ->paginate($this::DEFAULT_PAGINATE);
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch salesman.", 
+            msg: "Successfully fetch salesmen data.", 
             resource: $salesmenCache,
         );
     }
 
-    public function getOne(int $userId): JsonResponse
+    public function getOneData(string $userNumber): JsonResponse
     {
-        $salesmanCache = Cache::remember("salesman:{$userId}", $this::DEFAULT_CACHE_TTL, function () use ($userId) {
+        $salesmanCache = Cache::remember(
+            "salesmen:{$userNumber}", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($userNumber) 
+        {
             return User::with([
                 'status',
                 'type',
                 'visits',
                 'masterCallPlans',
             ])
-            ->where('user_id', $userId)
+            ->where('number', $userNumber)
             ->firstOrFail();
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch salesman {$userId}.", 
+            msg: "Successfully fetch salesman {$userNumber} data.", 
             resource: $salesmanCache,
         );
     }
 
-    public function getAllVisits(int $userId): JsonResponse
+    public function getVisitsData(string $userNumber): JsonResponse
     {
-        $salesmanVisitsCache = Cache::remember("salesman:{$userId}:visits", $this::DEFAULT_CACHE_TTL, function () use ($userId) {
-            return User::with([
-                'visits',
-            ])
-            ->whereHas('visits')
-            ->where('user_id', $userId)
-            ->firstOrFail();
+        $salesmanVisitsCache = Cache::remember(
+            "salesmen:{$userNumber}:visits", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($userNumber) 
+        {
+            return ProfilVisit::whereHas("user", function (Builder $query) use ($userNumber) {
+                $query->where('number', $userNumber);
+            })
+            ->orderBy('user', 'asc')
+            ->get();
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch salesman {$userId} visits.", 
+            msg: "Successfully fetch salesman {$userNumber} visits data.", 
             resource: $salesmanVisitsCache,
         );
     }
 
-    public function getOneVisit(int $userId, int $visitId): JsonResponse
+    public function getOneVisitData(string $userNumber, int $visitId): JsonResponse
     {
-        $salesmanVisitCache = Cache::remember("salesman:{$userId}:visits:{$visitId}", $this::DEFAULT_CACHE_TTL, function () use ($userId, $visitId) {
-            return User::with([
-                'visits',
-            ])
-            ->whereHas('visits', function (Builder $query) use ($visitId) {
-                $query->where('id', $visitId);
-            })
-            ->where('user_id', $userId)
+        $salesmanVisitCache = Cache::remember(
+            "salesmen:{$userNumber}:visits:{$visitId}", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($userNumber, $visitId) 
+        {
+            return ProfilVisit::whereHas("user", function (Builder $query) use ($userNumber, $visitId) {
+                $query->where('number', $userNumber);
+            })->where('id', $visitId)
             ->firstOrFail();
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch salesman {$userId} visit {$visitId}.", 
+            msg: "Successfully fetch salesman {$userNumber} visit {$visitId} data.", 
             resource: $salesmanVisitCache,
         );
     }
 
-    public function getAllCallPlans(int $userId): JsonResponse
+    public function getCallPlansData(string $userNumber): JsonResponse
     {
-        $salesmanCallPlansCache = Cache::remember("salesman:{$userId}:masterCallPlans", $this::DEFAULT_CACHE_TTL, function () use ($userId) {
-            return User::with([
-                'masterCallPlans',
-            ])
-            ->whereHas('masterCallPlans')
-            ->where('user_id', $userId)
-            ->firstOrFail();
+        $salesmanCallPlansCache = Cache::remember(
+            "salesmen:{$userNumber}:callPlans", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($userNumber) 
+        {
+            return MasterCallPlan::whereHas("user", function (Builder $query) use ($userNumber) {
+                $query->where('number', $userNumber);
+            })->orderBy('id', 'asc')
+            ->get();
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch salesman {$userId} call plan.", 
+            msg: "Successfully fetch salesman {$userNumber} call plans data.", 
             resource: $salesmanCallPlansCache,
         );
     }
 
-    public function getOneCallPlan(int $userId, int $masterCallPlanId): JsonResponse
+    public function getOneCallPlanData(string $userNumber, int $callPlanId): JsonResponse
     {
-        $salesmanCallPlanCache = Cache::remember("salesman:{$userId}:masterCallPlans:{$masterCallPlanId}", $this::DEFAULT_CACHE_TTL, function () use ($userId, $masterCallPlanId) {
+        $salesmanCallPlanCache = Cache::remember(
+            "salesmen:{$userNumber}:callPlans:{$callPlanId}", 
+            $this::DEFAULT_CACHE_TTL, 
+            function () use ($userNumber, $callPlanId) 
+        {
             return User::with([
                 'masterCallPlans',
             ])
-            ->whereHas('masterCallPlans', function (Builder $query) use ($masterCallPlanId) {
-                $query->where('id', $masterCallPlanId);
+            ->whereHas('masterCallPlans', function (Builder $query) use ($callPlanId) {
+                $query->where('id', $callPlanId);
             })
-            ->where('user_id', $userId)
+            ->where('user_id', $userNumber)
             ->firstOrFail();
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch salesman {$userId} call plan {$masterCallPlanId}.", 
+            msg: "Successfully fetch salesman {$userNumber} call plan {$callPlanId} data.", 
             resource: $salesmanCallPlanCache,
         );
     }
 
-    public function getAllByQuery(Request $request): JsonResponse
-    {
-        $searchByQuery = $request->query('q');
-
-        $salesmanByQueryCache = Cache::remember('salesmanByQuery', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
-            return User::with([
-                'status',
-                'type',
-                'visits',
-                'masterCallPlans',
-            ])->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                $query->where('number', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('nik', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('fullname', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('email', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('name', 'LIKE', '%' . $searchByQuery . '%');
-            })
-            ->orderBy('user_id', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
-
-        return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch salesman with query %{$searchByQuery}%.", 
-            resource: $salesmanByQueryCache,
-        );
-    }
-
-    public function storeOne(Request $request): JsonResponse
+    public function storeOneData(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'nik' => ['required', 'string', 'max:20'],
@@ -190,7 +183,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         try {
             DB::beginTransaction();
 
-            $newSalesmanAccount = User::create([
+            $salesman = User::create([
                 'number' => $this->randomDigitNumber->generateRandomNumber(),
                 'nik' => $request->nik,
                 'fullname' => $request->fullname,
@@ -206,7 +199,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 statusCode: 201, 
                 success: true, 
                 msg: "Successfully create new salesman account.", 
-                resource: $newSalesmanAccount
+                resource: $salesman
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -259,7 +252,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         try {
             DB::beginTransaction();
 
-            $newProfilVisit = ProfilVisit::create([
+            $checkInVisit = ProfilVisit::create([
                 'store_id' => $request->store_id,
                 'user' => $user->fullname,
                 'photo_visit' => $request->photo_visit,
@@ -273,13 +266,13 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
             DB::commit();
 
-            $checkProfilVisit = ProfilVisit::where('id', $newProfilVisit->id)
+            $checkProfilVisit = ProfilVisit::where('id', $checkInVisit->id)
             ->firstOrFail();
 
             return $this->successResponse(
                 statusCode: 201, 
                 success: true, 
-                msg: "Successfully create new profil visit data.", 
+                msg: "Successfully check-in visit related to salesman {$userNumber}.", 
                 resource: $checkProfilVisit
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -315,6 +308,13 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             'photo_visit_out' => ['required', 'string'],
             'lat_out' => ['nullable'],
             'long_out' => ['nullable'],
+        ],
+        [
+            'required' => ':attribute is required!',
+            'unique' => ':attribute is unique field!',
+            'min' => ':attribute should be :min in characters',
+            'max' => ':attribute could not more than :max characters',
+            'confirmed' => ':attribute confirmation does not match!',  
         ]);
         
         if ($validator->fails()) {
@@ -326,7 +326,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             );
         }
 
-        $user = User::where('number', $userNumber)->firstOrFail();
+        $salesman = User::where('number', $userNumber)->firstOrFail();
 
         $latestVisit = ProfilVisit::where('id', $visitId)->firstOrFail();
 
@@ -336,12 +336,12 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             if ($latestVisit) {
                 $latestVisit->update([
                     'photo_visit_out' => $request->photo_visit_out,
-                    'user' => $user->fullname,
+                    'user' => $salesman->fullname,
                     'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
                     'time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
                     'lat_out' => $request->lat_out,
                     'long_out' => $request->long_out,
-                    'updated_by' => $user->fullname,
+                    'updated_by' => $salesman->fullname,
                     'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
                 ]);
             }
@@ -351,7 +351,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             return $this->successResponse(
                 statusCode: 201, 
                 success: true, 
-                msg: "Successfully update profil visit data related to user {$userNumber}.", 
+                msg: "Successfully check-out visit related to salesman {$userNumber}.", 
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -378,5 +378,184 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 msg: $e->getMessage(),
             );
         }
+    }
+
+    public function updateOneData(Request $request, string $userNumber): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'number' => ['nullable', 'string', 'max:10'],
+            'nik' => ['nullable', 'string', 'max:20', 'unique:user_info,nik'],
+            'fullname' => ['nullable', 'string', 'max:200'],
+            'phone' => ['nullable', 'string', 'max:20', 'unique:user_info,phone'],
+            'email' => ['nullable', 'string', 'max:255', 'unique:user_info,email', 'lowercase', 'email'],
+            'name' => ['nullable', 'string', 'max:50', 'unique:user_info,name'],
+            'type_id' => ['nullable', 'integer', 'max_digits:10'],
+            'status' => ['nullable', 'integer', 'max_digits:10'],
+            'cabang_id' => ['nullable', 'integer', 'max_digits:10'],
+            'store_id' => ['nullable', 'integer', 'max_digits:10'],
+            'status_ba' => ['nullable', 'string', 'max:50'], 
+        ],
+        [
+            'required' => ':attribute is required!',
+            'unique' => ':attribute is unique field!',
+            'min' => ':attribute should be :min in characters',
+            'max' => ':attribute could not more than :max characters',
+            'confirmed' => ':attribute confirmation does not match!',  
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+                resource: $validator->errors()->all(),
+            );
+        }
+
+        $salesman = User::where('number', $userNumber)->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $salesman->update([
+                'number' => $request->number,
+                'nik' => $request->nik,
+                'fullname' => $request->fullname,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'name' => $request->name,
+                'type_id' => $request->type_id,
+                'status' => $request->status,
+                'cabang_id' => $request->cabang_id,
+                'store_id' => $request->store_id,
+                'status_ba' => $request->status_ba,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Successfully update recent salesman {$userNumber} data.", 
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function updateProfileData(Request $request, string $userNumber): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'number' => ['nullable', 'string', 'max:10'],
+            'nik' => ['nullable', 'string', 'max:20', 'unique:user_info,nik'],
+            'fullname' => ['nullable', 'string', 'max:200'],
+            'phone' => ['nullable', 'string', 'max:20', 'unique:user_info,phone'],
+            'email' => ['nullable', 'string', 'max:255', 'unique:user_info,email', 'lowercase', 'email'],
+            'name' => ['nullable', 'string', 'max:50', 'unique:user_info,name'],
+        ],
+        [
+            'required' => ':attribute is required!',
+            'unique' => ':attribute is unique field!',
+            'min' => ':attribute should be :min in characters',
+            'max' => ':attribute could not more than :max characters',
+            'confirmed' => ':attribute confirmation does not match!',  
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+                resource: $validator->errors()->all(),
+            );
+        }
+
+        $salesman = User::where('number', '=', $userNumber)->firstOrFail();
+
+        $profil_visit = ProfilVisit::where('user', $salesman->fullname)->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $$salesman->update([
+                'number' => $request->number,
+                'nik' => $request->nik,
+                'fullname' => $request->fullname,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'name' => $request->name, 
+            ]);
+
+            $profil_visit->update([
+                'user' => $request->fullname,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Successfully update recent salesman {$userNumber} profile data.", 
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function removeOneData(string $userNumber): JsonResponse
+    {
+        $salesman = User::where('number', $userNumber)->firstOrFail();
+
+        $salesman->delete();
+
+        return $this->successResponse(
+            statusCode: 200, 
+            success: true, 
+            msg: "Successfully remove recent salesman {$userNumber} data.", 
+        );
     }
 }

@@ -41,7 +41,7 @@ class ProductInfoDoFactory extends Factory
             'prod_status_id' => function() {
                 return \App\Models\ProductStatus::all()->random()->product_status_id;
             },
-            'status_aktif' => strval($this->faker->randomNumber(2, false)),
+            'status_aktif' => strval($this->faker->randomElement([0, 1])),
             'created_by' => $this->faker->name(),
             'updated_by' => $this->faker->name(),
         ];

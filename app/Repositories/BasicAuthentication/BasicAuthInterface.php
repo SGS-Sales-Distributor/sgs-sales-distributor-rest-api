@@ -9,7 +9,7 @@ interface BasicAuthInterface
 {   
     public function login(Request $request): JsonResponse;
 
-    public function register(Request $request): JsonResponse;
-
     public function logout(Request $request): JsonResponse;
+
+    public function resetPassword(Request $request): JsonResponse;
 }

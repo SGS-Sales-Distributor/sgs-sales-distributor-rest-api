@@ -46,8 +46,10 @@ return new class extends Migration
             ->index()
             ->primary();
             $table->string('prod_barcode_number', 30)
+            ->unique()
             ->nullable(false);
             $table->string('prod_universal_number', 30)
+            ->unique()
             ->nullable(false);
             $table->string('prod_name', 100)
             ->nullable(false);
@@ -95,6 +97,7 @@ return new class extends Migration
             $table->foreign('brand_id')
             ->references('brand_id')
             ->on('brand')
+            ->cascadeOnUpdate()
             ->cascadeOnDelete();
         });
     }

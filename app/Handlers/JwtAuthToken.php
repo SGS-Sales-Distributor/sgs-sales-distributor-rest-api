@@ -20,20 +20,18 @@ class JwtAuthToken
 
         $issueAt = new DateTimeImmutable(datetime: now(), timezone: new DateTimeZone('Asia/Jakarta'));
 
-        $expiredTime = $issueAt->modify('+10 minutes')->getTimestamp();
+        $expiredTime = $issueAt->modify('+30 minutes')->getTimestamp();
 
         $request = Request::capture();
 
         $serverName = $request->fullUrl();
 
         $userData = [
-            "data" => [
-                "fullname" => $user->fullname,
-                "phone_number" => $user->phone,
-                "email" => $user->email,
-                "username" => $user->name,
-                "status" => $user->status?->status ?? 'inactive',
-            ],
+            "fullname" => $user->fullname,
+            "phone_number" => $user->phone,
+            "email" => $user->email,
+            "username" => $user->name,
+            "status" => $user->status?->status ?? 'inactive',
         ];
 
         $payload = [

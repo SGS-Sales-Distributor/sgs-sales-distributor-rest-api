@@ -22,7 +22,7 @@ class BrandFactory extends Factory
         return [
             'brand_id' => $this->faker->unique()->regexify('[A-Z]{3}'),
             'brand_name' => $this->faker->word(),
-            'status' => $this->faker->unique()->randomNumber(2, false),
+            'status' => $this->faker->randomElement([0, 1]),
             'brand_group_id' => function() {
                 return \App\Models\BrandGroup::all()->random()->brand_group_id;
             },

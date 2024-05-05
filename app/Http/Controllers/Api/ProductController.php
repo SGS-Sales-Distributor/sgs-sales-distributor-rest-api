@@ -8,18 +8,28 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function getAllData(): JsonResponse
+    public function getAll(Request $request): JsonResponse
     {
-        return $this->productInfoInterface->getAll();
+        return $this->productInterface->getAllData($request);
     }
 
-    public function getAllDataByQuery(Request $request): JsonResponse
+    public function getOne(string $productNumber): JsonResponse
     {
-        return $this->productInfoInterface->getAllByQuery($request);
+        return $this->productInterface->getOneData($productNumber);
     }
 
-    public function getOneData(string $prodNumber): JsonResponse
+    public function storeOne(Request $request): JsonResponse
     {
-        return $this->productInfoInterface->getOne($prodNumber);
+        return $this->productInterface->storeOneData($request);
+    }
+
+    public function updateOne(Request $request, string $productNumber): JsonResponse
+    {
+        return $this->productInterface->updateOneData($request, $productNumber);
+    }
+
+    public function removeOne(string $productNumber): JsonResponse
+    {
+        return $this->productInterface->removeOneData($productNumber);
     }
 }

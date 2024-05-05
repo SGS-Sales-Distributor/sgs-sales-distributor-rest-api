@@ -8,29 +8,19 @@ use Illuminate\Http\Request;
 
 class SalesmanController extends Controller
 {
-    public function getAllData(): JsonResponse
+    public function getAll(Request $request): JsonResponse
     {
-        return $this->salesmanInterface->getAll();
+        return $this->salesmanInterface->getAllData($request);
     }
 
-    public function getAllVisitsData(int $userId): JsonResponse
+    public function getOne(string $userNumber): JsonResponse
     {
-        return $this->salesmanInterface->getAllVisits($userId);
+        return $this->salesmanInterface->getOneData($userNumber);
     }
 
-    public function getOneVisitData(int $userId, int $visitId): JsonResponse
+    public function storeOne(Request $request): JsonResponse
     {
-        return $this->salesmanInterface->getOneVisit($userId, $visitId);
-    }
-
-    public function getOneData(int $userId): JsonResponse
-    {
-        return $this->salesmanInterface->getOne($userId);
-    }
-
-    public function storeOneData(Request $request): JsonResponse
-    {
-        return $this->salesmanInterface->storeOne($request);
+        return $this->salesmanInterface->storeOneData($request);
     }
 
     public function checkInVisit(Request $request, string $userNumber): JsonResponse
@@ -41,5 +31,40 @@ class SalesmanController extends Controller
     public function checkOutVisit(Request $request, string $userNumber, int $visitId): JsonResponse
     {
         return $this->salesmanInterface->checkOutVisit($request, $userNumber, $visitId);
+    }
+
+    public function updateOne(Request $request, string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->updateOneData($request, $userNumber);
+    }
+
+    public function updateProfile(Request $request, string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->updateProfileData($request, $userNumber);
+    }
+
+    public function removeOne(string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->removeOneData($userNumber);
+    }
+
+    public function getVisits(string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->getVisitsData($userNumber);
+    }
+
+    public function getOneVisit(string $userNumber, int $visitId): JsonResponse
+    {
+        return $this->salesmanInterface->getOneVisitData($userNumber, $visitId);
+    }
+
+    public function getCallPlans(string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->getCallPlansData($userNumber);
+    }
+
+    public function getOneCallPlan(string $userNumber, int $callPlanId): JsonResponse
+    {
+        return $this->salesmanInterface->getOneCallPlanData($userNumber, $callPlanId);
     }
 }

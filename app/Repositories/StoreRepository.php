@@ -39,7 +39,7 @@ class StoreRepository extends Repository implements StoreInterface
         ->leftJoin('profil_visit', function (JoinClause $join) {
             $join->on('profil_visit.store_id', '=', 'store_info_distri.store_id');
         })
-        ->orderBy('store_info_distri.store_id', 'asc')
+        ->orderBy('store_info_distri.store_name', 'asc')
         ->paginate($this::DEFAULT_PAGINATE);
 
         return $this->successResponse(
@@ -229,6 +229,8 @@ class StoreRepository extends Repository implements StoreInterface
             'store_info_distri_person.nik_owner AS nik_pemilik_toko',
             'store_info_distri_person.email_owner AS email_pemilik_toko',
             'profil_visit.id AS visit_id',
+            'profil_visit.time_in AS waktu_check_in',
+            'profil_visit.time_out AS waktu_check_out',
         )
         ->join('store_type', function (JoinClause $join) {
             $join->on('store_info_distri.store_type_id', '=', 'store_type.store_type_id');
@@ -244,6 +246,14 @@ class StoreRepository extends Repository implements StoreInterface
         })
         ->where('store_info_distri.store_id', $id)
         ->first();
+
+        if (!$store) {
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: "Failed to fetch store {$id}.",
+            );
+        }
 
         return $this->successResponse(
             statusCode: 200, 

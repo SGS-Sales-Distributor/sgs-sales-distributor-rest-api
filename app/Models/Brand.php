@@ -16,6 +16,8 @@ class Brand extends Model
 
     protected $table = 'brand';
 
+    protected $primaryKey = "brand_id";
+
     protected $fillable = [
         'brand_id',
         'brand_name',
@@ -24,11 +26,6 @@ class Brand extends Model
         'created_by',
         'updated_by',
     ];
-
-    public function getKeyName()
-    {
-        return 'brand_id_status';
-    }
 
     /**
      * Get the attributes that should be cast.

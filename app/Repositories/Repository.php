@@ -11,9 +11,9 @@ abstract class Repository
 {
     use ApiResponse;
 
-    public const DEFAULT_PAGINATE = 100;
+    public const DEFAULT_PAGINATE = 50;
 
-    public const DEFAULT_CACHE_TTL = 3;
+    public const DEFAULT_CACHE_TTL = 5;
 
     protected RandomDigitNumber $randomDigitNumber;
     protected DateRangeFilter $dateRangeFilter;

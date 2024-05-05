@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\AdminInterface;
 use App\Repositories\BasicAuthentication\BasicAuthInterface;
 use App\Repositories\JwtAuthentication\JwtAuthInterface;
 use App\Repositories\MasterCallPlanInterface;
-use App\Repositories\MasterStatusInterface;
 use App\Repositories\MasterTargetNooInterface;
-use App\Repositories\ProductInfoInterface;
+use App\Repositories\ProductInterface;
 use App\Repositories\ProgramInterface;
+use App\Repositories\ProgramTypeInterface;
 use App\Repositories\SalesmanInterface;
 use App\Repositories\StoreInterface;
 
@@ -20,9 +21,10 @@ abstract class Controller
     protected MasterTargetNooInterface $masterTargetNooInterface;
     protected MasterCallPlanInterface $masterCallPlanInterface;
     protected ProgramInterface $programInterface;
-    protected ProductInfoInterface $productInfoInterface;
-    protected MasterStatusInterface $masterStatusInterface;
+    protected ProgramTypeInterface $programTypeInterface;
     protected SalesmanInterface $salesmanInterface;
+    protected AdminInterface $adminInterface;
+    protected ProductInterface $productInterface;
 
     public function __construct(
         JwtAuthInterface $jwtAuthInterface,
@@ -31,9 +33,10 @@ abstract class Controller
         MasterTargetNooInterface $masterTargetNooInterface,
         MasterCallPlanInterface $masterCallPlanInterface,
         ProgramInterface $programInterface,
-        ProductInfoInterface $productInfoInterface,
-        MasterStatusInterface $masterStatusInterface,
+        ProgramTypeInterface $programTypeInterface,
         SalesmanInterface $salesmanInterface,
+        AdminInterface $adminInterface,
+        ProductInterface $productInterface,
     )
     {
         $this->jwtAuthInterface = $jwtAuthInterface;
@@ -42,8 +45,9 @@ abstract class Controller
         $this->masterTargetNooInterface = $masterTargetNooInterface;
         $this->masterCallPlanInterface = $masterCallPlanInterface;
         $this->programInterface = $programInterface;
-        $this->productInfoInterface = $productInfoInterface;
-        $this->masterStatusInterface = $masterStatusInterface;
+        $this->programTypeInterface = $programTypeInterface;
         $this->salesmanInterface = $salesmanInterface;
+        $this->adminInterface = $adminInterface;
+        $this->productInterface = $productInterface;
     }
 }

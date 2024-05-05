@@ -17,6 +17,7 @@ return new class extends Migration
             ->nullable(false)
             ->index();
             $table->string('brand_group_id', 10)
+            ->unique()
             ->nullable(true)
             ->index();
             $table->string('brand_group_name', 20)

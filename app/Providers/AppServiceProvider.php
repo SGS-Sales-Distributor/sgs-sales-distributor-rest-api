@@ -2,20 +2,22 @@
 
 namespace App\Providers;
 
+use App\Repositories\AdminInterface;
+use App\Repositories\AdminRepository;
 use App\Repositories\BasicAuthentication\BasicAuthInterface;
 use App\Repositories\BasicAuthentication\BasicAuthRepository;
 use App\Repositories\JwtAuthentication\JwtAuthInterface;
 use App\Repositories\JwtAuthentication\JwtAuthRepository;
 use App\Repositories\MasterCallPlanInterface;
 use App\Repositories\MasterCallPlanRepository;
-use App\Repositories\MasterStatusInterface;
-use App\Repositories\MasterStatusRepository;
 use App\Repositories\MasterTargetNooInterface;
 use App\Repositories\MasterTargetNooRepository;
-use App\Repositories\ProductInfoInterface;
-use App\Repositories\ProductInfoRepository;
+use App\Repositories\ProductInterface;
+use App\Repositories\ProductRepository;
 use App\Repositories\ProgramInterface;
 use App\Repositories\ProgramRepository;
+use App\Repositories\ProgramTypeInterface;
+use App\Repositories\ProgramTypeRepository;
 use App\Repositories\SalesmanInterface;
 use App\Repositories\SalesmanRepository;
 use App\Repositories\StoreInterface;
@@ -34,10 +36,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MasterCallPlanInterface::class, MasterCallPlanRepository::class);
         $this->app->bind(MasterTargetNooInterface::class, MasterTargetNooRepository::class);
         $this->app->bind(ProgramInterface::class, ProgramRepository::class);
-        $this->app->bind(ProductInfoInterface::class, ProductInfoRepository::class);
-        $this->app->bind(MasterStatusInterface::class, MasterStatusRepository::class);
+        $this->app->bind(ProgramTypeInterface::class, ProgramTypeRepository::class);
         $this->app->bind(StoreInterface::class, StoreRepository::class);
         $this->app->bind(SalesmanInterface::class, SalesmanRepository::class);
+        $this->app->bind(AdminInterface::class, AdminRepository::class);
+        $this->app->bind(ProductInterface::class, ProductRepository::class);
     }
 
     /**

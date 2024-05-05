@@ -7,27 +7,27 @@ use Illuminate\Http\Request;
 
 interface SalesmanInterface
 {
-    public function getAll(): JsonResponse;
+    public function getAllData(Request $request): JsonResponse;
 
-    public function getOne(int $userId): JsonResponse;
+    public function getOneData(string $userNumber): JsonResponse;
 
-    public function getAllVisits(int $userId): JsonResponse;
-
-    public function getOneVisit(int $userId, int $visitId): JsonResponse;
-
-    public function getAllCallPlans(int $userId): JsonResponse;
-
-    public function getOneCallPlan(int $userId, int $masterCallPlanId): JsonResponse;
-
-    public function getAllByQuery(Request $request): JsonResponse;
-
-    // public function storeOneUserType(Request $request): JsonResponse;
-
-    // public function storeOneUserStatus(Request $request): JsonResponse;
-
-    public function storeOne(Request $request): JsonResponse;
+    public function storeOneData(Request $request): JsonResponse;
 
     public function checkInVisit(Request $request, string $userNumber): JsonResponse;
 
     public function checkOutVisit(Request $request, string $userNumber, int $visitId): JsonResponse;
+
+    public function updateOneData(Request $request, string $userNumber): JsonResponse;
+
+    public function updateProfileData(Request $request, string $userNumber): JsonResponse;
+
+    public function removeOneData(string $userNumber): JsonResponse;
+
+    public function getVisitsData(string $userNumber): JsonResponse;
+
+    public function getOneVisitData(string $userNumber, int $visitId): JsonResponse;
+
+    public function getCallPlansData(string $userNumber): JsonResponse;
+
+    public function getOneCallPlanData(string $userNumber, int $callPlanId): JsonResponse;
 }
