@@ -13,6 +13,8 @@ interface SalesmanInterface
 
     public function storeOneData(Request $request): JsonResponse;
 
+    public function fileUploadGambar(Request $request, string $userNumber): JsonResponse;
+    
     public function checkInVisit(Request $request, string $userNumber): JsonResponse;
 
     public function checkOutVisit(Request $request, string $userNumber, int $visitId): JsonResponse;
@@ -20,6 +22,8 @@ interface SalesmanInterface
     public function updateOneData(Request $request, string $userNumber): JsonResponse;
 
     public function updateProfileData(Request $request, string $userNumber): JsonResponse;
+
+    public function changePasswordData(Request $request, string $userNumber): JsonResponse;
 
     public function removeOneData(string $userNumber): JsonResponse;
 

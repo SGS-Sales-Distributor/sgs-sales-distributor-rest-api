@@ -22,8 +22,36 @@ class ProgramRepository extends Repository implements ProgramInterface
         $programsCache = Cache::remember(
             "programsCache", 
             $this::DEFAULT_CACHE_TTL, 
-            function () use ($searchByQuery)
+            function () use ($searchByQuery, $request)
         {
+            if ($request->query('q') == "ASC") {
+                return Program::with([
+                    'masterTypeProgram', 
+                    'details'
+                ])
+                ->orderBy('name_program', 'ASC')
+                ->paginate($this::DEFAULT_PAGINATE);
+            } 
+
+            if ($request->query('q') == "DESC") {
+                return Program::with([
+                    'masterTypeProgram', 
+                    'details'
+                ])
+                ->orderBy('name_program', 'DESC')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+
+            if ($request->query('q') == "latest") {
+                return Program::with([
+                    'masterTypeProgram', 
+                    'details'
+                ])
+                ->orderBy('name_program', 'ASC')
+                ->latest()
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+
             return Program::with([
                 'masterTypeProgram', 
                 'details'
@@ -43,33 +71,33 @@ class ProgramRepository extends Repository implements ProgramInterface
         );
     }
 
-    public function getAllByPeriodeFilter(Request $request): JsonResponse
+    public function getDataByDateRangeFilter(Request $request): JsonResponse
     {
-        $filterByPerStart = Carbon::parse($request->query('start-date'));
+        $filterByFromDate = Carbon::parse($request->query('from-date'));
 
-        $filterByPerEnd = Carbon::parse($request->query('end-date'));
+        $filterByEndDate = Carbon::parse($request->query('end-date'));
 
         $programByPeriodeFilterCache = Cache::remember(
             'programByPeriodeFilter', 
             $this::DEFAULT_CACHE_TTL, 
             function () use (
-                $filterByPerStart, 
-                $filterByPerEnd,
+                $filterByFromDate, 
+                $filterByEndDate,
             ) 
         {
             return Program::with(['masterTypeProgram', 'details'])
-            ->when($filterByPerStart and $filterByPerEnd, function (Builder $query) use ($filterByPerStart, $filterByPerEnd) {
-                $query->whereBetween('periode_start', [$filterByPerStart, $filterByPerEnd])
-                ->whereBetween('periode_end', [$filterByPerStart, $filterByPerEnd]);
+            ->when($filterByFromDate and $filterByEndDate, function (Builder $query) use ($filterByFromDate, $filterByEndDate) {
+                $query->whereBetween('periode_start', [$filterByFromDate, $filterByEndDate]);
+                // ->whereBetween('periode_end', [$filterByFromDate, $filterByEndDate]);
             })
-            ->orderBy('id_type', 'asc')
+            ->orderBy('name_program', 'asc')
             ->paginate($this::DEFAULT_PAGINATE);
         });
 
         return $this->successResponse(
             statusCode: 200, 
             success: true, 
-            msg: "Successfully fetch master type program with filter '{$filterByPerStart}' and '{$filterByPerEnd}'.", 
+            msg: "Successfully fetch program based on periode start with filter '{$filterByFromDate}' and '{$filterByEndDate}'.", 
             resource: $programByPeriodeFilterCache,
         );
     }
@@ -159,6 +187,7 @@ class ProgramRepository extends Repository implements ProgramInterface
     public function storeOneData(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            'id_type_program' => ['required', 'integer'],
             'nama_program' => ['required', 'string', 'max:255'],
             'keterangan' => ['nullable', 'string'],
             'periode_mulai' => ['required', 'date'],
@@ -167,7 +196,7 @@ class ProgramRepository extends Repository implements ProgramInterface
             'get' => ['nullable', 'string', 'max:255'],
             'code_product' => ['nullable', 'string', 'max:255'],
             'quantity' => ['nullable', 'integer', 'max_digits:10'],
-            'discount' => ['nullable', 'decimal:10,2'],
+            'discount' => ['nullable', 'integer'],
             'created_by' => ['nullable', 'string', 'max:255'],
             'updated_by' => ['nullable', 'string', 'max:255'],
         ]);
@@ -181,22 +210,16 @@ class ProgramRepository extends Repository implements ProgramInterface
             );
         }
 
-        // get value from type input select.
-        $typeProgram = $request->input('typeProgram');
-
-        // get value from product input select.
-        $product = $request->input('product');
-
         try {
             DB::beginTransaction();
 
             $program = Program::create([
-                'id_type_program' => $typeProgram,
+                'id_type_program' => $request->id_type_program,
                 'name_program' => $request->nama_program,
                 'keterangan' => $request->keterangan,
                 'active' => 1,
-                'periode_start' => $request->periode_mulai,
-                'periode_end' => $request->periode_akhir,
+                'periode_start' => Carbon::make($request->periode_mulai)->format('Y-m-d'),
+                'periode_end' => Carbon::make($request->periode_akhir)->format('Y-m-d'),
                 'created_by' => $request->created_by,
                 'updated_by' => $request->updated_by,
             ]);
@@ -205,9 +228,9 @@ class ProgramRepository extends Repository implements ProgramInterface
                 'id_program' => $program->id,
                 'condition' => $request->condition,
                 'get' => $request->get,
-                'product' => $product,
+                'product' => $request->code_product,
                 'qty' => $request->quantity,
-                'disc_val' => $request->discount,
+                'disc_val' => $request->discount / 100,
                 'created_by' => $request->created_by,
                 'updated_by' => $request->updated_by,
             ]);
@@ -345,7 +368,7 @@ class ProgramRepository extends Repository implements ProgramInterface
     {
         $recentProgram = Program::findOrFail($id);
 
-        $recentProgramDetail = ProgramDetail::where('id_program', $id)->firstOrFail();
+        $recentProgramDetail = ProgramDetail::findOrFail('id_program', $id);
 
         $recentProgramDetail->delete();
         

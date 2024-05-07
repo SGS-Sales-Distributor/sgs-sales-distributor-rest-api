@@ -8,28 +8,48 @@ use Illuminate\Http\Request;
 
 class StoreInfoDistriController extends Controller
 {
-    public function getAllData(): JsonResponse
+    public function getAll(Request $request): JsonResponse
     {
-        return $this->storeInterface->getAll();
+        return $this->storeInterface->getAllData($request);
     }
 
-    public function getOneData(int $id): JsonResponse
+    public function getOne(int $id): JsonResponse
     {
-        return $this->storeInterface->getOne($id);
+        return $this->storeInterface->getOneData($id);
     }
 
-    public function getAllVisitsData(int $id): JsonResponse
+    public function getAllByOrderDateFilter(Request $request): JsonResponse
     {
-        return $this->storeInterface->getAllVisits($id);
+        return $this->storeInterface->getAllDataByOrderDateFilter($request);
     }
 
-    public function getAllDataByQuery(Request $request): JsonResponse
+    public function getAllVisits(Request $request, int $id): JsonResponse
     {
-        return $this->storeInterface->getAllByQuery($request);
+        return $this->storeInterface->getAllVisitsData($request, $id);
     }
 
-    public function getAllDataByOrderDateFilter(Request $request): JsonResponse
+    public function getOneVisit(int $id, int $visitId): JsonResponse
     {
-        return $this->storeInterface->getAllByOrderDateFilter($request);
+        return $this->storeInterface->getOneVisitData($id, $visitId);
+    }
+
+    public function getAllOwners(Request $request, int $id): JsonResponse
+    {
+        return $this->storeInterface->getAllOwnersData($request, $id);
+    }
+
+    public function getOneOwner(int $id, int $ownerId): JsonResponse
+    {
+        return $this->storeInterface->getOneOwnerData($id, $ownerId);
+    }
+
+    public function getAllOrders(Request $request, int $id): JsonResponse
+    {
+        return $this->storeInterface->getAllOrdersData($request, $id);
+    }   
+
+    public function getOneOrder(int $id, int $orderId): JsonResponse
+    {
+        return $this->storeInterface->getOneOrderData($id, $orderId);
     }
 }

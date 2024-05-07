@@ -9,7 +9,7 @@ interface ProgramInterface
 {
     public function getAllData(Request $request): JsonResponse;
 
-    public function getAllByPeriodeFilter(Request $request): JsonResponse;
+    public function getDataByDateRangeFilter(Request $request): JsonResponse;
     
     public function getOneData(int $id): JsonResponse;
 

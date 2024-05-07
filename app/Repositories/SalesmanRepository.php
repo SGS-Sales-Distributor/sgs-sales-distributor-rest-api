@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -161,6 +163,113 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         );
     }
 
+    public static function str_random($length = 16)
+    {
+        $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
+    }
+
+    public function fileUploadGambar(Request $request, string $userNumber): JsonResponse
+    {
+        //die(print_r($request));
+        DB::beginTransaction();
+
+        // return response()->json([
+        //     'status' => true,
+        //     'message' => app()->basePath('app'),
+        // ], 201);
+        //try {
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            //$name = time() . '.' . $image->getClientOriginalExtension();
+            $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+            //$destinationPath = storage_path();
+            $destinationPath = public_path('images');
+            $image->move($destinationPath, $name);
+
+
+
+            // $compress_file = "compress_" . $name;
+            // $compressed_img = $destinationPath . '/' . $compress_file;
+            // $file_name = $destinationPath . '/' . $name;
+            // $compress_image = $this->compress($file_name, $compressed_img);
+            //unlink($file_name);
+            //Image::make($image->getRealPath())->resize(150, 150)->save($path);
+
+            //return response()->json(['data' => "image is uploaded"]);
+
+            $user = User::where('number', $userNumber)->firstOrFail();
+            
+            $checkInVisit = ProfilVisit::create([
+                'store_id' => $request->store_id,
+                'user' => $user->fullname,
+                'photo_visit' => $name,
+                'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
+                'time_in' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
+                'lat_in' => $request->lat_in,
+                'long_in' => $request->long_in,
+                'created_by' => $user->fullname,
+                'updated_by' => $user->fullname,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Successfully check-in visit related to salesman {$userNumber}.", 
+                resource: $checkInVisit
+            );
+            //return successful response
+            // return response()->json([
+            //     'status' => true,
+            //     'message' => 'Photo Upload successfully. (1)',
+            // ], 201);
+        } else {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'failed upload photo (2a).',
+            ], 409);
+
+            // // DB::rollback();
+            // // //return error message
+            // // return response()->json([
+            // //     'status' => false,
+            // //     'message' => $request,
+            // // ], 409);
+
+
+            // $image = $request->image;  // your base64 encoded
+            // $image = str_replace('data:image/png;base64,', '', $image);
+            // $image = str_replace(' ', '+', $image);
+            // $imageName = $this->str_random(10) . '.' . 'png';
+            // File::put(storage_path() . '/' . $imageName, base64_decode($image));
+
+            // // $data = DB::select("
+            // //         INSERT INTO test_photo(url) 
+            // //             VALUES ('" . $imageName . "')");
+
+
+            // DB::commit();
+            // //return successful response
+            // return response()->json([
+            //     'status' => true,
+            //     'message' => 'Photo Upload successfully. (2)',
+            //     'request' => $request,
+            // ], 201);
+        }
+        //} catch (\Exception $e) {
+        DB::rollback();
+        //return error message
+        return response()->json([
+            'status' => false,
+            'message' => 'failed upload photo (2b).',
+        ], 409);
+        //}
+    }
+
     public function storeOneData(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -266,14 +375,11 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
             DB::commit();
 
-            $checkProfilVisit = ProfilVisit::where('id', $checkInVisit->id)
-            ->firstOrFail();
-
             return $this->successResponse(
                 statusCode: 201, 
                 success: true, 
                 msg: "Successfully check-in visit related to salesman {$userNumber}.", 
-                resource: $checkProfilVisit
+                resource: $checkInVisit
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -304,38 +410,45 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
     public function checkOutVisit(Request $request, string $userNumber, int $visitId): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'photo_visit_out' => ['required', 'string'],
-            'lat_out' => ['nullable'],
-            'long_out' => ['nullable'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'unique' => ':attribute is unique field!',
-            'min' => ':attribute should be :min in characters',
-            'max' => ':attribute could not more than :max characters',
-            'confirmed' => ':attribute confirmation does not match!',  
-        ]);
+                // $validator = Validator::make($request->all(), [
+        //     'photo_visit_out' => ['required', 'string'],
+        //     'lat_out' => ['nullable'],
+        //     'long_out' => ['nullable'],
+        // ],
+        // [
+        //     'required' => ':attribute is required!',
+        //     'unique' => ':attribute is unique field!',
+        //     'min' => ':attribute should be :min in characters',
+        //     'max' => ':attribute could not more than :max characters',
+        //     'confirmed' => ':attribute confirmation does not match!',  
+        // ]);
         
-        if ($validator->fails()) {
-            return $this->clientErrorResponse(
-                statusCode: 422,
-                success: false,
-                msg: $validator->errors()->first(),
-                resource: $validator->errors()->all(),
-            );
-        }
-
-        $salesman = User::where('number', $userNumber)->firstOrFail();
-
-        $latestVisit = ProfilVisit::where('id', $visitId)->firstOrFail();
+        // if ($validator->fails()) {
+        //     return $this->clientErrorResponse(
+        //         statusCode: 422,
+        //         success: false,
+        //         msg: $validator->errors()->first(),
+        //         resource: $validator->errors()->all(),
+        //     );
+        // }
 
         try {
             DB::beginTransaction();
 
-            if ($latestVisit) {
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                //$name = time() . '.' . $image->getClientOriginalExtension();
+                $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+                //$destinationPath = storage_path();
+                $destinationPath = public_path('images');
+                $image->move($destinationPath, $name);
+
+                $salesman = User::where('number', $userNumber)->firstOrFail();
+
+                $latestVisit = ProfilVisit::where('id', $visitId)->firstOrFail();
+    
                 $latestVisit->update([
-                    'photo_visit_out' => $request->photo_visit_out,
+                    'photo_visit_out' => $name,
                     'user' => $salesman->fullname,
                     'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
                     'time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
@@ -344,6 +457,13 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                     'updated_by' => $salesman->fullname,
                     'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
                 ]);
+                
+            }else{
+                return response()->json([
+                    'status' => false,
+                    'message' => 'failed upload photo (2b).',
+                ], 409);
+
             }
 
             DB::commit();
@@ -494,22 +614,16 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
         $salesman = User::where('number', '=', $userNumber)->firstOrFail();
 
-        $profil_visit = ProfilVisit::where('user', $salesman->fullname)->firstOrFail();
-
         try {
             DB::beginTransaction();
 
-            $$salesman->update([
+            $salesman->update([
                 'number' => $request->number,
                 'nik' => $request->nik,
                 'fullname' => $request->fullname,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'name' => $request->name, 
-            ]);
-
-            $profil_visit->update([
-                'user' => $request->fullname,
             ]);
 
             DB::commit();
@@ -543,6 +657,74 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 success: false,
                 msg: $e->getMessage(),
             );
+        }
+    }
+
+    public function changePasswordData(Request $request, string $userNumber): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'max:100', 'confirmed', Password::default()],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+                resource: $validator->errors()->all(),
+            );
+        }
+
+        $salesman = User::where('number', $userNumber)->firstOrFail();
+
+        if (!Hash::check(request('current_password'), $salesman->password)) {
+            return $this->serverErrorResponse(
+                statusCode: 500, 
+                success: false, 
+                msg: "Password doesn't match.",
+            );
+        } else {
+            try {
+                DB::beginTransaction();
+    
+                $salesman->update([
+                    'password' => $request->password,
+                    'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
+                ]);
+    
+                DB::commit();
+
+                return $this->successResponse(
+                    statusCode: 200,
+                    success: true,
+                    msg: "Successfully update salesman {$userNumber} password data.",
+                );
+            } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+                DB::rollBack();
+    
+                return $this->errorResponse(
+                    statusCode: $e->getStatusCode(),
+                    success: false,
+                    msg: $e->getMessage(),
+                );
+            } catch (\Error $e) {
+                DB::rollBack();
+    
+                return $this->errorResponse(
+                    statusCode: 500,
+                    success: false,
+                    msg: $e->getMessage(),
+                );
+            } catch (\Exception $e) {
+                DB::rollBack();
+                
+                return $this->errorResponse(
+                    statusCode: 500,
+                    success: false,
+                    msg: $e->getMessage(),
+                );
+            } 
         }
     }
 
