@@ -41,6 +41,7 @@ Route::group([
     Route::put('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);
     Route::put('/salesmen/{number}', [SalesmanController::class, 'updateOne']);
     Route::patch('/salesmen/{number}/profiles', [SalesmanController::class, 'updateProfile']);
+    Route::patch('/salesmen/{number}/change-password', [SalesmanController::class, 'changePassword']);
     Route::delete('/salesmen/{number}', [SalesmanController::class, 'removeOne']);
     Route::get('/salesmen/{id}/visits', [SalesmanController::class, 'getVisits']);
     Route::get('/salesmen/{id}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
@@ -57,7 +58,7 @@ Route::group([
     // program's routes.
     Route::get('/programs', [ProgramController::class, 'getAll']);
     Route::get('/programs/{id}', [ProgramController::class, 'getOne']);
-    Route::get('/programs/filter', [ProgramController::class, 'getAllDataByPeriodeFilter']);
+    Route::get('/programs/filter', [ProgramController::class, 'getAllDataByDateRangeFilter']);
     Route::post('/programs', [ProgramController::class, 'storeOne']);
     Route::put('/programs/{id}', [ProgramController::class, 'updateOne']);
     Route::delete('/programs/{id}', [ProgramController::class, 'removeOne']);
@@ -73,15 +74,14 @@ Route::group([
     Route::delete('/programs/{number}', [ProductController::class, 'removeOne']);
 
     // store's routes.
-    Route::get('/stores', [StoreInfoDistriController::class, 'getAllData']);        
-    Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOneData']);
-    Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwnersData']);
-    Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwnerData']);
-    Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisitsData']);
-    Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisitData']);
-    Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrdersData']);
-    Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrderData']);
-    Route::get('/stores/search', [StoreInfoDistriController::class, 'getAllDataByQuery']);
+    Route::get('/stores', [StoreInfoDistriController::class, 'getAll']);        
+    Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
+    Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwners']);
+    Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwner']);
+    Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisits']);
+    Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisit']);
+    Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrders']);
+    Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrder']);
     Route::get('/stores/filter', [StoreInfoDistriController::class, 'getAllDataByOrderDateFilter']);
 });
 
@@ -114,10 +114,12 @@ Route::group([
         // salesman's routes
         Route::get('/salesmen', [SalesmanController::class, 'getAll']);
         Route::get('/salesmen/{id}', [SalesmanController::class, 'getOne']);
-        Route::post('/salesmen/{number}/visits', [SalesmanController::class, 'checkInVisit']);
-        Route::put('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);
+        Route::post('/salesmen/{number}/visits', [SalesmanController::class, 'uploadFile']);
+        // Route::post('/salesmen/{number}/visits', [SalesmanController::class, 'checkInVisit']);
+        Route::post('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);
         Route::put('/salesmen/{number}', [SalesmanController::class, 'updateOne']);
         Route::patch('/salesmen/{number}/profiles', [SalesmanController::class, 'updateProfile']);
+        Route::patch('/salesmen/{number}/change-password', [SalesmanController::class, 'changePassword']);
         Route::delete('/salesmen/{number}', [SalesmanController::class, 'removeOne']);
         Route::get('/salesmen/{id}/visits', [SalesmanController::class, 'getVisits']);
         Route::get('/salesmen/{id}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
@@ -150,15 +152,15 @@ Route::group([
         Route::delete('/programs/{number}', [ProductController::class, 'removeOne']);
 
         // store's routes.
-        Route::get('/stores', [StoreInfoDistriController::class, 'getAllData']);        
-        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOneData']);
-        Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwnersData']);
-        Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwnerData']);
-        Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisitsData']);
-        Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisitData']);
-        Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrdersData']);
-        Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrderData']);
-        Route::get('/stores/search', [StoreInfoDistriController::class, 'getAllDataByQuery']);
+        Route::get('/stores', [StoreInfoDistriController::class, 'getAll']);        
+        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
+        Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwners']);
+        Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwner']);
+        Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisits']);
+        Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisit']);
+        Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrders']);
+        Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrder']);
+        Route::get('/stores/filter', [StoreInfoDistriController::class, 'getAllDataByOrderDateFilter']);
         Route::get('/stores/filter', [StoreInfoDistriController::class, 'getAllDataByOrderDateFilter']);
     });
 });

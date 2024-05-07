@@ -13,9 +13,7 @@ return new class extends Migration
     {
         Schema::create('brand', function (Blueprint $table) {
             $table->string('brand_id', 10)
-            ->unique()
-            ->index()
-            ->nullable(false);
+            ->primary();
             $table->string('brand_name', 255)
             ->nullable(false)
             ->index();
@@ -35,10 +33,6 @@ return new class extends Migration
             ->on('brand_group')
             ->cascadeOnUpdate()
             ->cascadeOnDelete();
-            $table->primary([
-                'brand_id',
-                'status',
-            ], 'brand_id_status');
         });
     }
 

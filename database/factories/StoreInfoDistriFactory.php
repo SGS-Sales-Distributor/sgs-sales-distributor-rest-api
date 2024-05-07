@@ -34,7 +34,7 @@ class StoreInfoDistriFactory extends Factory
                 return \App\Models\StoreCabang::all()->random()->id;
             },
             'store_code' => $this->faker->numerify('OS#-####'),
-            'active' => $this->faker->numberBetween(0, 2),
+            'active' => $this->faker->randomElement([0, 1]),
             'subcabang_idnew' => function() {
                 return \App\Models\StoreCabang::all()->random()->id;
             },

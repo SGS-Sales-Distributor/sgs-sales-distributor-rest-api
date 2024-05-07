@@ -23,6 +23,11 @@ class SalesmanController extends Controller
         return $this->salesmanInterface->storeOneData($request);
     }
 
+    public function uploadFile(Request $request, string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->fileUploadGambar($request, $userNumber);
+    }
+
     public function checkInVisit(Request $request, string $userNumber): JsonResponse
     {
         return $this->salesmanInterface->checkInVisit($request, $userNumber);
@@ -41,6 +46,11 @@ class SalesmanController extends Controller
     public function updateProfile(Request $request, string $userNumber): JsonResponse
     {
         return $this->salesmanInterface->updateProfileData($request, $userNumber);
+    }
+
+    public function changePassword(Request $request, string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->changePasswordData($request, $userNumber);
     }
 
     public function removeOne(string $userNumber): JsonResponse
