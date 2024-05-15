@@ -8,23 +8,33 @@ use Illuminate\Http\Request;
 
 class MasterCallPlanController extends Controller
 {
-    public function getAllData(): JsonResponse
+    public function getAll(Request $request): JsonResponse
     {
-        return $this->masterCallPlanInterface->getAll();
+        return $this->masterCallPlanInterface->getAllData($request);
     }
 
-    public function getAllDataByQuery(Request $request): JsonResponse
+    public function getAllByDateFilter(Request $request): JsonResponse
     {
-        return $this->masterCallPlanInterface->getAllByQuery($request);
+        return $this->masterCallPlanInterface->getAllDataByDateFilter($request);
     }
 
-    public function getAllDataByDateFilter(Request $request): JsonResponse
+    public function getOne(int $id): JsonResponse
     {
-        return $this->masterCallPlanInterface->getAllByDateFilter($request);
+        return $this->masterCallPlanInterface->getOneData($id);
     }
 
-    public function getOneData(int $id): JsonResponse
+    public function storeOne(Request $request): JsonResponse
     {
-        return $this->masterCallPlanInterface->getOne($id);
+        return $this->masterCallPlanInterface->storeOneData($request);
+    }
+
+    public function updateOne(Request $request, int $id): JsonResponse
+    {
+        return $this->masterCallPlanInterface->updateOneData($request, $id);
+    }
+
+    public function removeOne(int $id): JsonResponse
+    {
+        return $this->masterCallPlanInterface->removeOneData($id);
     }
 }

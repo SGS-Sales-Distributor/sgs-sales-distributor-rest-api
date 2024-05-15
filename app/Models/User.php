@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -90,5 +91,10 @@ class User extends Authenticatable
     public function masterCallPlans(): HasMany
     {
         return $this->hasMany(MasterCallPlan::class, 'user_id');
+    }
+
+    public function masterCallPlanDetails(): HasManyThrough
+    {
+        return $this->hasManyThrough(MasterCallPlanDetail::class, MasterCallPlan::class, 'user_id', 'call_plan_id');
     }
 }

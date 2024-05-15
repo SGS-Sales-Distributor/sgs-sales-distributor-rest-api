@@ -23,11 +23,6 @@ class SalesmanController extends Controller
         return $this->salesmanInterface->storeOneData($request);
     }
 
-    public function uploadFile(Request $request, string $userNumber): JsonResponse
-    {
-        return $this->salesmanInterface->fileUploadGambar($request, $userNumber);
-    }
-
     public function checkInVisit(Request $request, string $userNumber): JsonResponse
     {
         return $this->salesmanInterface->checkInVisit($request, $userNumber);
@@ -68,9 +63,9 @@ class SalesmanController extends Controller
         return $this->salesmanInterface->getOneVisitData($userNumber, $visitId);
     }
 
-    public function getCallPlans(string $userNumber): JsonResponse
+    public function getCallPlans(Request $request, string $userNumber): JsonResponse
     {
-        return $this->salesmanInterface->getCallPlansData($userNumber);
+        return $this->salesmanInterface->getCallPlansData($request, $userNumber);
     }
 
     public function getOneCallPlan(string $userNumber, int $callPlanId): JsonResponse
