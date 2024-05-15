@@ -13,8 +13,6 @@ interface SalesmanInterface
 
     public function storeOneData(Request $request): JsonResponse;
 
-    public function fileUploadGambar(Request $request, string $userNumber): JsonResponse;
-    
     public function checkInVisit(Request $request, string $userNumber): JsonResponse;
 
     public function checkOutVisit(Request $request, string $userNumber, int $visitId): JsonResponse;
@@ -31,7 +29,7 @@ interface SalesmanInterface
 
     public function getOneVisitData(string $userNumber, int $visitId): JsonResponse;
 
-    public function getCallPlansData(string $userNumber): JsonResponse;
+    public function getCallPlansData(Request $request, string $userNumber): JsonResponse;
 
     public function getOneCallPlanData(string $userNumber, int $callPlanId): JsonResponse;
 }

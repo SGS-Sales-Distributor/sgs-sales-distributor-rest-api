@@ -12,9 +12,12 @@ use App\Repositories\ProgramInterface;
 use App\Repositories\ProgramTypeInterface;
 use App\Repositories\SalesmanInterface;
 use App\Repositories\StoreInterface;
+use App\Traits\ApiResponse;
 
 abstract class Controller
 {
+    use ApiResponse;
+    
     protected JwtAuthInterface $jwtAuthInterface;
     protected BasicAuthInterface $basicAuthInterface;
     protected StoreInterface $storeInterface;

@@ -3,6 +3,8 @@
 namespace App\Repositories;
 
 use App\Models\MasterCallPlan;
+use App\Models\MasterCallPlanDetail;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -12,17 +14,25 @@ use Illuminate\Support\Facades\Validator;
 
 class MasterCallPlanRepository extends Repository implements MasterCallPlanInterface
 {   
-    public function getAll(): JsonResponse
+    public function getAllData(Request $request): JsonResponse
     {
+        $searchByQuery = $request->query('q');
+
         $masterCallPlanCache = Cache::remember(
             'masterCallPlan', 
             $this::DEFAULT_CACHE_TTL, 
-            function() 
+            function() use ($searchByQuery)  
         {
             return MasterCallPlan::with([
                 'user',
-                'details',
+                'details.store',
             ])
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->whereHas('user', function (Builder $subQuery) use ($searchByQuery) {
+                    $subQuery->where('fullname', 'LIKE', '%' .$searchByQuery . '%')
+                    ->orWhere('email', 'LIKE', '%' . $searchByQuery . '%');
+                });
+            })
             ->orderBy('id', 'asc')
             ->paginate($this::DEFAULT_PAGINATE);
         });
@@ -35,40 +45,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         );
     }
 
-    public function getAllByQuery(Request $request): JsonResponse
-    {
-        $searchByQuery = $request->query('q');
-
-        $masterCallPlanByQueryCache = Cache::remember(
-            'masterCallPlanByQuery', 
-            $this::DEFAULT_CACHE_TTL, 
-            function() use ($searchByQuery) 
-        {
-            return MasterCallPlan::with([
-                'user',
-                'details',
-            ])
-            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                $query->whereHas('user', function (Builder $subQuery) use ($searchByQuery) {
-                    $subQuery->where('user_fullname', 'LIKE', '%' .$searchByQuery . '%')
-                    ->orWhere('user_nik', 'LIKE', '%' . $searchByQuery . '%')
-                    ->orWhere('user_email', 'LIKE', '%' . $searchByQuery . '%')
-                    ->orWhere('user_name', 'LIKE', '%' . $searchByQuery . '%');
-                });
-            })
-            ->orderBy('id', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
-
-        return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch master call plan with query %{$searchByQuery}%.", 
-            resource: $masterCallPlanByQueryCache,
-        );
-    }
-
-    public function getAllByDateFilter(Request $request): JsonResponse
+    public function getAllDataByDateFilter(Request $request): JsonResponse
     {
         $searchByDateQuery = $request->query('q');
 
@@ -159,7 +136,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         );
     }
 
-    public function getOne(int $id): JsonResponse
+    public function getOneData(int $id): JsonResponse
     {
         $masterCallPlanCache = Cache::remember(
             "masterCallPlan:{$id}", 
@@ -179,12 +156,15 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         );
     }
 
-    public function storeOne(Request $request): JsonResponse
+    public function storeOneData(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'month_plan' => ['nullable', 'integer', 'max_digits:15'],
-            'year_plan' => ['nullable', 'integer', 'max:digits:15'],
-            'user_id' => ['required', 'integer', 'max_digits:20'],
+            'call_plan_id' => ['required', 'integer'],
+            'month_plan' => ['required', 'integer'],
+            'year_plan' => ['required', 'integer'],
+            'user_id' => ['required', 'integer'],
+            'store_id' => ['required', 'integer'],
+            'date' => ['required', 'date'],
         ],
         [
             'required' => ':attribute is required!',
@@ -205,22 +185,25 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         try {
             DB::beginTransaction();
 
-            $newMasterCallPlan = MasterCallPlan::create([
+            $masterCallPlan = MasterCallPlan::create([
                 'month_plan' => $request->month_plan,
                 'year_plan' => $request->year_plan,
                 'user_id' => $request->user_id,
             ]);
 
-            DB::commit();
+            MasterCallPlanDetail::create([
+                'call_plan_id' => $request->call_plan_id,
+                'store_id' => $request->store_id,
+                'date' => $request->date,
+            ]);
 
-            $checkMasterCallPlan = MasterCallPlan::where('id', $newMasterCallPlan->id)
-            ->firstOrFail();
+            DB::commit();
 
             return $this->successResponse(
                 statusCode: 201, 
                 success: true, 
                 msg: "Successfully create new master call plan data", 
-                resource: $checkMasterCallPlan
+                resource: $masterCallPlan
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -249,12 +232,15 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         } 
     }
 
-    public function updateOne(Request $request, int $id): JsonResponse
+    public function updateOneData(Request $request, int $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'month_plan' => ['nullable', 'integer', 'max_digits:15'],
-            'year_plan' => ['nullable', 'integer', 'max:digits:15'],
-            'user_number' => ['required', 'integer', 'max_digits:20'],
+            'call_plan_id' => ['nullable', 'integer'],
+            'month_plan' => ['nullable', 'integer'],
+            'year_plan' => ['nullable', 'integer'],
+            'user_id' => ['required', 'integer'],
+            'store_id' => ['required', 'integer'],
+            'date' => ['required', 'date'],
         ],
         [
             'required' => ':attribute is required!',
@@ -274,6 +260,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
         $masterCallPlan = MasterCallPlan::where('id', $id)->firstOrFail();
 
+        $masterCallPlanDetail = MasterCallPlanDetail::where('call_plan_id', $id)->firstOrFail();
+
         try {
             DB::beginTransaction();
 
@@ -283,13 +271,18 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 'user_id' => $request->user_id,
             ]);
 
+            $masterCallPlanDetail->update([
+                'call_plan_id' => $request->call_plan_id,
+                'store_id' => $request->store_id,
+                'date' => $request->date,
+            ]);
+
             DB::commit();
 
             return $this->successResponse(
                 statusCode: 201, 
                 success: true, 
                 msg: "Successfully update master call plan {$id}", 
-                resource: $masterCallPlan,
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -318,16 +311,22 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         } 
     }
 
-    public function removeOne(int $id): JsonResponse
+    public function removeOneData(int $id): JsonResponse
     {
-        $masterCallPlan = MasterCallPlan::where('id', $id)->findOrFail();
+        $masterCallPlanDetail = MasterCallPlanDetail::where('call_plan_id', $id)
+        ->firstOrFail();
+
+        $masterCallPlan = MasterCallPlan::where('id', $id)
+        ->firstOrFail();
+
+        $masterCallPlanDetail->delete();
 
         $masterCallPlan->delete();
 
         return $this->successResponse(
             statusCode: 200,
             success: true,
-            msg: "Successfully remove master call plan {$id}.",
+            msg: "Successfully remove master call plan {$id} and it's detail.",
         );
     }
 }

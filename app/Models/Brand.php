@@ -14,6 +14,8 @@ class Brand extends Model
 
     public $timestamps = true;
 
+    public $incrementing = false;
+
     protected $table = 'brand';
 
     protected $primaryKey = "brand_id";

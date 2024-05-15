@@ -21,9 +21,11 @@ return new class extends Migration
             ->on('store_info_distri')
             ->cascadeOnDelete()
             ->cascadeOnUpdate();
-            $table->string('user', 100)
-            ->nullable(true)
-            ->index();
+            $table->foreignId('user')
+            ->references('user_id')
+            ->on('user_info')
+            ->cascadeOnDelete()
+            ->cascadeOnUpdate();
             $table->text('photo_visit')
             ->nullable(true);
             $table->text('photo_visit_out')
@@ -63,11 +65,6 @@ return new class extends Migration
             ->nullable(true);
             $table->timestamps();
             $table->softDeletes();
-            $table->foreign('user')
-            ->references('fullname')
-            ->on('user_info')
-            ->cascadeOnDelete()
-            ->cascadeOnUpdate();
         });
     }
 

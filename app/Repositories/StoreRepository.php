@@ -4,16 +4,29 @@ namespace App\Repositories;
 
 use App\Models\OrderCustomerSales;
 use App\Models\ProfilVisit;
+use App\Models\PurchaseOrderOTP;
+use App\Models\StoreCabang;
 use App\Models\StoreInfoDistri;
 use App\Models\StoreInfoDistriPerson;
+use App\Models\StoreType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class StoreRepository extends Repository implements StoreInterface
 {
+    public static function str_random($length = 16)
+    {
+        $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
+    }
+
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
@@ -34,7 +47,7 @@ class StoreRepository extends Repository implements StoreInterface
                 'store_info_distri.store_type_id',
                 'store_info_distri.subcabang_id',
                 'store_info_distri.store_code as kode_toko',
-                'store_info_distri.active as status_toko',
+                'store_info_distri.active as status_toko',            
                 'profil_visit.id as visit_id',
                 'profil_visit.user as nama_salesman',
                 'profil_visit.tanggal_visit as tanggal_visit',
@@ -42,25 +55,16 @@ class StoreRepository extends Repository implements StoreInterface
                 'profil_visit.time_out as waktu_keluar',
                 'profil_visit.ket as keterangan',
                 'profil_visit.approval as approval',
+                'master_call_plan_detail.date',
             ])
+            ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
+            ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
             ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
-            ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->when('store_name', 'LIKE', '%' . $searchByQuery . '%');
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
             })->orderBy('store_name', 'asc')
             ->paginate($this::DEFAULT_PAGINATE);
-            // return StoreInfoDistri::with([
-            //     'type',
-            //     'cabang',
-            //     'visits',
-            //     'owners',
-            //     'orders',
-            //     'orderDetails',
-            //     'masterCallPlanDetails',
-            // ])->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-            //     $query->when('store_name', 'LIKE', '%' . $searchByQuery . '%');
-            // })
-            // ->orderBy('store_name', 'asc')
-            // ->paginate($this::DEFAULT_PAGINATE);
+            
         });
 
         return $this->successResponse(
@@ -322,5 +326,594 @@ class StoreRepository extends Repository implements StoreInterface
             msg: "Successfully fetch store {$id} order {$orderId}.", 
             resource: $storeOrderCache,
         );
+    }
+
+    public function getStoreTypes(Request $request): JsonResponse
+    {
+        $searchByQuery = $request->query('q');
+
+        $storeTypesCache = Cache::remember('storeTypes', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
+            return StoreType::with('stores')
+            ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                $query->where('store_type_name', 'LIKE', '%' . $searchByQuery . '%');  
+            })->orderBy('store_type_name')
+            ->paginate($this::DEFAULT_PAGINATE);
+        });
+
+        return $this->successResponse(
+            statusCode: 200, 
+            success: true, 
+            msg: "Successfully fetch store types", 
+            resource: $storeTypesCache,
+        );
+    }
+
+    public function getStoreCabangs(Request $request): JsonResponse
+    {
+        $searchByQuery = $request->query('q');
+
+        $storeCabangsCache = Cache::remember('storeCabangs', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
+            return StoreCabang::with(['province', 'stores'])
+            ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                $query->where('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
+            })->orderBy('nama_cabang')->paginate($this::DEFAULT_PAGINATE);
+        });
+
+        return $this->successResponse(
+            statusCode: 200, 
+            success: true, 
+            msg: "Successfully fetch store cabang", 
+            resource: $storeCabangsCache,
+        );        
+    }
+
+    public function storeOneData(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'store_name' => ['required', 'string', 'max:100'],
+            'store_alias' => ['required', 'string', 'max:200'],
+            'store_address' => ['required', 'string'],
+            'store_phone' => ['required', 'string', 'max:20', 'unique:store_info_distri,store_phone'],
+            'store_fax' => ['required', 'string', 'max:20', 'unique:store_info_distri,store_fax'],
+            'store_type_id' => ['required', 'integer'],
+            'subcabang_id' => ['required', 'integer'],
+            'subcabang_idnew' => ['nullable', 'integer'],
+            'store_code' => ['nullable', 'string', 'max:20'],
+            'active' => ['nullable', 'integer'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $store = StoreInfoDistri::create([
+                'store_name' => $request->store_name,
+                'store_alias' => $request->store_alias,
+                'store_address' => $request->store_address,
+                'store_phone' => $request->store_phone,
+                'store_fax' => $request->store_fax,
+                'store_type_id' => $request->store_type_id,
+                'subcabang_id' => $request->subcabang_id,
+                'subcabang_idnew' => $request->subcabang_id,
+                'store_code' => $this->randomStoreCode->generateRandomCode(20),
+                'active' => 1,
+            ]);
+        
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Successfully create new outlet.", 
+                resource: $store
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } 
+    }
+
+    public function updateOneData(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'store_name' => ['required', 'string', 'max:100'],
+            'store_alias' => ['required', 'string', 'max:200'],
+            'store_address' => ['required', 'string'],
+            'store_phone' => ['required', 'string', 'max:20', 'unique:store_info_distri,store_phone'],
+            'store_fax' => ['required', 'string', 'max:20', 'unique:store_info_distri,store_fax'],
+            'store_type_id' => ['required', 'integer'],
+            'subcabang_id' => ['required', 'integer'],
+            'subcabang_idnew' => ['nullable', 'integer'],
+            'store_code' => ['nullable', 'string', 'max:20'],
+            'active' => ['nullable', 'integer'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+
+        $store = StoreInfoDistri::where('store_id', $id)->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $store->update([
+                'store_name' => $request->store_name,
+                'store_alias' => $request->store_alias,
+                'store_address' => $request->store_address,
+                'store_phone' => $request->store_phone,
+                'store_fax' => $request->store_fax,
+                'store_type_id' => $request->store_type_id,
+                'subcabang_id' => $request->subcabang_id,
+                'store_code' => $store->store_code,
+                'active' => $request->active,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 200, 
+                success: true, 
+                msg: "Successfully update recent outlet {$id}."
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function removeOneData(int $id): JsonResponse
+    {
+        $store = StoreInfoDistri::findOrFail($id);
+
+        $store->delete();
+
+        return $this->successResponse(
+            statusCode: 200, 
+            success: true, 
+            msg: "Successfully remove recent outlet {$id}."
+        );
+    }
+
+    public function storeOwnersData(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'owner' => ['required', 'string', 'max:255'],
+            'nik_owner' => ['required', 'string', 'max:20'],
+            'email_owner' => ['required', 'string', 'max:100'], 
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+        
+        try {
+            $ktp_image = $request->file('ktp_image');
+
+            $photo_other_image = $request->file('photo_other');
+
+            $ktp_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+
+            $photo_other_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+
+            $ktp_destination_path = public_path('images/ktp');
+
+            $photo_other_destination_path = public_path('images/other');
+
+            $ktp_image->move($ktp_destination_path, $ktp_name);
+
+            $photo_other_image->move($photo_other_destination_path, $photo_other_name);
+
+            DB::beginTransaction();
+
+            $storeOwner = StoreInfoDistriPerson::create([
+                'store_id' => $id,
+                'owner' => $request->owner,
+                'nik_owner' => $request->nik_owner,
+                'email_owner' => $request->email_owner,
+                'ktp_owner' => $ktp_name,
+                'photo_other' => $photo_other_name,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Successfully create new owner data for outlet {$id}.", 
+                resource: $storeOwner
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } 
+    }
+
+    public function updateOwnerData(Request $request, int $id, int $ownerId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'owner' => ['required', 'string', 'max:255'],
+            'nik_owner' => ['required', 'string', 'max:20'],
+            'email_owner' => ['required', 'string', 'max:100'],
+            'ktp_owner' => ['nullable', 'string', 'max:255'],
+            'photo_other' => ['nullable', 'string', 'max:255'], 
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+
+        $storeOwner = StoreInfoDistriPerson::whereHas('store', function (EloquentBuilder $query) use ($id) {
+            $query->where('store_id', $id);
+        })->where('id', $ownerId)
+        ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $storeOwner->update([
+                'owner' => $request->owner,
+                'nik_owner' => $request->nik_owner,
+                'email_owner' => $request->email_owner,
+                'ktp_owner' => $request->ktp_owner,
+                'photo_other' => $request->photo_other,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 200, 
+                success: true, 
+                msg: "Successfully update recent owner {$ownerId} data for outlet {$id}."
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } 
+    }
+
+    public function removeOwnerData(int $id, int $ownerId): JsonResponse
+    {
+        $storeOwner = StoreInfoDistriPerson::whereHas('store', function (EloquentBuilder $query) use ($id) {
+            $query->where('store_id', $id);
+        })->where('id', $ownerId)
+        ->firstOrFail();
+
+        $storeOwner->delete();
+
+        return $this->successResponse(
+            statusCode: 200, 
+            success: true, 
+            msg: "Successfully remove recent owner {$ownerId} data for outlet {$id}."
+        );
+    }
+
+    public function sendOtp(Request $request): JsonResponse
+    {
+        $store = StoreInfoDistri::where('store_id', $request->idToko)
+        ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $objectOrder = $request->objOrder;
+
+            $initialNum = 0;
+            
+            foreach ($objectOrder as $key => $value) {
+                $initialNum += $objectOrder[$key]['qty'];    
+            };
+
+            $nomor_po = date('YmdHis') . $request->idToko;
+
+            $id_table = OrderCustomerSales::create([
+                'no_order' => $nomor_po,
+                'tgl_order' => date('Y-m-d'),
+                'tipe' => 'SO',
+                'company' => 1,
+                'top' => 30,
+                'cust_code' => str_replace('-', '', $store->store_code),
+                'ship_code' => '000',
+                'whs_code' => '016',
+                'whs_code_to' => 0,
+                'order_sts' => 'Draft',
+                'totOrderQty' => $initialNum,
+                'totReleaseQty' => 0,
+                'keterangan' => $request->metodePembayaran,
+                'llb_gabungan_reff' => null,
+                'llb_gabungan_sts' => "Open",
+                'uploaded_at' => date('Y-m-d H:i:s'),
+                'uploaded_by' => "iduser",
+                'store_id' => $request->idToko,
+                'status_id' => 1,
+            ])->id;
+
+            $kode_otp = $this->generateOTP($id_table, $nomor_po); 
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Pembuatan draft PO berhasil!",
+                resource: [
+                    'nomor_po' => $nomor_po,
+                    'otp' => $kode_otp,
+                ],
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function resendOTP(Request $request): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $purchaseOrderOTP = PurchaseOrderOTP::where('nomor_po', $request->nomorPO)
+            ->firstOrFail();
+
+            $x = rand(1000, 9999);
+
+            $purchaseOrderOTP->update([
+                'random_otp' => $x,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Resend OTP berhasil!",
+                resource: [
+                    'nomor_po' => $request->nomorPO,
+                    'otp' => $x,
+                ],
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function confirmOtp(Request $request): JsonResponse 
+    {
+        $purchaseOrderOTP = PurchaseOrderOTP::where('nomor_po', $request->nomorPO)
+        ->where('random_otp', $request->inputOtp)
+        ->firstOrFail();
+
+        // ubah PO ke 2
+        $orderCustomerSales = OrderCustomerSales::where('no_order', $request->nomorPO)
+        ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+            
+            $orderCustomerSales->update([
+                'status_id' => 2, 
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201, 
+                success: true, 
+                msg: "Konfirmasi PO anda berhasil!",
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    protected function generateOTP($id_table, $nomor_po)
+    {
+        $x = rand(1000, 9999);
+
+        try {
+            DB::beginTransaction();
+
+            PurchaseOrderOTP::create([
+                'id_po' => $id_table,
+                'nomor_po' => $nomor_po,
+                'random_otp' => $x,
+            ]);
+
+            DB::commit();
+
+            return $x;
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
     }
 }

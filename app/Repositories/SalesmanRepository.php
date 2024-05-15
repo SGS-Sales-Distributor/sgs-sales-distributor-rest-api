@@ -6,7 +6,9 @@ use App\Models\MasterCallPlan;
 use App\Models\ProfilVisit;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -18,6 +20,13 @@ use Illuminate\Validation\Rules\Password;
 
 class SalesmanRepository extends Repository implements SalesmanInterface
 {
+    public static function str_random($length = 16)
+    {
+        $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
+    }
+
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
@@ -32,6 +41,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 'type',
                 'visits',
                 'masterCallPlans',
+                'masterCallPlanDetails'
             ])
             ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
                 $query->where('fullname', 'LIKE', '%' . $searchByQuery . '%')
@@ -56,10 +66,14 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             $this::DEFAULT_CACHE_TTL, 
             function () use ($userNumber) 
         {
-            return User::with([
+            return User::withWhereHas('masterCallPlanDetails', function ($query) {
+                $query->where('date', '=', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
+                ->withWhereHas('store', function ($query) {
+                    $query->with('visits');
+                });
+            })->with([
                 'status',
                 'type',
-                'visits',
                 'masterCallPlans',
             ])
             ->where('number', $userNumber)
@@ -117,16 +131,27 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         );
     }
 
-    public function getCallPlansData(string $userNumber): JsonResponse
+    public function getCallPlansData(Request $request, string $userNumber): JsonResponse
     {
+        $searchByQuery = $request->query('q');
+
         $salesmanCallPlansCache = Cache::remember(
             "salesmen:{$userNumber}:callPlans", 
             $this::DEFAULT_CACHE_TTL, 
-            function () use ($userNumber) 
+            function () use ($userNumber, $searchByQuery) 
         {
-            return MasterCallPlan::whereHas("user", function (Builder $query) use ($userNumber) {
+            return MasterCallPlan::withWhereHas('details', function ($query) use ($searchByQuery) {
+                $query->where('date', '=', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
+                ->withWhereHas('store', function ($query) use ($searchByQuery) {
+                    $query->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                        $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');      
+                    });
+                });
+            })
+            ->withWhereHas("user", function ($query) use ($userNumber) {
                 $query->where('number', $userNumber);
-            })->orderBy('id', 'asc')
+            })
+            ->orderBy('id', 'asc')
             ->get();
         });
 
@@ -145,13 +170,11 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             $this::DEFAULT_CACHE_TTL, 
             function () use ($userNumber, $callPlanId) 
         {
-            return User::with([
-                'masterCallPlans',
-            ])
-            ->whereHas('masterCallPlans', function (Builder $query) use ($callPlanId) {
-                $query->where('id', $callPlanId);
+            return MasterCallPlan::whereHas('user', function (Builder $query) use ($userNumber) {
+                $query->where('number', $userNumber);
             })
-            ->where('user_id', $userNumber)
+            ->with('details')
+            ->where('id', $callPlanId)
             ->firstOrFail();
         });
 
@@ -163,48 +186,25 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         );
     }
 
-    public static function str_random($length = 16)
+    public function checkInVisit(Request $request, string $userNumber): JsonResponse
     {
-        $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        try {
+            DB::beginTransaction();
 
-        return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
-    }
-
-    public function fileUploadGambar(Request $request, string $userNumber): JsonResponse
-    {
-        //die(print_r($request));
-        DB::beginTransaction();
-
-        // return response()->json([
-        //     'status' => true,
-        //     'message' => app()->basePath('app'),
-        // ], 201);
-        //try {
-        if ($request->hasFile('image')) {
             $image = $request->file('image');
-            //$name = time() . '.' . $image->getClientOriginalExtension();
-            $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
-            //$destinationPath = storage_path();
+
+            $image_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+            
             $destinationPath = public_path('images');
-            $image->move($destinationPath, $name);
-
-
-
-            // $compress_file = "compress_" . $name;
-            // $compressed_img = $destinationPath . '/' . $compress_file;
-            // $file_name = $destinationPath . '/' . $name;
-            // $compress_image = $this->compress($file_name, $compressed_img);
-            //unlink($file_name);
-            //Image::make($image->getRealPath())->resize(150, 150)->save($path);
-
-            //return response()->json(['data' => "image is uploaded"]);
+            
+            $image->move($destinationPath, $image_name);
 
             $user = User::where('number', $userNumber)->firstOrFail();
             
             $checkInVisit = ProfilVisit::create([
                 'store_id' => $request->store_id,
-                'user' => $user->fullname,
-                'photo_visit' => $name,
+                'user' => $user->user_id,
+                'photo_visit' => $image_name,
                 'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
                 'time_in' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
                 'lat_in' => $request->lat_in,
@@ -221,53 +221,31 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 msg: "Successfully check-in visit related to salesman {$userNumber}.", 
                 resource: $checkInVisit
             );
-            //return successful response
-            // return response()->json([
-            //     'status' => true,
-            //     'message' => 'Photo Upload successfully. (1)',
-            // ], 201);
-        } else {
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'failed upload photo (2a).',
-            ], 409);
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
 
-            // // DB::rollback();
-            // // //return error message
-            // // return response()->json([
-            // //     'status' => false,
-            // //     'message' => $request,
-            // // ], 409);
-
-
-            // $image = $request->image;  // your base64 encoded
-            // $image = str_replace('data:image/png;base64,', '', $image);
-            // $image = str_replace(' ', '+', $image);
-            // $imageName = $this->str_random(10) . '.' . 'png';
-            // File::put(storage_path() . '/' . $imageName, base64_decode($image));
-
-            // // $data = DB::select("
-            // //         INSERT INTO test_photo(url) 
-            // //             VALUES ('" . $imageName . "')");
-
-
-            // DB::commit();
-            // //return successful response
-            // return response()->json([
-            //     'status' => true,
-            //     'message' => 'Photo Upload successfully. (2)',
-            //     'request' => $request,
-            // ], 201);
-        }
-        //} catch (\Exception $e) {
-        DB::rollback();
-        //return error message
-        return response()->json([
-            'status' => false,
-            'message' => 'failed upload photo (2b).',
-        ], 409);
-        //}
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } 
     }
 
     public function storeOneData(Request $request): JsonResponse
@@ -337,134 +315,33 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         } 
     }
 
-    public function checkInVisit(Request $request, string $userNumber): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'store_id' => ['nullable', 'integer'],
-            'photo_visit' => ['required', 'string'],
-            'lat_in' => ['nullable'],
-            'long_in' => ['nullable'],
-        ]);
-        
-        if ($validator->fails()) {
-            return $this->clientErrorResponse(
-                statusCode: 422,
-                success: false,
-                msg: $validator->errors()->first(),
-                resource: $validator->errors()->all(),
-            );
-        }
-
-        $user = User::where('number', $userNumber)
-        ->firstOrFail();
-
-        try {
-            DB::beginTransaction();
-
-            $checkInVisit = ProfilVisit::create([
-                'store_id' => $request->store_id,
-                'user' => $user->fullname,
-                'photo_visit' => $request->photo_visit,
-                'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
-                'time_in' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
-                'lat_in' => $request->lat_in,
-                'long_in' => $request->long_in,
-                'created_by' => $user->fullname,
-                'updated_by' => $user->fullname,
-            ]);
-
-            DB::commit();
-
-            return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
-                msg: "Successfully check-in visit related to salesman {$userNumber}.", 
-                resource: $checkInVisit
-            );
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            DB::rollBack();
-
-            return $this->errorResponse(
-                statusCode: $e->getStatusCode(),
-                success: false,
-                msg: $e->getMessage(),
-            );
-        } catch (\Error $e) {
-            DB::rollBack();
-
-            return $this->errorResponse(
-                statusCode: 500,
-                success: false,
-                msg: $e->getMessage(),
-            );
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return $this->errorResponse(
-                statusCode: 500,
-                success: false,
-                msg: $e->getMessage(),
-            );
-        } 
-    }
-
     public function checkOutVisit(Request $request, string $userNumber, int $visitId): JsonResponse
     {
-                // $validator = Validator::make($request->all(), [
-        //     'photo_visit_out' => ['required', 'string'],
-        //     'lat_out' => ['nullable'],
-        //     'long_out' => ['nullable'],
-        // ],
-        // [
-        //     'required' => ':attribute is required!',
-        //     'unique' => ':attribute is unique field!',
-        //     'min' => ':attribute should be :min in characters',
-        //     'max' => ':attribute could not more than :max characters',
-        //     'confirmed' => ':attribute confirmation does not match!',  
-        // ]);
-        
-        // if ($validator->fails()) {
-        //     return $this->clientErrorResponse(
-        //         statusCode: 422,
-        //         success: false,
-        //         msg: $validator->errors()->first(),
-        //         resource: $validator->errors()->all(),
-        //     );
-        // }
-
         try {
             DB::beginTransaction();
 
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                //$name = time() . '.' . $image->getClientOriginalExtension();
-                $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
-                //$destinationPath = storage_path();
-                $destinationPath = public_path('images');
-                $image->move($destinationPath, $name);
-
-                $salesman = User::where('number', $userNumber)->firstOrFail();
-
-                $latestVisit = ProfilVisit::where('id', $visitId)->firstOrFail();
-    
-                $latestVisit->update([
-                    'photo_visit_out' => $name,
-                    'user' => $salesman->fullname,
-                    'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
-                    'time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
-                    'lat_out' => $request->lat_out,
-                    'long_out' => $request->long_out,
-                    'updated_by' => $salesman->fullname,
-                    'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
-                ]);
+            $image = $request->file('image');
                 
-            }else{
-                return response()->json([
-                    'status' => false,
-                    'message' => 'failed upload photo (2b).',
-                ], 409);
+            $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
 
-            }
+            $destinationPath = public_path('images');
+            
+            $image->move($destinationPath, $name);
+
+            $salesman = User::where('number', $userNumber)->firstOrFail();
+
+            $latestVisit = ProfilVisit::where('id', $visitId)->firstOrFail();
+
+            $latestVisit->update([
+                'photo_visit_out' => $name,
+                'user' => $salesman->user_id,
+                'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
+                'time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
+                'lat_out' => $request->lat_out,
+                'long_out' => $request->long_out,
+                'updated_by' => $salesman->fullname,
+                'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
+            ]);
 
             DB::commit();
 

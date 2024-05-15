@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             // BrandSeeder::class,
             // ProductStatusSeeder::class,
             // ProductTypeSeeder::class,
+            // ProductInfoDoSeeder::class,
             // ProductInfoLmtSeeder::class,
             // OrderCustomerSalesSeeder::class,
             // OrderCustomerSalesDetailSeeder::class,

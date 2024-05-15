@@ -43,7 +43,6 @@ return new class extends Migration
         
         Schema::create('product_info_do', function (Blueprint $table) {
             $table->string('prod_number', 100)
-            ->index()
             ->primary();
             $table->string('prod_barcode_number', 30)
             ->unique()
@@ -65,26 +64,24 @@ return new class extends Migration
             $table->string('prod_special_offer_unit', 20)
             ->nullable(false);
             $table->string('brand_id', 10)
-            ->nullable(false)
-            ->index();
+            ->nullable(false);
             $table->string('category_id', 10)
-            ->nullable(false)
-            ->index();
+            ->nullable(false);
             $table->integer('category_sub_id')
             ->nullable(false);
             $table->foreignId('prod_type_id')
             ->nullable(true)
-            ->index()
             ->references('prod_type_id')
             ->on('product_type')
+            ->cascadeOnUpdate()
             ->cascadeOnDelete();
             $table->string('supplier_id', 10)
             ->nullable(true);
             $table->foreignId('prod_status_id')
             ->nullable(true)
-            ->index()
             ->references('product_status_id')
             ->on('product_status')
+            ->cascadeOnUpdate()
             ->cascadeOnDelete();
             $table->char('status_aktif')
             ->nullable(false);
@@ -97,7 +94,6 @@ return new class extends Migration
             $table->foreign('brand_id')
             ->references('brand_id')
             ->on('brand')
-            ->cascadeOnUpdate()
             ->cascadeOnDelete();
         });
     }
