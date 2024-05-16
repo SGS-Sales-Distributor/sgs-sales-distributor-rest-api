@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (UnauthorizedHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 1, 
                 'success' => false, 
                 'message' => 'Authorization required.', 
                 'error' => $e->getMessage(), 
@@ -37,7 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (NotFoundHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 2, 
                 'success' => false, 
                 'message' => 'Data not found.', 
                 'error' => $e->getMessage(), 
@@ -46,7 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (MethodNotAllowedHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 3, 
                 'success' => false, 
                 'message' => 'Method not allowed.', 
                 'error' => $e->getMessage(), 
@@ -55,7 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (UnsupportedMediaTypeHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 4, 
                 'success' => false, 
                 'message' => 'Unsupported media type.', 
                 'error' => $e->getMessage(), 
@@ -64,7 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (UnprocessableEntityHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 5, 
                 'success' => false, 
                 'message' => 'Unprocessable content.', 
                 'error' => $e->getMessage(), 
@@ -73,7 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (TooManyRequestsHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 6, 
                 'success' => false, 
                 'message' => 'Unprocessable content.', 
                 'error' => $e->getMessage(), 
@@ -82,7 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (ServiceUnavailableHttpException $e) {
             return response()->json([
-                'status' => $e->getStatusCode(), 
+                'status' => 7, 
                 'success' => false, 
                 'message' => 'Unprocessable content.', 
                 'error' => $e->getMessage(), 
@@ -91,7 +91,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (\Error $e) {
             return response()->json([
-                'status' => 500, 
+                'status' => 8, 
                 'success' => false, 
                 'message' => 'Internal Server Error.', 
                 'error' => $e->getMessage(), 

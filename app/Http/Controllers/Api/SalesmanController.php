@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -72,4 +73,10 @@ class SalesmanController extends Controller
     {
         return $this->salesmanInterface->getOneCallPlanData($userNumber, $callPlanId);
     }
+
+    public function getCboUserType()
+	{
+		$userType = UserType::with('users')->orderBy('user_type_id')
+        ->paginate(50);
+	}
 }
