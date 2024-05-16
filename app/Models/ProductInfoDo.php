@@ -93,4 +93,17 @@ class ProductInfoDo extends Model
     {
         return $this->hasMany(DataReturDetail::class, 'itemCode');
     }
+
+    public function get_data_($search, $arr_pagination)
+    {
+
+        if (!empty($search)) $arr_pagination['offset'] = 0;
+        
+        $data = ProductInfoDo::where('prod_number', 'like', "%$search%")
+            ->orWhere('prod_barcode_number', 'like', "%$search%")
+            ->orWhere('prod_universal_number', 'like', "%$search%")
+            ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
+            ->orderBy('created_at', 'DESC')->get();
+        return $data;
+    }
 }

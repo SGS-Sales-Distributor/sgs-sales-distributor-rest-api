@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ProgramTypeController;
 use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\SalesmanController;
 use App\Http\Controllers\Api\StoreInfoDistriController;
+use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,140 @@ Route::group([
     Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
     Route::put('/call-plans/{id}', [MasterCallPlanController::class, 'updateOne']);
     Route::delete('/call-plans/{id}', [MasterCallPlanController::class, 'removeOne']);
+
+    // type program's routes.
+    Route::get('/master_type_program_x', [ProgramTypeController::class, 'getAll']);
+    Route::get('/master_type_program/{id}', [ProgramTypeController::class, 'getOne']);
+    Route::post('/master_type_program', [ProgramTypeController::class, 'storeOne']);
+    Route::put('/master_type_program/{id}', [ProgramTypeController::class, 'updateOne']);
+    Route::delete('/master_type_program/{id}', [ProgramTypeController::class, 'removeOne']);
+
+    Route::get('/type-programs/{id}', [ProgramTypeController::class, 'getOne']);
+    Route::post('/type-programs', [ProgramTypeController::class, 'storeOne']);
+    Route::put('/type-programs', [ProgramTypeController::class, 'updateOne']);
+    Route::delete('/type-programs', [ProgramTypeController::class, 'removeOne']);
+
+    Route::get('/getTipeToko', [StoreTypeController::class, 'getTipeToko']);
+    Route::get('/store_type', [StoreTypeController::class, 'paging']);
+    Route::post('/store_type', [StoreTypeController::class, 'store']);
+    Route::get('/store_type/{store_type_id}', [StoreTypeController::class, 'show']);
+    Route::put('/store_type/{store_type_id}', [StoreTypeController::class, 'update']);
+    Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
+    
+    // // CRUD untuk Product Info Do
+    Route::get('/getMasterProduk', [ProductController::class, 'getMasterProduk']);
+    Route::get('/product_info_do', [ProductController::class, 'paging']);
+    Route::post('/product_info_do', [ProductController::class, 'store']);
+    Route::get('/product_info_do/{prod_number}', [ProductController::class, 'show']);
+    Route::put('/product_info_do/{prod_number}', [ProductController::class, 'update']);
+    Route::delete('/product_info_do/{prod_number}', [ProductController::class, 'destroy']);
+    
+    // CRUD untuk User Info 
+    // Router::get('/getUserInfo', 'UserInfoController@getUserInfo');
+    // Router::get('/getUserInfoX', 'UserInfoController@getUserInfoX');
+    // Router::get('/user_info', 'UserInfoController@paging');
+    // Router::post('/user_info', 'UserInfoController@store');
+    // Router::get('/user_info/{user_id}', 'UserInfoController@show');
+    // Router::put('/user_info/{user_id}', 'UserInfoController@update');
+    // Router::delete('/user_info/{user_id}', 'UserInfoController@destroy');
+    // Router::get('/getCboUserType', 'UserInfoController@getCboUserType');
+    // Router::get('/getCboStoreCabang', 'UserInfoController@getCboStoreCabang');
+    Route::get('/getCboOutlet', 'UserInfoController@getCboOutlet');
+    // Router::get('/getCboPenempatan', 'UserInfoController@getCboPenempatan');
+    // Router::get('/getKodeLokasi/{id}', 'UserInfoController@getKodeLokasi');
+    // Router::post('/exportData', 'UserInfoController@xportData');
+
+    // CRUD untuk Master Type Program 
+    // Router::get('/getTipeProgram', 'MasterTypeProgramController@getTipeProgram');
+    // Router::get('/master_type_program_x', 'MasterTypeProgramController@paging');
+
+    // CRUD untuk Kode Lokasi
+    // Router::get('/kode_lokasi', 'KodeLokasiController@paging');
+
+    // CRUD untuk Store Cabang
+    // Router::get('/store_cabang', 'StoreCabangController@paging');
+    // Router::post('/store_cabang', 'StoreCabangController@store');
+    // Router::get('/store_cabang/{id}', 'StoreCabangController@show');
+    // Router::put('/store_cabang/{id}', 'StoreCabangController@update');
+    // Router::delete('/store_cabang/{id}', 'StoreCabangController@destroy');
+
+    // CRUD untuk Store Info Distri
+    // Router::get('/getcboIDCabang', 'StoreInfoDistriController@getcboIDCabang');
+    // Router::get('/getcboIDStore', 'StoreInfoDistriController@getcboIDStore');
+    // Router::get('/getStoreInfoDistri', 'StoreInfoDistriController@getStoreInfoDistri');
+    // Router::post('/exportDataToko', 'UserInfoController@xportDataToko');
+    // Router::get('/store_info_distri', 'StoreInfoDistriController@paging');
+    // Router::post('/store_info_distri', 'StoreInfoDistriController@store');
+    // Router::get('/store_info_distri/{store_id}', 'StoreInfoDistriController@show');
+    // Router::put('/store_info_distri/{store_id}', 'StoreInfoDistriController@update');
+    // Router::delete('/store_info_distri/{store_id}', 'StoreInfoDistriController@destroy');
+
+    // CRUD untuk Store Cabang
+    // Router::get('visits', 'ProfilVisitController@paging');
+    // Router::post('visits', 'ProfilVisitController@store');
+    // Router::get('visits/{id}', 'ProfilVisitController@show');
+    // Router::put('visits/{id}', 'ProfilVisitController@update');
+    // Router::delete('visits/{id}', 'ProfilVisitController@destroy');
+
+    // CRUD untuk User Type
+    // Router::get('/user_type', 'UserTypeController@paging');
+    // Router::post('/user_type', 'UserTypeController@store');
+    // Router::get('/user_type/{user_type_id}', 'UserTypeController@show');
+    // Router::put('/user_type/{user_type_id}', 'UserTypeController@update');
+    // Router::delete('/user_type/{user_type_id}', 'UserTypeController@destroy');
+
+    // CRUD untuk Store Type
+
+    // // CRUD untuk Data Retur
+    // Router::get('/data_retur', 'DataReturController@paging');
+    // Router::post('/data_retur', 'DataReturController@store');
+    // Router::get('/data_retur/{id}', 'DataReturController@show');
+    // Router::put('/data_retur/{id}', 'DataReturController@update');
+    // Router::delete('/data_retur/{id}', 'DataReturController@destroy');
+
+    // // CRUD untuk Data Retur Detail
+    // Router::get('/data_returdetail', 'DataReturDetailController@paging');
+    // Router::post('/data_returdetail', 'DataReturDetailController@store');
+    // Router::get('/data_returdetail/{id}', 'DataReturDetailController@show');
+    // Router::put('/data_returdetail/{id}', 'DataReturDetailController@update');
+    // Router::delete('/data_returdetail/{id}', 'DataReturDetailController@destroy');
+
+    // // CRUD untuk Master User
+    // Router::get('/master_user', 'MasterUserController@paging');
+    // Router::post('/master_user', 'MasterUserController@store');
+    // Router::get('/master_user/{id}', 'MasterUserController@show');
+    // Router::put('/master_user/{id}', 'MasterUserController@update');
+    // Router::delete('/master_user/{id}', 'MasterUserController@destroy');
+
+    // // CRUD untuk Master User Detail
+    // Router::get('/master_user_detail', 'MasterUserDetailController@paging');
+    // Router::post('/master_user_detail', 'MasterUserDetailController@store');
+    // Router::get('/master_user_detail/{id}', 'MasterUserDetailController@show');
+    // Router::put('/master_user_detail/{id}', 'MasterUserDetailController@update');
+    // Router::delete('/master_user_detail/{id}', 'MasterUserDetailController@destroy');
+
+    // // CRUD untuk Product Info Lmt
+    // Router::get('/product_info_lmt', 'ProductInfoLmtController@paging');
+    // Router::post('/product_info_lmt', 'ProductInfoLmtController@store');
+    // Router::get('/product_info_lmt/{prod_number}', 'ProductInfoLmtController@show');
+    // Router::put('/product_info_lmt/{prod_number}', 'ProductInfoLmtController@update');
+    // Router::delete('/product_info_lmt/{prod_number}', 'ProductInfoLmtController@destroy');
+
+    // // CRUD untuk Order Customer Sales
+    // Router::get('/getIDstore', 'OrderCustomerSalesController@getIDstore');
+    // Router::get('/getPurchaseOrder', 'OrderCustomerSalesController@getPurchaseOrder');
+    // Router::get('/order_customer_sales', 'OrderCustomerSalesController@paging');
+    // Router::post('/order_customer_sales', 'OrderCustomerSalesController@store');
+    // Router::get('/order_customer_sales/{id}', 'OrderCustomerSalesController@show');
+    // Router::put('/order_customer_sales/{id}', 'OrderCustomerSalesController@update');
+    // Router::delete('/order_customer_sales/{id}', 'OrderCustomerSalesController@destroy');
+
+    // // CRUD untuk Order Customer Sales Detail
+    // Router::get('/order_customer_sales_detail', 'OrderCustomerSalesDetailController@paging');
+    // Router::post('/order_customer_sales_detail', 'OrderCustomerSalesDetailController@store');
+    // Router::get('/order_customer_sales_detail/{id}', 'OrderCustomerSalesDetailController@show');
+    // Router::put('/order_customer_sales_detail/{id}', 'OrderCustomerSalesDetailController@update');
+    // Router::delete('/order_customer_sales_detail/{id}', 'OrderCustomerSalesDetailController@destroy');
 });
 
 // rest api version 2

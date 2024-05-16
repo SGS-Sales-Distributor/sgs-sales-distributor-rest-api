@@ -60,8 +60,9 @@ class ProfilVisitController extends Controller
 	public function getOne(int $id): JsonResponse
 	{
 		$visit = DB::table('profil_visit')
-			->select('profil_visit.*', 'store_info_distri.store_name')
+			->select('profil_visit.*', 'store_info_distri.store_name', 'user_info.*')
 			->join('store_info_distri', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
+			->join('user_info', 'profil_visit.user', '=', 'user_info.user_id')
 			->where('id', $id)
 			->first();
 
