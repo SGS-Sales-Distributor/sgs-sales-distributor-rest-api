@@ -24,7 +24,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             function() use ($searchByQuery)  
         {
             return MasterCallPlan::with([
-                'user',
+                'user.type',
+                'user.status',
                 'details.store',
             ])
             ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {

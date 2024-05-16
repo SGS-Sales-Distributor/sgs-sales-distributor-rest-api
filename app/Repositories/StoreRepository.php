@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\OrderCustomerSales;
+use App\Models\OrderCustomerSalesDetail;
 use App\Models\ProfilVisit;
 use App\Models\PurchaseOrderOTP;
 use App\Models\StoreCabang;
@@ -730,6 +731,21 @@ class StoreRepository extends Repository implements StoreInterface
                 'store_id' => $request->idToko,
                 'status_id' => 1,
             ])->id;
+
+            $n = 0;
+
+            foreach ($objectOrder as $key => $value) {
+                $n++;
+                
+                OrderCustomerSalesDetail::create([
+                    'orderId' => $id_table,
+                    'lineNo' => $n,
+                    'itemCodeCust' => $objectOrder[$key]['prodNumber'],
+                    'itemCode' => $objectOrder[$key]['prodNumber'],
+                    'qtyOrder' => $objectOrder[$key]['qty'],
+                    'add_disc_2' => $objectOrder[$key]['statusBonus'],
+                ]);
+            }
 
             $kode_otp = $this->generateOTP($id_table, $nomor_po); 
 
