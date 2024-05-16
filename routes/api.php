@@ -3,9 +3,12 @@
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\Authentication\BasicAuthController;
 use App\Http\Controllers\Api\JwtAuthentication\JwtAuthController;
+use App\Http\Controllers\Api\MasterCallPlanController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProfilVisitController;
 use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\ProgramTypeController;
+use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\SalesmanController;
 use App\Http\Controllers\Api\StoreInfoDistriController;
 use App\Http\Controllers\Api\StoreTypeController;
@@ -18,8 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 // rest api version 1
 Route::group([
-    'prefix' => 'v1',
-    'middleware' => 'GrahamCampbell\Throttle\Http\Middleware\ThrottleMiddleware:500,60',
+    'prefix' => 'sgs',
 ], function () {
     // visit's routes
     Route::get('/profil_visit', [ProfilVisitController::class, 'getAll']);
@@ -61,13 +63,19 @@ Route::group([
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
     
     // // CRUD untuk Product Info Do
-    Route::get('/getMasterProduk', [ProductController::class, 'getMasterProduk']);
-    Route::get('/product_info_do', [ProductController::class, 'paging']);
-    Route::post('/product_info_do', [ProductController::class, 'store']);
-    Route::get('/product_info_do/{prod_number}', [ProductController::class, 'show']);
-    Route::put('/product_info_do/{prod_number}', [ProductController::class, 'update']);
-    Route::delete('/product_info_do/{prod_number}', [ProductController::class, 'destroy']);
+    Route::get('/getMasterProduk', [ProductController::class, 'getAllBasic']);
+    Route::get('/product_info_do', [ProductController::class, 'getAllBasicWithPaging']);
+    Route::get('/product_info_do/{prod_number}', [ProductController::class, 'getOneBasic']);
+    Route::post('/product_info_do', [ProductController::class, 'storeBasicData']);
+    Route::put('/product_info_do/{prod_number}', [ProductController::class, 'updateBasicData']);
+    Route::delete('/product_info_do/{prod_number}', [ProductController::class, 'removeBasicData']);
     
+    Route::get('/order_customer_sales', [PurchaseOrderController::class, 'getAll']);
+    Route::post('/order_customer_sales', [PurchaseOrderController::class, 'storeOne']);
+    Route::get('/order_customer_sales/{id}', [PurchaseOrderController::class, 'getOne']);
+    Route::put('/order_customer_sales/{id}', [PurchaseOrderController::class, 'updateOne']);
+    Route::delete('/order_customer_sales/{id}', [PurchaseOrderController::class, 'removeOne']);
+
     // CRUD untuk User Info 
     // Router::get('/getUserInfo', 'UserInfoController@getUserInfo');
     // Router::get('/getUserInfoX', 'UserInfoController@getUserInfoX');
@@ -160,13 +168,6 @@ Route::group([
     // Router::delete('/product_info_lmt/{prod_number}', 'ProductInfoLmtController@destroy');
 
     // // CRUD untuk Order Customer Sales
-    // Router::get('/getIDstore', 'OrderCustomerSalesController@getIDstore');
-    // Router::get('/getPurchaseOrder', 'OrderCustomerSalesController@getPurchaseOrder');
-    // Router::get('/order_customer_sales', 'OrderCustomerSalesController@paging');
-    // Router::post('/order_customer_sales', 'OrderCustomerSalesController@store');
-    // Router::get('/order_customer_sales/{id}', 'OrderCustomerSalesController@show');
-    // Router::put('/order_customer_sales/{id}', 'OrderCustomerSalesController@update');
-    // Router::delete('/order_customer_sales/{id}', 'OrderCustomerSalesController@destroy');
 
     // // CRUD untuk Order Customer Sales Detail
     // Router::get('/order_customer_sales_detail', 'OrderCustomerSalesDetailController@paging');
@@ -241,15 +242,17 @@ Route::group([
         Route::delete('/programs/{number}', [ProductController::class, 'removeOne']);
 
         // store's routes.
-        Route::get('/stores', [StoreInfoDistriController::class, 'getAllData']);        
-        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOneData']);
-        Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwnersData']);
-        Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwnerData']);
-        Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisitsData']);
-        Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisitData']);
-        Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrdersData']);
-        Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrderData']);
-        Route::get('/stores/search', [StoreInfoDistriController::class, 'getAllDataByQuery']);
-        Route::get('/stores/filter', [StoreInfoDistriController::class, 'getAllDataByOrderDateFilter']);
+        Route::get('/stores', [StoreInfoDistriController::class, 'getAll']);        
+        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
+        Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwners']);
+        Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwner']);
+        Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisits']);
+        Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisit']);
+        Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrders']);
+        Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrder']);
+        
+        Route::post('/stores/send-otp', [StoreInfoDistriController::class, 'sendOtp']);
+        Route::post('/stores/resend-otp', [StoreInfoDistriController::class, 'resendOtp']);
+        Route::post('/stores/confirm-otp', [StoreInfoDistriController::class, 'confirmOtp']);
     });
 });
