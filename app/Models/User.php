@@ -85,6 +85,8 @@ class User extends Authenticatable
         return $this->hasMany(ProfilVisit::class, 'user');
     }
 
+    
+
     /**
      * One to Many relationship with MasterCallPlan model.
      */

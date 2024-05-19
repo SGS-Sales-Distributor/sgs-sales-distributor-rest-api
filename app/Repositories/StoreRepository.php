@@ -31,47 +31,46 @@ class StoreRepository extends Repository implements StoreInterface
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
-        
+
         $storesCache = Cache::remember(
-            "storesCache", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($searchByQuery) 
-        {
-            return DB::table('store_info_distri')
-            ->select([
-                'store_info_distri.store_id',
-                'store_info_distri.store_name as nama_toko',
-                'store_info_distri.store_alias as alias_toko',
-                'store_info_distri.store_address as alamat_toko',
-                'store_info_distri.store_phone as nomor_telepon_toko',
-                'store_info_distri.store_fax as nomor_fax_toko',
-                'store_info_distri.store_type_id',
-                'store_info_distri.subcabang_id',
-                'store_info_distri.store_code as kode_toko',
-                'store_info_distri.active as status_toko',            
-                'profil_visit.id as visit_id',
-                'profil_visit.user as nama_salesman',
-                'profil_visit.tanggal_visit as tanggal_visit',
-                'profil_visit.time_in as waktu_masuk',
-                'profil_visit.time_out as waktu_keluar',
-                'profil_visit.ket as keterangan',
-                'profil_visit.approval as approval',
-                'master_call_plan_detail.date',
-            ])
-            ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
-            ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-            ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
-            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-            })->orderBy('store_name', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-            
-        });
+            "storesCache",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery) {
+                return DB::table('store_info_distri')
+                    ->select([
+                        'store_info_distri.store_id',
+                        'store_info_distri.store_name as nama_toko',
+                        'store_info_distri.store_alias as alias_toko',
+                        'store_info_distri.store_address as alamat_toko',
+                        'store_info_distri.store_phone as nomor_telepon_toko',
+                        'store_info_distri.store_fax as nomor_fax_toko',
+                        'store_info_distri.store_type_id',
+                        'store_info_distri.subcabang_id',
+                        'store_info_distri.store_code as kode_toko',
+                        'store_info_distri.active as status_toko',
+                        'profil_visit.id as visit_id',
+                        'profil_visit.user as nama_salesman',
+                        'profil_visit.tanggal_visit as tanggal_visit',
+                        'profil_visit.time_in as waktu_masuk',
+                        'profil_visit.time_out as waktu_keluar',
+                        'profil_visit.ket as keterangan',
+                        'profil_visit.approval as approval',
+                        'master_call_plan_detail.date',
+                    ])
+                    ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
+                    ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
+                    ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
+                    ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                        $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
+                    })->orderBy('store_info_distri.store_name', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store.",
             resource: $storesCache,
         );
     }
@@ -81,25 +80,62 @@ class StoreRepository extends Repository implements StoreInterface
         $searchByQuery = $request->query('q');
 
         $storeOwnersCache = Cache::remember(
-            "stores:{$id}:owners", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($searchByQuery, $id) 
-        {
-            return StoreInfoDistriPerson::with([
-                'store',
-            ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
-                $query->where('id', $id);
-            })->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->where('owner', 'LIKE', '%' . $searchByQuery . '%');
-            })->orderBy('owner', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
+            "stores:{$id}:owners",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery, $id) {
+                return StoreInfoDistriPerson::with([
+                    'store',
+                ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
+                    $query->where('id', $id);
+                })->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                    $query->where('owner', 'LIKE', '%' . $searchByQuery . '%');
+                })->orderBy('owner', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store owners.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store owners.",
             resource: $storeOwnersCache,
+        );
+    }
+
+    public function getAllDataWithoutCallPlans(Request $request): JsonResponse
+    {
+        $searchByQuery = $request->query('q');
+
+        $storeCallPlansCache = Cache::remember(
+            "storeCallPlansCache",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery)
+            {
+                return StoreInfoDistri::with('owners')
+                ->select(
+                    'store_id',
+                    'store_name as nama_toko',
+                    'store_alias as alias_toko',
+                    'store_address as alamat_toko',
+                    'store_phone as nomor_telepon_toko',
+                    'store_fax as nomor_fax_toko',
+                    'store_type_id',
+                    'subcabang_id',
+                    'store_code as kode_toko',
+                    'active as status_toko',
+                )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                    $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
+                })->whereHas('owners')
+                ->orderBy('store_name', 'asc')
+                ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store based on call plans",
+            resource: $storeCallPlansCache,
         );
     }
 
@@ -108,25 +144,25 @@ class StoreRepository extends Repository implements StoreInterface
         $searchByQuery = $request->query('q');
 
         $storeVisitsCache = Cache::remember(
-            "stores:{$id}:visits", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($searchByQuery, $id) 
-        {
-            return ProfilVisit::with([
-                'store',
-                'user',
-            ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
-                $query->where('id', $id);
-            })->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->where('user', 'LIKE', '%' . $searchByQuery . '%');
-            })->orderBy('user', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
+            "stores:{$id}:visits",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery, $id) {
+                return ProfilVisit::with([
+                    'store',
+                    'user',
+                ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
+                    $query->where('id', $id);
+                })->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                    $query->where('user', 'LIKE', '%' . $searchByQuery . '%');
+                })->orderBy('user', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store visits.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store visits.",
             resource: $storeVisitsCache,
         );
     }
@@ -140,56 +176,54 @@ class StoreRepository extends Repository implements StoreInterface
         $filterByDate = $this->dateRangeFilter->parseDate($searchByOrderDateQuery);
 
         $storeInfoDistriByTypeFilterCache = Cache::remember(
-            'storeInfoDistriByTypeFilter', 
+            'storeInfoDistriByTypeFilter',
             $this::DEFAULT_CACHE_TTL,
             function () use (
-                $filterByDateRange, 
+                $filterByDateRange,
                 $filterByDate,
-            ) 
-        {
-            if ($filterByDateRange)
-            {
-                return StoreInfoDistri::with([
-                    'type',
-                    'cabang',
-                    'visits',
-                    'owners',
-                    'orders',
-                    'orderDetails',
-                    'masterCallPlanDetails',
-                ])->when($filterByDateRange, function (EloquentBuilder $query) use ($filterByDateRange) {
-                    $query->whereHas('orders', function (EloquentBuilder $subQuery) use ($filterByDateRange) {
-                        $subQuery->whereBetween('tgl_order', $filterByDateRange);
-                    });
-                })
-                ->orderBy('store_id', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
-            }
+            ) {
+                if ($filterByDateRange) {
+                    return StoreInfoDistri::with([
+                        'type',
+                        'cabang',
+                        'visits',
+                        'owners',
+                        'orders',
+                        'orderDetails',
+                        'masterCallPlanDetails',
+                    ])->when($filterByDateRange, function (EloquentBuilder $query) use ($filterByDateRange) {
+                        $query->whereHas('orders', function (EloquentBuilder $subQuery) use ($filterByDateRange) {
+                            $subQuery->whereBetween('tgl_order', $filterByDateRange);
+                        });
+                    })
+                        ->orderBy('store_id', 'asc')
+                        ->paginate($this::DEFAULT_PAGINATE);
+                }
 
-            if ($filterByDate)
-            {
-                return StoreInfoDistri::with([
-                    'type',
-                    'cabang',
-                    'visits',
-                    'owners',
-                    'orders',
-                    'orderDetails',
-                    'masterCallPlanDetails',
-                ])->when($filterByDate, function (EloquentBuilder $query) use ($filterByDate) {
-                    $query->whereHas('orders', function (EloquentBuilder $subQuery) use ($filterByDate) {
-                        $subQuery->whereDate('tgl_order', $filterByDate);
-                    });
-                })
-                ->orderBy('store_id', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
+                if ($filterByDate) {
+                    return StoreInfoDistri::with([
+                        'type',
+                        'cabang',
+                        'visits',
+                        'owners',
+                        'orders',
+                        'orderDetails',
+                        'masterCallPlanDetails',
+                    ])->when($filterByDate, function (EloquentBuilder $query) use ($filterByDate) {
+                        $query->whereHas('orders', function (EloquentBuilder $subQuery) use ($filterByDate) {
+                            $subQuery->whereDate('tgl_order', $filterByDate);
+                        });
+                    })
+                        ->orderBy('store_id', 'asc')
+                        ->paginate($this::DEFAULT_PAGINATE);
+                }
             }
-        });
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store with store type filter {$request->input('type')}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store with store type filter {$request->input('type')}.",
             resource: $storeInfoDistriByTypeFilterCache,
         );
     }
@@ -197,37 +231,37 @@ class StoreRepository extends Repository implements StoreInterface
     public function getOneData(int $id): JsonResponse
     {
         $store =  DB::table('store_info_distri')
-        ->select([
-            'store_info_distri.store_id',
-            'store_info_distri.store_name as nama_toko',
-            'store_info_distri.store_alias as alias_toko',
-            'store_info_distri.store_address as alamat_toko',
-            'store_info_distri.store_phone as nomor_telepon_toko',
-            'store_info_distri.store_fax as nomor_fax_toko',
-            'store_info_distri.store_type_id',
-            'store_info_distri.subcabang_id',
-            'store_info_distri.active as status_toko',
-            'store_info_distri.store_code as kode_toko',
-            'store_info_distri_person.owner as nama_pemilik',
-            'store_info_distri_person.nik_owner as nik_pemilik',
-            'store_info_distri_person.email_owner as email_pemilik',
-            'profil_visit.id as visit_id',
-            'profil_visit.user as nama_salesman',
-            'profil_visit.tanggal_visit as tanggal_visit',
-            'profil_visit.time_in as waktu_masuk',
-            'profil_visit.time_out as waktu_keluar',
-            'profil_visit.ket as keterangan',
-            'profil_visit.approval as approval',
-        ])
-        ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
-        ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
-        ->where('store_info_distri.store_id', $id)
-        ->first(); 
+            ->select([
+                'store_info_distri.store_id',
+                'store_info_distri.store_name as nama_toko',
+                'store_info_distri.store_alias as alias_toko',
+                'store_info_distri.store_address as alamat_toko',
+                'store_info_distri.store_phone as nomor_telepon_toko',
+                'store_info_distri.store_fax as nomor_fax_toko',
+                'store_info_distri.store_type_id',
+                'store_info_distri.subcabang_id',
+                'store_info_distri.active as status_toko',
+                'store_info_distri.store_code as kode_toko',
+                'store_info_distri_person.owner as nama_pemilik',
+                'store_info_distri_person.nik_owner as nik_pemilik',
+                'store_info_distri_person.email_owner as email_pemilik',
+                'profil_visit.id as visit_id',
+                'profil_visit.user as nama_salesman',
+                'profil_visit.tanggal_visit as tanggal_visit',
+                'profil_visit.time_in as waktu_masuk',
+                'profil_visit.time_out as waktu_keluar',
+                'profil_visit.ket as keterangan',
+                'profil_visit.approval as approval',
+            ])
+            ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+            ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
+            ->where('store_info_distri.store_id', $id)
+            ->first();
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store {$id}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store {$id}.",
             resource: $store
         );
     }
@@ -235,22 +269,22 @@ class StoreRepository extends Repository implements StoreInterface
     public function getOneOwnerData(int $id, int $ownerId): JsonResponse
     {
         $storeOwnerCache = Cache::remember(
-            "stores:{$id}:owners:{$ownerId}", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($id, $ownerId) 
-        {
-            return StoreInfoDistriPerson::with([
-                'store'
-            ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
-                $query->where('id', $id);
-            })->where('id', $ownerId)
-            ->firstOrFail();
-        });
+            "stores:{$id}:owners:{$ownerId}",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($id, $ownerId) {
+                return StoreInfoDistriPerson::with([
+                    'store'
+                ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
+                    $query->where('id', $id);
+                })->where('id', $ownerId)
+                    ->firstOrFail();
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store owner {$ownerId}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store owner {$ownerId}.",
             resource: $storeOwnerCache,
         );
     }
@@ -258,23 +292,23 @@ class StoreRepository extends Repository implements StoreInterface
     public function getOneVisitData(int $id, int $visitId): JsonResponse
     {
         $storeVisitCache = Cache::remember(
-            "stores:{$id}:visits:{$visitId}", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($id, $visitId) 
-        {
-            return ProfilVisit::with([
-                'store',
-                'user',
-            ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
-                $query->where('id', $id);
-            })->where('id', $visitId)
-            ->firstOrFail();
-        });
+            "stores:{$id}:visits:{$visitId}",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($id, $visitId) {
+                return ProfilVisit::with([
+                    'store',
+                    'user',
+                ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
+                    $query->where('id', $id);
+                })->where('id', $visitId)
+                    ->firstOrFail();
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store visit {$visitId}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store visit {$visitId}.",
             resource: $storeVisitCache,
         );
     }
@@ -284,26 +318,26 @@ class StoreRepository extends Repository implements StoreInterface
         $searchByQuery = $request->query('q');
 
         $storeOrdersCache = Cache::remember(
-            "stores:{$id}:orders", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($searchByQuery, $id) 
-        {
-            return OrderCustomerSales::with([
-                'status',
-                'store',
-                'details',
-            ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
-                $query->where('id', $id);
-            })->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->where('no_order', 'LIKE' , '%' . $searchByQuery . '%');
-            })->orderBy('no_order', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
+            "stores:{$id}:orders",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery, $id) {
+                return OrderCustomerSales::with([
+                    'status',
+                    'store',
+                    'details',
+                ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
+                    $query->where('id', $id);
+                })->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                    $query->where('no_order', 'LIKE', '%' . $searchByQuery . '%');
+                })->orderBy('no_order', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store {$id} orders.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store {$id} orders.",
             resource: $storeOrdersCache,
         );
     }
@@ -318,13 +352,13 @@ class StoreRepository extends Repository implements StoreInterface
             ])->whereHas('store', function (EloquentBuilder $query) use ($id) {
                 $query->where('id', $id);
             })->where('id', $orderId)
-            ->firstOrFail();
+                ->firstOrFail();
         });
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store {$id} order {$orderId}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store {$id} order {$orderId}.",
             resource: $storeOrderCache,
         );
     }
@@ -335,16 +369,16 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeTypesCache = Cache::remember('storeTypes', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
             return StoreType::with('stores')
-            ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->where('store_type_name', 'LIKE', '%' . $searchByQuery . '%');  
-            })->orderBy('store_type_name')
-            ->paginate($this::DEFAULT_PAGINATE);
+                ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                    $query->where('store_type_name', 'LIKE', '%' . $searchByQuery . '%');
+                })->orderBy('store_type_name')
+                ->paginate($this::DEFAULT_PAGINATE);
         });
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store types", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store types",
             resource: $storeTypesCache,
         );
     }
@@ -355,17 +389,17 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeCabangsCache = Cache::remember('storeCabangs', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
             return StoreCabang::with(['province', 'stores'])
-            ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->where('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
-            })->orderBy('nama_cabang')->paginate($this::DEFAULT_PAGINATE);
+                ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                    $query->where('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
+                })->orderBy('nama_cabang')->paginate($this::DEFAULT_PAGINATE);
         });
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch store cabang", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store cabang",
             resource: $storeCabangsCache,
-        );        
+        );
     }
 
     public function storeOneData(Request $request): JsonResponse
@@ -406,13 +440,13 @@ class StoreRepository extends Repository implements StoreInterface
                 'store_code' => $this->randomStoreCode->generateRandomCode(20),
                 'active' => 1,
             ]);
-        
+
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
-                msg: "Successfully create new outlet.", 
+                statusCode: 201,
+                success: true,
+                msg: "Successfully create new outlet.",
                 resource: $store
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -433,13 +467,13 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
                 msg: $e->getMessage(),
             );
-        } 
+        }
     }
 
     public function updateOneData(Request $request, int $id): JsonResponse
@@ -485,8 +519,8 @@ class StoreRepository extends Repository implements StoreInterface
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 200, 
-                success: true, 
+                statusCode: 200,
+                success: true,
                 msg: "Successfully update recent outlet {$id}."
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -507,7 +541,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
@@ -523,8 +557,8 @@ class StoreRepository extends Repository implements StoreInterface
         $store->delete();
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
+            statusCode: 200,
+            success: true,
             msg: "Successfully remove recent outlet {$id}."
         );
     }
@@ -534,7 +568,7 @@ class StoreRepository extends Repository implements StoreInterface
         $validator = Validator::make($request->all(), [
             'owner' => ['required', 'string', 'max:255'],
             'nik_owner' => ['required', 'string', 'max:20'],
-            'email_owner' => ['required', 'string', 'max:100'], 
+            'email_owner' => ['required', 'string', 'max:100'],
         ]);
 
         if ($validator->fails()) {
@@ -544,23 +578,29 @@ class StoreRepository extends Repository implements StoreInterface
                 msg: $validator->errors()->first(),
             );
         }
+
+        $ktp_name = "";
         
+        $photo_other_name = "";
+
         try {
-            $ktp_image = $request->file('ktp_image');
+            if ($request->hasFile('ktp_image') and $request->hasFile('photo_other')) {
+                $ktp_image = $request->file('ktp_image');
 
-            $photo_other_image = $request->file('photo_other');
+                $photo_other_image = $request->file('photo_other');
 
-            $ktp_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+                $ktp_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
 
-            $photo_other_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+                $photo_other_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
 
-            $ktp_destination_path = public_path('images/ktp');
+                $ktp_destination_path = public_path('images/ktp');
 
-            $photo_other_destination_path = public_path('images/other');
+                $photo_other_destination_path = public_path('images/other');
 
-            $ktp_image->move($ktp_destination_path, $ktp_name);
+                $ktp_image->move($ktp_destination_path, $ktp_name);
 
-            $photo_other_image->move($photo_other_destination_path, $photo_other_name);
+                $photo_other_image->move($photo_other_destination_path, $photo_other_name);
+            }
 
             DB::beginTransaction();
 
@@ -569,16 +609,16 @@ class StoreRepository extends Repository implements StoreInterface
                 'owner' => $request->owner,
                 'nik_owner' => $request->nik_owner,
                 'email_owner' => $request->email_owner,
-                'ktp_owner' => $ktp_name,
-                'photo_other' => $photo_other_name,
+                'ktp_owner' => $ktp_name ? $ktp_name : "",
+                'photo_other' => $photo_other_name ? $photo_other_name : "",
             ]);
 
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
-                msg: "Successfully create new owner data for outlet {$id}.", 
+                statusCode: 201,
+                success: true,
+                msg: "Successfully create new owner data for outlet {$id}.",
                 resource: $storeOwner
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -599,13 +639,13 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
                 msg: $e->getMessage(),
             );
-        } 
+        }
     }
 
     public function updateOwnerData(Request $request, int $id, int $ownerId): JsonResponse
@@ -615,7 +655,7 @@ class StoreRepository extends Repository implements StoreInterface
             'nik_owner' => ['required', 'string', 'max:20'],
             'email_owner' => ['required', 'string', 'max:100'],
             'ktp_owner' => ['nullable', 'string', 'max:255'],
-            'photo_other' => ['nullable', 'string', 'max:255'], 
+            'photo_other' => ['nullable', 'string', 'max:255'],
         ]);
 
         if ($validator->fails()) {
@@ -629,7 +669,7 @@ class StoreRepository extends Repository implements StoreInterface
         $storeOwner = StoreInfoDistriPerson::whereHas('store', function (EloquentBuilder $query) use ($id) {
             $query->where('store_id', $id);
         })->where('id', $ownerId)
-        ->firstOrFail();
+            ->firstOrFail();
 
         try {
             DB::beginTransaction();
@@ -645,8 +685,8 @@ class StoreRepository extends Repository implements StoreInterface
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 200, 
-                success: true, 
+                statusCode: 200,
+                success: true,
                 msg: "Successfully update recent owner {$ownerId} data for outlet {$id}."
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -667,13 +707,13 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
                 msg: $e->getMessage(),
             );
-        } 
+        }
     }
 
     public function removeOwnerData(int $id, int $ownerId): JsonResponse
@@ -681,13 +721,13 @@ class StoreRepository extends Repository implements StoreInterface
         $storeOwner = StoreInfoDistriPerson::whereHas('store', function (EloquentBuilder $query) use ($id) {
             $query->where('store_id', $id);
         })->where('id', $ownerId)
-        ->firstOrFail();
+            ->firstOrFail();
 
         $storeOwner->delete();
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
+            statusCode: 200,
+            success: true,
             msg: "Successfully remove recent owner {$ownerId} data for outlet {$id}."
         );
     }
@@ -695,7 +735,7 @@ class StoreRepository extends Repository implements StoreInterface
     public function sendOtp(Request $request): JsonResponse
     {
         $store = StoreInfoDistri::where('store_id', $request->idToko)
-        ->firstOrFail();
+            ->firstOrFail();
 
         try {
             DB::beginTransaction();
@@ -703,9 +743,9 @@ class StoreRepository extends Repository implements StoreInterface
             $objectOrder = $request->objOrder;
 
             $initialNum = 0;
-            
+
             foreach ($objectOrder as $key => $value) {
-                $initialNum += $objectOrder[$key]['qty'];    
+                $initialNum += $objectOrder[$key]['qty'];
             };
 
             $nomor_po = date('YmdHis') . $request->idToko;
@@ -736,7 +776,7 @@ class StoreRepository extends Repository implements StoreInterface
 
             foreach ($objectOrder as $key => $value) {
                 $n++;
-                
+
                 OrderCustomerSalesDetail::create([
                     'orderId' => $id_table,
                     'lineNo' => $n,
@@ -747,13 +787,13 @@ class StoreRepository extends Repository implements StoreInterface
                 ]);
             }
 
-            $kode_otp = $this->generateOTP($id_table, $nomor_po); 
+            $kode_otp = $this->generateOTP($id_table, $nomor_po);
 
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
+                statusCode: 201,
+                success: true,
                 msg: "Pembuatan draft PO berhasil!",
                 resource: [
                     'nomor_po' => $nomor_po,
@@ -778,7 +818,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
@@ -793,7 +833,7 @@ class StoreRepository extends Repository implements StoreInterface
             DB::beginTransaction();
 
             $purchaseOrderOTP = PurchaseOrderOTP::where('nomor_po', $request->nomorPO)
-            ->firstOrFail();
+                ->firstOrFail();
 
             $x = rand(1000, 9999);
 
@@ -804,8 +844,8 @@ class StoreRepository extends Repository implements StoreInterface
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
+                statusCode: 201,
+                success: true,
                 msg: "Resend OTP berhasil!",
                 resource: [
                     'nomor_po' => $request->nomorPO,
@@ -830,7 +870,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
@@ -839,28 +879,28 @@ class StoreRepository extends Repository implements StoreInterface
         }
     }
 
-    public function confirmOtp(Request $request): JsonResponse 
+    public function confirmOtp(Request $request): JsonResponse
     {
         $purchaseOrderOTP = PurchaseOrderOTP::where('nomor_po', $request->nomorPO)
-        ->where('random_otp', $request->inputOtp)
-        ->firstOrFail();
+            ->where('random_otp', $request->inputOtp)
+            ->firstOrFail();
 
         // ubah PO ke 2
         $orderCustomerSales = OrderCustomerSales::where('no_order', $request->nomorPO)
-        ->firstOrFail();
+            ->firstOrFail();
 
         try {
             DB::beginTransaction();
-            
+
             $orderCustomerSales->update([
-                'status_id' => 2, 
+                'status_id' => 2,
             ]);
 
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
+                statusCode: 201,
+                success: true,
                 msg: "Konfirmasi PO anda berhasil!",
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -881,7 +921,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
@@ -924,7 +964,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,

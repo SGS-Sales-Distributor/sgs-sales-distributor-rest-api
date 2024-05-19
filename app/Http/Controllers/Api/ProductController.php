@@ -68,25 +68,25 @@ class ProductController extends Controller
         return $this->productInterface->removeBasicData($productNumber);
     }
 
-    public function index()
-    {
-        try {
-            $todos = ProductInfoDo::with('productInfoLmt')->orderBy('prod_number', 'asc')->paginate(10);
+    // public function index()
+    // {
+    //     try {
+    //         $todos = ProductInfoDo::with('productInfoLmt')->orderBy('prod_number', 'asc')->paginate(10);
             
-            return response()->json([
-                'code' => 200,
-                'status' => true,
-                'total' => $todos->total(),
-                'last_page' => $todos->lastPage(),
-                'data' => $todos->items(),
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 409,
-                'status' => false,
-                'message' => 'failed get data',
-                'error' => $e->getMessage()
-            ], 409);
-        }
-    }
+    //         return response()->json([
+    //             'code' => 200,
+    //             'status' => true,
+    //             'total' => $todos->total(),
+    //             'last_page' => $todos->lastPage(),
+    //             'data' => $todos->items(),
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'code' => 409,
+    //             'status' => false,
+    //             'message' => 'failed get data',
+    //             'error' => $e->getMessage()
+    //         ], 409);
+    //     }
+    // }
 }

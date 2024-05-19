@@ -9,6 +9,8 @@ interface StoreInterface
 {
     public function getAllData(Request $request): JsonResponse;
 
+    public function getAllDataWithoutCallPlans(Request $request): JsonResponse;
+
     public function getAllDataByOrderDateFilter(Request $request): JsonResponse;
 
     public function getOneData(int $id): JsonResponse;

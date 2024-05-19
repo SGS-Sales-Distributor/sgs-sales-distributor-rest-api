@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\ProductInfoDo;
 use App\Models\PublicModel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -17,7 +18,7 @@ class ProductRepository extends Repository implements ProductInterface
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
-
+        
         $products = ProductInfoDo::with([
             'status',
             'brand',
@@ -25,12 +26,15 @@ class ProductRepository extends Repository implements ProductInterface
             'productInfoLmts',
             'dataReturDetails',
         ])
-            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                $query->where('prod_name', 'LIKE', '%' . $searchByQuery . '%')
-                    ->orWhere('prod_number', 'LIKE', '%' . $searchByQuery . '%');
-            })
-            ->orderBy('prod_number', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
+        ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+            $query->where('prod_name', 'LIKE', '%' . $searchByQuery . '%')
+                ->orWhere('prod_number', 'LIKE', '%' . $searchByQuery . '%')
+                ->orWhereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', 'LIKE', '%' . $searchByQuery . '%');
+                })->orderBy('prod_base_price', 'asc');
+        })
+        ->orderBy('prod_number', 'asc')
+        ->paginate($this::DEFAULT_PAGINATE);
 
         return $this->successResponse(
             statusCode: 200,

@@ -13,6 +13,11 @@ class StoreInfoDistriController extends Controller
         return $this->storeInterface->getAllData($request);
     }
 
+    public function getAllWithoutCallPlans(Request $request): JsonResponse
+    {
+        return $this->storeInterface->getAllDataWithoutCallPlans($request);
+    }
+
     public function getOne(int $id): JsonResponse
     {
         return $this->storeInterface->getOneData($id);

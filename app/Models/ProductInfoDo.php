@@ -79,7 +79,7 @@ class ProductInfoDo extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(ProductType::class, 'prod_type_id');
-    }    
+    }
 
     /**
      * One to Many relationship with ProductInfoLmt model.

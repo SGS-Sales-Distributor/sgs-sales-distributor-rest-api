@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
-use App\Http\Controllers\Api\Authentication\BasicAuthController;
 use App\Http\Controllers\Api\JwtAuthentication\JwtAuthController;
 use App\Http\Controllers\Api\MasterCallPlanController;
 use App\Http\Controllers\Api\ProductController;
@@ -12,6 +11,7 @@ use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\SalesmanController;
 use App\Http\Controllers\Api\StoreInfoDistriController;
 use App\Http\Controllers\Api\StoreTypeController;
+use App\Http\Controllers\Api\BrandController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -29,13 +29,6 @@ Route::group([
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
     Route::delete('/profil_visit/{id}', [ProfilVisitController::class, 'removeOne']);
 
-    // program type's routes.
-    Route::get('/program-types', [ProgramTypeController::class, 'getAllData']);
-    Route::get('/program-types/{id}', [ProgramTypeController::class, 'getOneData']);
-    Route::post('/program-types', [ProgramTypeController::class, 'storeNewProgramType']);
-    Route::put('/program-types/{id}', [ProgramTypeController::class, 'updateRecentProgramType']);
-    Route::delete('/program-types/{id}', [ProgramTypeController::class, 'removeRecentProgramType']);
-
     // call plan's routes.
     Route::get('/call-plans', [MasterCallPlanController::class, 'getAll']);
     Route::get('/call-plans/filter', [MasterCallPlanController::class, 'getAllByDateFilter']);
@@ -49,11 +42,6 @@ Route::group([
     Route::post('/master_type_program', [ProgramTypeController::class, 'storeOne']);
     Route::put('/master_type_program/{id}', [ProgramTypeController::class, 'updateOne']);
     Route::delete('/master_type_program/{id}', [ProgramTypeController::class, 'removeOne']);
-
-    Route::get('/type-programs/{id}', [ProgramTypeController::class, 'getOne']);
-    Route::post('/type-programs', [ProgramTypeController::class, 'storeOne']);
-    Route::put('/type-programs', [ProgramTypeController::class, 'updateOne']);
-    Route::delete('/type-programs', [ProgramTypeController::class, 'removeOne']);
 
     Route::get('/getTipeToko', [StoreTypeController::class, 'getTipeToko']);
     Route::get('/store_type', [StoreTypeController::class, 'paging']);
@@ -180,7 +168,6 @@ Route::group([
 // rest api version 2
 Route::group([
     'prefix' => 'v2',
-    'middleware' => 'GrahamCampbell\Throttle\Http\Middleware\ThrottleMiddleware:500,60',
 ], function () {
     Route::group([
         'prefix' => 'auth',
@@ -205,16 +192,20 @@ Route::group([
     ], function () {
         // salesman's routes
         Route::get('/salesmen', [SalesmanController::class, 'getAll']);
-        Route::get('/salesmen/{id}', [SalesmanController::class, 'getOne']);
+        Route::get('/salesmen/{number}', [SalesmanController::class, 'getOne']);
         Route::post('/salesmen/{number}/visits', [SalesmanController::class, 'checkInVisit']);
-        Route::put('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);
+        Route::post('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);
         Route::put('/salesmen/{number}', [SalesmanController::class, 'updateOne']);
         Route::patch('/salesmen/{number}/profiles', [SalesmanController::class, 'updateProfile']);
         Route::delete('/salesmen/{number}', [SalesmanController::class, 'removeOne']);
-        Route::get('/salesmen/{id}/visits', [SalesmanController::class, 'getVisits']);
-        Route::get('/salesmen/{id}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
+        Route::get('/salesmen/{number}/visits', [SalesmanController::class, 'getVisits']);
+        Route::get('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
         Route::get('/salesmen/{number}/call-plans', [SalesmanController::class, 'getCallPlans']);
         Route::get('/salesmen/{number}/call-plans/{callPlanId}', [SalesmanController::class, 'getOneCallPlan']);
+
+        // brand's routes.
+        Route::get('/brands', [BrandController::class, 'getAll']);
+        Route::get('/brands/{id}', [BrandController::class, 'getOne']);
 
         // program type's routes.
         Route::get('/program-types', [ProgramTypeController::class, 'getAllData']);
@@ -241,11 +232,23 @@ Route::group([
         Route::put('/products/{number}', [ProductController::class, 'updateOne']);
         Route::delete('/programs/{number}', [ProductController::class, 'removeOne']);
 
+        Route::get('/store-cabangs', [StoreInfoDistriController::class, 'getStoreCabangs']);
+        Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
+        
         // store's routes.
-        Route::get('/stores', [StoreInfoDistriController::class, 'getAll']);        
+        Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
+        Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
         Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
+        Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
+        Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
+        Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'removeOne']);
+
         Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwners']);
         Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwner']);
+        Route::post('/stores/{id}/owners', [StoreInfoDistriController::class, 'storeOwner']);
+        Route::put('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'updateOwner']);
+        Route::delete('/stores/{id}/owners{ownerId}', [StoreInfoDistriController::class, 'removeOwner']);
+        
         Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisits']);
         Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisit']);
         Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrders']);
