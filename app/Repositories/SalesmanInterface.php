@@ -21,13 +21,15 @@ interface SalesmanInterface
 
     public function updateProfileData(Request $request, string $userNumber): JsonResponse;
 
+    public function changePasswordData(Request $request, string $userNumber): JsonResponse;
+
     public function removeOneData(string $userNumber): JsonResponse;
 
     public function getVisitsData(string $userNumber): JsonResponse;
 
     public function getOneVisitData(string $userNumber, int $visitId): JsonResponse;
 
-    public function getCallPlansData(string $userNumber): JsonResponse;
+    public function getCallPlansData(Request $request, string $userNumber): JsonResponse;
 
     public function getOneCallPlanData(string $userNumber, int $callPlanId): JsonResponse;
 }

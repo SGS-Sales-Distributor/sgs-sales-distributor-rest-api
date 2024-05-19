@@ -16,4 +16,16 @@ interface ProductInterface
     public function updateOneData(Request $request, string $productNumber): JsonResponse;
 
     public function removeOneData(string $productNumber): JsonResponse;
+
+    public function getAllBasic(): JsonResponse;
+    
+    public function getAllBasicWithPaging(Request $request): JsonResponse;
+
+    public function getOneBasic(string $productNumber): JsonResponse;
+
+    public function storeBasicData(Request $request): JsonResponse;
+
+    public function updateBasicData(Request $request, string $productNumber): JsonResponse;
+
+    public function removeBasicData(string $productNumber): JsonResponse;
 }

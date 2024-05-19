@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Repositories\AdminInterface;
 use App\Repositories\BasicAuthentication\BasicAuthInterface;
+use App\Repositories\BrandInterface;
 use App\Repositories\JwtAuthentication\JwtAuthInterface;
 use App\Repositories\MasterCallPlanInterface;
 use App\Repositories\MasterTargetNooInterface;
@@ -12,9 +13,12 @@ use App\Repositories\ProgramInterface;
 use App\Repositories\ProgramTypeInterface;
 use App\Repositories\SalesmanInterface;
 use App\Repositories\StoreInterface;
+use App\Traits\ApiResponse;
 
 abstract class Controller
 {
+    use ApiResponse;
+    
     protected JwtAuthInterface $jwtAuthInterface;
     protected BasicAuthInterface $basicAuthInterface;
     protected StoreInterface $storeInterface;
@@ -25,6 +29,7 @@ abstract class Controller
     protected SalesmanInterface $salesmanInterface;
     protected AdminInterface $adminInterface;
     protected ProductInterface $productInterface;
+    protected BrandInterface $brandInterface;
 
     public function __construct(
         JwtAuthInterface $jwtAuthInterface,
@@ -37,6 +42,7 @@ abstract class Controller
         SalesmanInterface $salesmanInterface,
         AdminInterface $adminInterface,
         ProductInterface $productInterface,
+        BrandInterface $brandInterface,
     )
     {
         $this->jwtAuthInterface = $jwtAuthInterface;
@@ -49,5 +55,6 @@ abstract class Controller
         $this->salesmanInterface = $salesmanInterface;
         $this->adminInterface = $adminInterface;
         $this->productInterface = $productInterface;
+        $this->brandInterface = $brandInterface;
     }
 }

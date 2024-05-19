@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 
 class ProductInfoDo extends Model
 {
@@ -76,7 +79,7 @@ class ProductInfoDo extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(ProductType::class, 'prod_type_id');
-    }    
+    }
 
     /**
      * One to Many relationship with ProductInfoLmt model.
@@ -86,11 +89,39 @@ class ProductInfoDo extends Model
         return $this->hasMany(ProductInfoLmt::class, 'prod_number');
     }
 
+    public function orderDetails(): HasManyThrough
+    {
+        return $this->hasManyThrough(OrderCustomerSalesDetail::class, ProductInfoLmt::class, 'prod_number', 'itemCodeCust');
+    }
+
     /**
      * One to Many relationship with DataReturDetail model.
      */
     public function dataReturDetails(): HasMany
     {
         return $this->hasMany(DataReturDetail::class, 'itemCode');
+    }
+
+    // custom ORM for get all data.
+    public function getAllData($search, array $pagination)
+    {
+        if (!empty($search)) $pagination['offset'] = 0;
+        
+        $products = ProductInfoDo::with([
+            'status',
+            'brand',
+            'type',
+            'productInfoLmts',
+            'orderDetails',
+            'dataReturDetails',
+        ])->when($search, function (Builder $query) use ($search) {
+            $query->where('prod_number', 'like', '%' . $search . '%');
+        })
+        ->orderBy('created_at', 'DESC')
+        ->offset($pagination['offset'])
+        ->limit($pagination['limit'])
+        ->get();
+        
+        return $products;
     }
 }

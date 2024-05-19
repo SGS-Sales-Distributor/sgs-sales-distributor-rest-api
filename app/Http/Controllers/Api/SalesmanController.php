@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -43,6 +44,11 @@ class SalesmanController extends Controller
         return $this->salesmanInterface->updateProfileData($request, $userNumber);
     }
 
+    public function changePassword(Request $request, string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->changePasswordData($request, $userNumber);
+    }
+
     public function removeOne(string $userNumber): JsonResponse
     {
         return $this->salesmanInterface->removeOneData($userNumber);
@@ -58,13 +64,19 @@ class SalesmanController extends Controller
         return $this->salesmanInterface->getOneVisitData($userNumber, $visitId);
     }
 
-    public function getCallPlans(string $userNumber): JsonResponse
+    public function getCallPlans(Request $request, string $userNumber): JsonResponse
     {
-        return $this->salesmanInterface->getCallPlansData($userNumber);
+        return $this->salesmanInterface->getCallPlansData($request, $userNumber);
     }
 
     public function getOneCallPlan(string $userNumber, int $callPlanId): JsonResponse
     {
         return $this->salesmanInterface->getOneCallPlanData($userNumber, $callPlanId);
     }
+
+    public function getCboUserType()
+	{
+		$userType = UserType::with('users')->orderBy('user_type_id')
+        ->paginate(50);
+	}
 }

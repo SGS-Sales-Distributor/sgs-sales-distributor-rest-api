@@ -7,13 +7,13 @@ use Illuminate\Http\Request;
 
 interface ProgramTypeInterface
 {
-    public function getAll(Request $request): JsonResponse;
+    public function getAllData(Request $request): JsonResponse;
 
-    public function getOne(int $id): JsonResponse;
+    public function getOneData(int $id): JsonResponse;
 
-    public function storeOne(Request $request): JsonResponse;
+    public function storeOneData(Request $request): JsonResponse;
 
-    public function updateOne(Request $request, int $id): JsonResponse;
+    public function updateOneData(Request $request, int $id): JsonResponse;
 
-    public function removeOne(int $id): JsonResponse;
+    public function removeOneData(int $id): JsonResponse;
 }

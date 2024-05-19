@@ -6,6 +6,8 @@ use App\Repositories\AdminInterface;
 use App\Repositories\AdminRepository;
 use App\Repositories\BasicAuthentication\BasicAuthInterface;
 use App\Repositories\BasicAuthentication\BasicAuthRepository;
+use App\Repositories\BrandInterface;
+use App\Repositories\BrandRepository;
 use App\Repositories\JwtAuthentication\JwtAuthInterface;
 use App\Repositories\JwtAuthentication\JwtAuthRepository;
 use App\Repositories\MasterCallPlanInterface;
@@ -41,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SalesmanInterface::class, SalesmanRepository::class);
         $this->app->bind(AdminInterface::class, AdminRepository::class);
         $this->app->bind(ProductInterface::class, ProductRepository::class);
+        $this->app->bind(BrandInterface::class, BrandRepository::class);
     }
 
     /**

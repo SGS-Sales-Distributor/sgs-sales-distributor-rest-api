@@ -7,6 +7,8 @@ use App\Models\Program;
 use App\Models\ProgramDetail;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -19,57 +21,116 @@ class ProgramRepository extends Repository implements ProgramInterface
     {
         $searchByQuery = $request->query('q');
 
-        $programsCache = Cache::remember(
-            "programsCache", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($searchByQuery)
-        {
-            return Program::with([
-                'masterTypeProgram', 
-                'details'
-            ])
-            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                $query->where('name_program', 'LIKE', '%' . $searchByQuery . '%');
-            })
-            ->orderBy('id', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
+        // $programs = DB::table('program')
+        //     ->select(
+        //         'program.*',
+        //         'program_detail.condition',
+        //         'program_detail.get',
+        //         'program_detail.product',
+        //         'program_detail.qty',
+        //         'program_detail.disc_val',
+        //         'master_type_program.type',
+        //         'product_info_do.prod_number',
+        //         'product_info_do.prod_barcode_number',
+        //         'product_info_do.prod_universal_number',
+        //         'product_info_do.prod_name',
+        //         'product_info_do.prod_base_price',
+        //         'product_info_do.prod_unit_price',
+        //         'product_info_do.prod_promo_price',
+        //         'product_info_do.prod_special_offer',
+        //         'product_info_do.prod_special_offer_unit',
+        //         'product_info_do.brand_id',
+        //         'product_info_do.category_id',
+        //         'product_info_do.category_sub_id',
+        //         'product_info_do.prod_type_id',
+        //         'product_info_do.supplier_id',
+        //         'product_info_do.prod_status_id',
+        //         'product_info_do.status_aktif',
+        //     )->when($searchByQuery, function (QueryBuilder $query) use ($searchByQuery) {
+        //         $query->where('name_program', 'LIKE', '%' . $searchByQuery . '%');
+        //     })
+        //     ->join('program_detail', function (JoinClause $join) {
+        //         $join->on('program.id', '=', 'program_detail.id_program');
+        //     })
+        //     ->join('master_type_program', 'master_type_program.id_type', '=', 'program.id_type_program')
+        //     ->join('product_info_do', 'program_detail.product', '=', 'product_info_do.prod_number')
+        //     ->orderBy('program.name_program', 'asc')
+        //     ->paginate($this::DEFAULT_PAGINATE);
+
+        $programs = Program::with([
+            'masterTypeProgram', 
+            'details',
+        ])
+        ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+            $query->where('name_program', 'LIKE', '%' . $searchByQuery . '%');
+        })
+        ->where('periode_end', '>', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
+        ->orderBy('id', 'asc')
+        ->paginate($this::DEFAULT_PAGINATE);
+
+        // if ($request->query('q') == "ASC") {
+        //     $programs = Program::with([
+        //         'masterTypeProgram', 
+        //         'details'
+        //     ])
+        //     ->orderBy('name_program', 'ASC')
+        //     ->paginate($this::DEFAULT_PAGINATE);
+        // } 
+
+        // if ($request->query('q') == "DESC") {
+        //     $programs = Program::with([
+        //         'masterTypeProgram', 
+        //         'details'
+        //     ])
+        //     ->orderBy('name_program', 'DESC')
+        //     ->paginate($this::DEFAULT_PAGINATE);
+        // }
+
+        // if ($request->query('q') == "latest") {
+        //     $programs = Program::with([
+        //         'masterTypeProgram', 
+        //         'details'
+        //     ])
+        //     ->orderBy('name_program', 'ASC')
+        //     ->latest()
+        //     ->paginate($this::DEFAULT_PAGINATE);
+        // }
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch programs.", 
-            resource: $programsCache,
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch programs.",
+            resource: $programs,
         );
     }
 
-    public function getAllByPeriodeFilter(Request $request): JsonResponse
+    public function getDataByDateRangeFilter(Request $request): JsonResponse
     {
-        $filterByPerStart = Carbon::parse($request->query('start-date'));
+        $filterByFromDate = Carbon::parse($request->query('from-date'));
 
-        $filterByPerEnd = Carbon::parse($request->query('end-date'));
+        $filterByEndDate = Carbon::parse($request->query('end-date'));
 
         $programByPeriodeFilterCache = Cache::remember(
-            'programByPeriodeFilter', 
-            $this::DEFAULT_CACHE_TTL, 
+            'programByPeriodeFilter',
+            $this::DEFAULT_CACHE_TTL,
             function () use (
-                $filterByPerStart, 
-                $filterByPerEnd,
-            ) 
-        {
-            return Program::with(['masterTypeProgram', 'details'])
-            ->when($filterByPerStart and $filterByPerEnd, function (Builder $query) use ($filterByPerStart, $filterByPerEnd) {
-                $query->whereBetween('periode_start', [$filterByPerStart, $filterByPerEnd])
-                ->whereBetween('periode_end', [$filterByPerStart, $filterByPerEnd]);
-            })
-            ->orderBy('id_type', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
+                $filterByFromDate,
+                $filterByEndDate,
+            ) {
+                return Program::with(['masterTypeProgram', 'details'])
+                    ->when($filterByFromDate and $filterByEndDate, function (Builder $query) use ($filterByFromDate, $filterByEndDate) {
+                        $query->whereBetween('periode_start', [$filterByFromDate, $filterByEndDate]);
+                        // ->whereBetween('periode_end', [$filterByFromDate, $filterByEndDate]);
+                    })
+                    ->orderBy('name_program', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch master type program with filter '{$filterByPerStart}' and '{$filterByPerEnd}'.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch program based on periode start with filter '{$filterByFromDate}' and '{$filterByEndDate}'.",
             resource: $programByPeriodeFilterCache,
         );
     }
@@ -77,22 +138,22 @@ class ProgramRepository extends Repository implements ProgramInterface
     public function getOneData(int $id): JsonResponse
     {
         $programCache = Cache::remember(
-            "program:{$id}", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($id) 
-        {
-            return Program::with([
-                'masterTypeProgram', 
-                'details'
-            ])
-            ->where('id', $id)
-            ->firstOrFail();
-        });
+            "program:{$id}",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($id) {
+                return Program::with([
+                    'masterTypeProgram',
+                    'details'
+                ])
+                    ->where('id', $id)
+                    ->firstOrFail();
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch program {$id}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch program {$id}.",
             resource: $programCache,
         );
     }
@@ -100,14 +161,14 @@ class ProgramRepository extends Repository implements ProgramInterface
     public function getProgramTypeData(int $id): JsonResponse
     {
         $programTypeCache = Cache::remember(
-            "programs:{$id}:types", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($id) 
-        {
-            return MasterTypeProgram::whereHas("programs", function (Builder $query) use ($id) {
-                $query->where('id', $id);
-            })->get();
-        });
+            "programs:{$id}:types",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($id) {
+                return MasterTypeProgram::whereHas("programs", function (Builder $query) use ($id) {
+                    $query->where('id', $id);
+                })->get();
+            }
+        );
 
         return $this->successResponse(
             statusCode: 200,
@@ -120,16 +181,16 @@ class ProgramRepository extends Repository implements ProgramInterface
     public function getProgramDetailsData(int $id): JsonResponse
     {
         $programDetailsCache = Cache::remember(
-            "programs:{$id}:details", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($id) 
-        {
-            return ProgramDetail::whereHas("program", function (Builder $query) use ($id) {
-                $query->where('id', $id);
-            })
-            ->orderBy('id_program', 'asc')
-            ->get();
-        });
+            "programs:{$id}:details",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($id) {
+                return ProgramDetail::whereHas("program", function (Builder $query) use ($id) {
+                    $query->where('id', $id);
+                })
+                    ->orderBy('id_program', 'asc')
+                    ->get();
+            }
+        );
 
         return $this->successResponse(
             statusCode: 200,
@@ -145,7 +206,7 @@ class ProgramRepository extends Repository implements ProgramInterface
             return ProgramDetail::whereHas("program", function (Builder $query) use ($id, $detailId) {
                 $query->where('id', $id);
             })->where('id', $detailId)
-            ->firstOrFail();
+                ->firstOrFail();
         });
 
         return $this->successResponse(
@@ -159,6 +220,7 @@ class ProgramRepository extends Repository implements ProgramInterface
     public function storeOneData(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            'id_type_program' => ['required', 'integer'],
             'nama_program' => ['required', 'string', 'max:255'],
             'keterangan' => ['nullable', 'string'],
             'periode_mulai' => ['required', 'date'],
@@ -167,7 +229,7 @@ class ProgramRepository extends Repository implements ProgramInterface
             'get' => ['nullable', 'string', 'max:255'],
             'code_product' => ['nullable', 'string', 'max:255'],
             'quantity' => ['nullable', 'integer', 'max_digits:10'],
-            'discount' => ['nullable', 'decimal:10,2'],
+            'discount' => ['nullable', 'integer'],
             'created_by' => ['nullable', 'string', 'max:255'],
             'updated_by' => ['nullable', 'string', 'max:255'],
         ]);
@@ -181,22 +243,16 @@ class ProgramRepository extends Repository implements ProgramInterface
             );
         }
 
-        // get value from type input select.
-        $typeProgram = $request->input('typeProgram');
-
-        // get value from product input select.
-        $product = $request->input('product');
-
         try {
             DB::beginTransaction();
 
             $program = Program::create([
-                'id_type_program' => $typeProgram,
+                'id_type_program' => $request->id_type_program,
                 'name_program' => $request->nama_program,
                 'keterangan' => $request->keterangan,
                 'active' => 1,
-                'periode_start' => $request->periode_mulai,
-                'periode_end' => $request->periode_akhir,
+                'periode_start' => Carbon::make($request->periode_mulai)->format('Y-m-d'),
+                'periode_end' => Carbon::make($request->periode_akhir)->format('Y-m-d'),
                 'created_by' => $request->created_by,
                 'updated_by' => $request->updated_by,
             ]);
@@ -205,9 +261,9 @@ class ProgramRepository extends Repository implements ProgramInterface
                 'id_program' => $program->id,
                 'condition' => $request->condition,
                 'get' => $request->get,
-                'product' => $product,
+                'product' => $request->code_product,
                 'qty' => $request->quantity,
-                'disc_val' => $request->discount,
+                'disc_val' => $request->discount / 100,
                 'created_by' => $request->created_by,
                 'updated_by' => $request->updated_by,
             ]);
@@ -238,7 +294,7 @@ class ProgramRepository extends Repository implements ProgramInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
@@ -332,7 +388,7 @@ class ProgramRepository extends Repository implements ProgramInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
@@ -345,10 +401,10 @@ class ProgramRepository extends Repository implements ProgramInterface
     {
         $recentProgram = Program::findOrFail($id);
 
-        $recentProgramDetail = ProgramDetail::where('id_program', $id)->firstOrFail();
+        $recentProgramDetail = ProgramDetail::findOrFail('id_program', $id);
 
         $recentProgramDetail->delete();
-        
+
         $recentProgram->delete();
 
         return $this->successResponse(

@@ -13,6 +13,11 @@ class JwtAuthController extends Controller
         return $this->jwtAuthInterface->login($request);
     }
 
+    public function register(Request $request): JsonResponse
+    {
+        return $this->jwtAuthInterface->register($request);
+    }
+
     public function checkSelf(Request $request): JsonResponse
     {
         return $this->jwtAuthInterface->checkSelf($request);

@@ -51,4 +51,22 @@ class MasterTypeProgram extends Model
     {
         return $this->hasManyThrough(ProgramDetail::class, Program::class, 'id_type_program', 'id_program');
     }
+
+    public function programa()
+    {
+        return $this->belongsTo(program::class, 'id_type_program', 'id_type');
+    }
+
+
+    public function get_data_($search, $arr_pagination)
+    {
+    
+        if (!empty($search)) $arr_pagination['offset'] = 0;
+        
+        $data = MasterTypeProgram::where('id_type', 'like', "%$search%")
+            ->orWhere('type', 'like', "%$search%")
+            ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
+            ->orderBy('id_type', 'ASC')->get();
+        return $data;
+    } 
 }

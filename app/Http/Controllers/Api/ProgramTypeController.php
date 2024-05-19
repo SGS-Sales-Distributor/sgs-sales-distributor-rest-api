@@ -8,28 +8,28 @@ use Illuminate\Http\Request;
 
 class ProgramTypeController extends Controller
 {
-    public function getAllData(Request $request): JsonResponse
+    public function getAll(Request $request): JsonResponse
     {
-        return $this->programTypeInterface->getAll($request);
+        return $this->programTypeInterface->getAllData($request);
     }
 
-    public function getOneData(int $id): JsonResponse
+    public function getOne(int $id): JsonResponse
     {
-        return $this->programTypeInterface->getOne($id);
+        return $this->programTypeInterface->getOneData($id);
     }
 
-    public function storeNewProgramType(Request $request): JsonResponse
+    public function storeOne(Request $request): JsonResponse
     {
-        return $this->programTypeInterface->storeOne($request);
+        return $this->programTypeInterface->storeOneData($request);
     }
 
-    public function updateRecentProgramType(Request $request, int $id): JsonResponse
+    public function updateOne(Request $request, int $id): JsonResponse
     {
-        return $this->programTypeInterface->updateOne($request, $id);
+        return $this->programTypeInterface->updateOneData($request, $id);
     }
 
-    public function removeRecentProgramType(int $id): JsonResponse
+    public function removeOne(int $id): JsonResponse
     {
-        return $this->programTypeInterface->removeOne($id);
+        return $this->programTypeInterface->removeOneData($id);
     }
 }

@@ -9,7 +9,6 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -75,6 +74,78 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             msg: "Successfully login as {$user->email}",
             resource: $body
         ); 
+    }
+
+    public function register(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'number' => ['required', 'string', 'max:10'],
+            'nik' => ['required', 'string', 'max:20'],
+            'fullname' => ['required', 'string', 'max:200'],
+            'phone' => ['required', 'string', 'max:20', 'unique:user_info,phone'],
+            'email' => ['required', 'string', 'email', 'lowercase', 'max:255', 'unique:user_info,email'],
+            'name' => ['required', 'string', 'max:50'],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()],
+            'type_id' => ['required', 'integer'],
+            'status' => ['required', 'integer'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $user = User::create([
+                'number' => $request->number,
+                'nik' => $request->nik,
+                'fullname' => $request->fullname,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'name' => $request->name,
+                'password' => $request->password,
+                'type_id' => $request->type_id,
+                'status' => $request->status,
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201,
+                success: true,
+                msg: "Successfully register new salesman account",
+                resource: $user
+            );             
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } 
     }
 
     public function checkSelf(Request $request): JsonResponse

@@ -13,9 +13,9 @@ class ProgramController extends Controller
         return $this->programInterface->getAllData($request);
     }
 
-    public function getAllDataByPeriodeFilter(Request $request): JsonResponse
+    public function getAllDataByDateRangeFilter(Request $request): JsonResponse
     {
-        return $this->programInterface->getAllByPeriodeFilter($request);
+        return $this->programInterface->getDataByDateRangeFilter($request);
     }
 
     public function getOne(int $id): JsonResponse
