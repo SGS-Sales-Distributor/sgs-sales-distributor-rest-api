@@ -4,56 +4,88 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\OrderCustomerSales;
+use App\Models\OrderCustomerSalesDetail;
+use App\Models\PublicModel;
 use App\Models\StoreInfoDistri;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 
 class PurchaseOrderController extends Controller
 {
 	public function getAll(Request $request): JsonResponse
 	{
-		$searchByQuery = $request->query('q');
+		$url =  URL::current();
 
-		$orders = OrderCustomerSales::withWhereHas('store', function ($query) use ($searchByQuery) {
-			$query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-		})->with(['status', 'details', 'store.cabang'])
-			->orderBy('no_order', 'asc')
-			->paginate(50);
+		$orderModel = new OrderCustomerSales();
+
+		$publicModel = new PublicModel();
+
+		if (!isset($request->search)) {
+			$pagination = $publicModel->paginateDataWithoutSearchQuery(
+				$url,
+				$request->limit,
+				$request->offset,
+			);
+
+			$orders =  $orderModel->getAllData(
+				$request->search,
+				$pagination
+			);
+
+			$countData = $orders->count();
+		} else {
+			$pagination = $publicModel->paginateDataWithSearchQuery(
+				$url,
+				$request->limit,
+				$request->offset,
+				$request->search,
+			);
+
+			$orders = $orderModel->getAllData(
+				$request->search,
+				$pagination
+			);
+
+			$countData = $orders->count();
+		}
+
+		$countData = $orders->count();
+
+		return $publicModel->successResponse(
+			$orders,
+			$countData,
+			$pagination
+		);
+	}
+
+	public function getAllOrder(): JsonResponse
+	{
+		$orders = DB::table('order_customer_sales')
+		->select(
+			'order_customer_sales.id',
+			'order_customer_sales.no_order',
+			'order_customer_sales.tgl_order',
+			'order_customer_sales.cust_code',
+			'order_customer_sales.order_sts',
+			'order_customer_sales.created_at',
+			'order_customer_sales.updated_at',
+			'store_info_distri.store_name',
+		)->join('store_info_distri', 'store_info_distri.store_code', '=', 'order_customer_sales.cust_code')
+		->latest()
+		->take(5)
+		->get();
 
 		return $this->successResponse(
 			statusCode: 200,
 			success: true,
-			msg: "Successfully fetch orders data.",
+			msg: "Successfully fetch orders data",
 			resource: $orders,
 		);
 	}
-
-
-	// public function index()
-	// {
-	//     try {
-
-	//         $todos = order_customer_sales::orderBy('modified_at', 'desc')->paginate(10);
-	//         // $todos = program::with('programa')->get();
-	//         return response()->json([
-	//             'code' => 200,
-	//             'status' => true,
-	//             'total' => $todos->total(),
-	//             'last_page' => $todos->lastPage(),
-	//             'data' => $todos->items(),
-	//         ], 200);
-	//     } catch (\Exception $e) {
-	//         return response()->json([
-	//             'code' => 409,
-	//             'status' => false,
-	//             'message' => 'failed get data',
-	//             'error' => $e->getMessage()
-	//         ], 409);
-	//     }
-	// }
 
 	public function storeOne(Request $request): JsonResponse
 	{
@@ -149,11 +181,13 @@ class PurchaseOrderController extends Controller
 		}
 	}
 
-	public function show(int $id): JsonResponse
+	public function getOne(int $id): JsonResponse
 	{
-		//$todo = $this->MUom->findOrFail($id);
-		//die($id);
-		$todo = OrderCustomerSales::with(['details', 'status', 'store.cabang'])
+		$todo = OrderCustomerSales::with([
+			'details',
+			'status',
+			'store.cabang'
+		])
 			->where('id', $id)
 			->firstOrFail();
 
@@ -169,135 +203,175 @@ class PurchaseOrderController extends Controller
 		} else {
 			return response()->json([
 				'status' => false,
-				'message' => $this->judul_halaman_notif . ' data not found.',
+				'message' => 'Purchase Order data not found.',
 			], 404);
 		}
 	}
 
-	/**
-	 * Show the form for editing the specified resource.
-	 *
-	 * @param  \App\Models\order_customer_sales  $order_customer_sales
-	 * @return \Illuminate\Http\Response
-	 */
-	public function edit(order_customer_sales $order_customer_sales)
+	public function getAllDetail(): JsonResponse
 	{
-		//
-	}
+		$orderDetails = DB::table('order_customer_sales_detail')
+		->select(
+			'order_customer_sales_detail.id',
+			'order_customer_sales_detail.orderId',
+			'order_customer_sales_detail.lineNo',
+			'order_customer_sales_detail.itemCode as item_code',
+			'order_customer_sales_detail.qtyOrder as qty',
+			'order_customer_sales_detail.created_at',
+			'order_customer_sales_detail.updated_at',
+			'order_customer_sales.no_order',
+			'order_customer_sales.status_id',
+			'brand.brand_id',
+			'brand.brand_name as brand',
+			'product_info_do.prod_number as nomor_produk',
+			'product_info_do.prod_name as nama_produk',
+		)
+		->join('product_info_do', 'product_info_do.prod_number', '=', 'order_customer_sales_detail.itemCode')
+		->join('brand', 'brand.brand_id', '=', 'product_info_do.brand_id')
+		->join('order_customer_sales', 'order_customer_sales.id', '=', 'order_customer_sales_detail.orderId')
+		->get();
 
-	/**
-	 * Update the specified resource in storage.
-	 *
-	 * @param  \Illuminate\Http\Request  $request
-	 * @param  \App\Models\order_customer_sales  $order_customer_sales
-	 * @return \Illuminate\Http\Response
-	 */
-	public function update(Request $request, int $id)
-	{
-		//validate incoming request 
-		//echo "<pre>";echo print_r($request);die();
-
-		//$type_id = $request->typeid;
-		$data = $this->validate($request, [
-			'data.type' => 'required',
-		]);
-
-		try {
-			$todo = order_customer_sales::findOrFail($id);
-			$todo->fill($data['data']);
-			$todo->save();
-
-			// order_customer_sales::where('id', $id)->update(['updated_by' => $id, 'updated_at' => date('Y-m-d H:i:s')]);
-
-			//return successful response
-			return response()->json([
-				'status' => true,
-				'message' => $this->judul_halaman_notif . ' updated successfully.',
-				'data' => $todo
-			], 201);
-		} catch (\Exception $e) {
-
-			//return error message
-			return response()->json([
-				'status' => false,
-				'message' => $this->judul_halaman_notif . ' failed update.',
-			], 409);
-		}
-	}
-
-	/**
-	 * Remove the specified resource from storage.
-	 *
-	 * @param  \App\Models\order_customer_sales  $order_customer_sales
-	 * @return \Illuminate\Http\Response
-	 */
-	public function destroy(Request $request, int $id)
-	{
-		//echo "<pre>";echo print_r($request);die();
-		// $id = $request->typeid;
-
-		try {
-			$todo = order_customer_sales::findOrFail($id);
-			// order_customer_sales::where('id', $id)->update(['deleted_by' => $id]);
-			$todo->delete();
-			//untuk me-restore softdelete
-			// $this->MUom->where('id', $id)->withTrashed()->restore();
-			// order_customer_sales::withTrashed()->where('id', $id)->restore();
-
-			//return successful response
-			return response()->json([
-				'status' => true,
-				'message' => $this->judul_halaman_notif . ' deleted successfully.',
-				'user' => $todo
-			], 201);
-		} catch (\Exception $e) {
-
-			//return error message
-			return response()->json([
-				'status' => false,
-				'message' => $this->judul_halaman_notif . ' failed delete.',
-			], 409);
-		}
-	}
-
-	public function getIDstore()
-	{
-		$type = (new store_info_distri())->getIDstore();
-		return response()->json(
-			['data' => $type],
-			200
+		return $this->successResponse(
+			statusCode: 200,
+			success: true,
+			msg: "Successfully fetch order details data.",
+			resource: $orderDetails,
 		);
 	}
 
-	public function getPurchaseOrder(Request $request)
+	public function getOneDetail(int $orderId): JsonResponse
 	{
+		// nama produk, itemCode, brand, qty
+		$orderDetail = DB::table('order_customer_sales_detail')
+			->select(
+				'order_customer_sales_detail.id',
+				'order_customer_sales_detail.orderId',
+				'order_customer_sales_detail.lineNo',
+				'order_customer_sales_detail.itemCode as item_code',
+				'order_customer_sales_detail.qtyOrder as qty',
+				'brand.brand_id',
+				'brand.brand_name as brand',
+				'product_info_do.prod_number as nomor_produk',
+				'product_info_do.prod_name as nama_produk',
+			)
+			->join('product_info_do', 'product_info_do.prod_number', '=', 'order_customer_sales_detail.itemCode')
+			->join('brand', 'brand.brand_id', '=', 'product_info_do.brand_id')
+			->where('order_customer_sales_detail.orderId', '=', $orderId)
+			->get();
 
+		return response()
+			->json([
+				'data' => $orderDetail
+			], 200);
+	}
+
+	public function updateOne(Request $request, int $id): JsonResponse
+	{
+		$validator = Validator::make($request->all(), [
+			'data.no_order' => ['nullable', 'string'],
+			'data.tgl_order' => ['required', 'date'],
+			'data.tipe' => ['required', 'string'],
+			'data.company' => ['required', 'integer'],
+			'data.top' => ['required', 'integer'],
+			'data.cust_code' => ['required', 'string'],
+			'data.ship_code' => ['required', 'string'],
+			'data.whs_code' => ['required', 'integer'],
+			'data.whs_code_to' => ['required', 'integer'],
+			'data.order_sts' => ['required', 'string'],
+			'data.totOrderQty' => ['required', 'integer'],
+			'data.totReleaseQty' => ['required', 'integer'],
+			'data.keterangan' => ['required', 'string'],
+			'data.llb_gabungan_reff' => ['required', 'string'],
+			'data.llb_gabungan_sts' => ['required', 'string'],
+			'data.store_id' => ['required', 'integer'],
+			'data.status_id' => ['required', 'integer']
+		]);
+
+		if ($validator->fails()) {
+			return $this->clientErrorResponse(
+				statusCode: 422,
+				success: false,
+				msg: $validator->errors()->first(),
+			);
+		}
+
+		$order = OrderCustomerSales::where('id', $id)->firstOrFail();
+
+		$data = $request->data;
 
 		try {
+			$array = [
+				'no_order' => $data['no_order'],
+				'tgl_order' => $data['tgl_order'],
+				'tipe' => $data['tipe'],
+				'company' => $data['company'],
+				'top' => $data['top'],
+				'cust_code' => $data['cust_code'],
+				'ship_code' => $data['ship_code'],
+				'whs_code' => $data['whs_code'],
+				'whs_code_to' => $data['whs_code_to'],
+				'order_sts' => $data['order_sts'],
+				'totOrderQty' => $data['totOrderQty'],
+				'totReleaseQty' => $data['totReleaseQty'],
+				'keterangan' => $data['keterangan'],
+				'llb_gabungan_reff' => $data['llb_gabungan_reff'],
+				'llb_gabungan_sts' => $data['llb_gabungan_sts'],
+				'store_id' => $data['store_id'],
+				'status_id' => $data['status_id'],
+			];
 
+			DB::beginTransaction();
 
-			$data = DB::table('order_customer_sales as t1')
-				->join('store_info_distri as t2', 't1.store_id', '=', 't2.store_id')
-				->select(
-					't1.id as ID PO',
-					't1.cust_code as CODE CUSTOMER',
-					't1.order_sts as STATUS ORDER',
-					't1.totOrderQty as QUANTITY',
-					// 't1.store_id as ID OUTLET',
-					't2.store_name as NAMA OUTLET',
-				)
-				->get();
+			$order->update($array);
 
+			DB::commit();
 
+			//return successful response
 			return response()->json([
 				'status' => true,
-				'data' => $data
+				'message' => 'Form Purchase Order updated successfully.',
 			], 200);
 		} catch (\Exception $e) {
+			//return error message
 			return response()->json([
 				'status' => false,
-				'message' => $e->getMessage()
-			], 500);
+				'message' => $e->getMessage(),
+			], 409);
 		}
 	}
+
+	public function removeOne(Request $request, int $id)
+	{
+		$order = OrderCustomerSales::findOrFail($id);
+
+		$order->delete();
+
+		return response()->json([
+			'status' => true,
+			'message' => 'Form Purchaser Order deleted successfully.',
+		], 200);
+	}
+
+	// public function index()
+	// {
+	//     try {
+
+	//         $todos = order_customer_sales::orderBy('modified_at', 'desc')->paginate(10);
+	//         // $todos = program::with('programa')->get();
+	//         return response()->json([
+	//             'code' => 200,
+	//             'status' => true,
+	//             'total' => $todos->total(),
+	//             'last_page' => $todos->lastPage(),
+	//             'data' => $todos->items(),
+	//         ], 200);
+	//     } catch (\Exception $e) {
+	//         return response()->json([
+	//             'code' => 409,
+	//             'status' => false,
+	//             'message' => 'failed get data',
+	//             'error' => $e->getMessage()
+	//         ], 409);
+	//     }
+	// }
 }

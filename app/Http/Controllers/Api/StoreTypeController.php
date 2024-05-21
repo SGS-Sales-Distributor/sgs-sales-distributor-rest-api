@@ -28,16 +28,16 @@ class StoreTypeController extends Controller
 
 		if (!isset($request->search)) {
 			$count = (new StoreType())->count();
-			$arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
+			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 			$todos =(new StoreType())->get_data_($request->search, $arr_pagination);
 		} else {
-			$arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
+			$arr_pagination = (new PublicModel())->paginateDataWithSearchQuery($URL, $request->limit, $request->offset, $request->search);
 			$todos =  (new StoreType())->get_data_($request->search, $arr_pagination);
 			$count = $todos->count();
 		}
 
 		return response()->json(
-			(new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+			(new PublicModel())->successResponse($todos, $count, $arr_pagination),
 			200
 		);
 	}

@@ -53,7 +53,7 @@ class OrderCustomerSalesDetail extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(ProductInfoLmt::class, 'itemCodeCust');
+        return $this->belongsTo(ProductInfoDo::class, 'itemCodeCust');
     }
 
     /**

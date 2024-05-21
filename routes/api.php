@@ -43,6 +43,7 @@ Route::group([
     Route::put('/master_type_program/{id}', [ProgramTypeController::class, 'updateOne']);
     Route::delete('/master_type_program/{id}', [ProgramTypeController::class, 'removeOne']);
 
+    // store type's routes.
     Route::get('/getTipeToko', [StoreTypeController::class, 'getTipeToko']);
     Route::get('/store_type', [StoreTypeController::class, 'paging']);
     Route::post('/store_type', [StoreTypeController::class, 'store']);
@@ -50,7 +51,7 @@ Route::group([
     Route::put('/store_type/{store_type_id}', [StoreTypeController::class, 'update']);
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
     
-    // // CRUD untuk Product Info Do
+    // CRUD untuk Product Info Do
     Route::get('/getMasterProduk', [ProductController::class, 'getAllBasic']);
     Route::get('/product_info_do', [ProductController::class, 'getAllBasicWithPaging']);
     Route::get('/product_info_do/{prod_number}', [ProductController::class, 'getOneBasic']);
@@ -58,11 +59,17 @@ Route::group([
     Route::put('/product_info_do/{prod_number}', [ProductController::class, 'updateBasicData']);
     Route::delete('/product_info_do/{prod_number}', [ProductController::class, 'removeBasicData']);
     
+    // purchase order's routes.
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'getAllOrder']);
     Route::get('/order_customer_sales', [PurchaseOrderController::class, 'getAll']);
     Route::post('/order_customer_sales', [PurchaseOrderController::class, 'storeOne']);
     Route::get('/order_customer_sales/{id}', [PurchaseOrderController::class, 'getOne']);
     Route::put('/order_customer_sales/{id}', [PurchaseOrderController::class, 'updateOne']);
     Route::delete('/order_customer_sales/{id}', [PurchaseOrderController::class, 'removeOne']);
+    
+    // purchase order detail's routes.
+    Route::get('/order_customer_sales_detail', [PurchaseOrderController::class, 'getAllDetail']);
+    Route::get('/order_customer_sales_detail/{orderId}', [PurchaseOrderController::class, 'getOneDetail']);
 
     // CRUD untuk User Info 
     // Router::get('/getUserInfo', 'UserInfoController@getUserInfo');
@@ -187,6 +194,11 @@ Route::group([
     // for create new admin account.
     Route::post('/admins', [AdminController::class, 'storeOneData']);
 
+    Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
+
+    Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
+    Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
+    
     Route::group([
         'middleware' => JwtAuthMiddleware::class,
     ], function () {
@@ -236,9 +248,6 @@ Route::group([
         Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
         
         // store's routes.
-        Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
-        Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
-        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
         Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
         Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
         Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'removeOne']);

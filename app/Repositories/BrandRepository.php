@@ -23,6 +23,7 @@ class BrandRepository extends Repository implements BrandInterface
             ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
                 $query->where('brand_name', 'LIKE', '%' . $searchByQuery . '%');
             })
+            ->where('status', 1)
             ->orderBy('brand_id', 'asc')
             ->paginate($this::DEFAULT_PAGINATE);
         });

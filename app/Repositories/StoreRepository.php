@@ -32,46 +32,62 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $searchByQuery = $request->query('q');
 
-        $storesCache = Cache::remember(
-            "storesCache",
-            $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery) {
-                return DB::table('store_info_distri')
-                    ->select([
-                        'store_info_distri.store_id',
-                        'store_info_distri.store_name as nama_toko',
-                        'store_info_distri.store_alias as alias_toko',
-                        'store_info_distri.store_address as alamat_toko',
-                        'store_info_distri.store_phone as nomor_telepon_toko',
-                        'store_info_distri.store_fax as nomor_fax_toko',
-                        'store_info_distri.store_type_id',
-                        'store_info_distri.subcabang_id',
-                        'store_info_distri.store_code as kode_toko',
-                        'store_info_distri.active as status_toko',
-                        'profil_visit.id as visit_id',
-                        'profil_visit.user as nama_salesman',
-                        'profil_visit.tanggal_visit as tanggal_visit',
-                        'profil_visit.time_in as waktu_masuk',
-                        'profil_visit.time_out as waktu_keluar',
-                        'profil_visit.ket as keterangan',
-                        'profil_visit.approval as approval',
-                        'master_call_plan_detail.date',
-                    ])
-                    ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
-                    ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-                    ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
-                    ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                        $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
-                    })->orderBy('store_info_distri.store_name', 'asc')
-                    ->paginate($this::DEFAULT_PAGINATE);
-            }
-        );
+        // DB::enableQueryLog();
+
+        $currDate = now(env('APP_TIMEZONE'))->format('Y-m-d');
+
+        $stores = DB::table('master_call_plan')
+            ->select([
+                'store_info_distri.store_id',
+                'store_info_distri.store_name as nama_toko',
+                'store_info_distri.store_alias as alias_toko',
+                'store_info_distri.store_address as alamat_toko',
+                'store_info_distri.store_phone as nomor_telepon_toko',
+                'store_info_distri.store_fax as nomor_fax_toko',
+                'store_info_distri.store_type_id',
+                'store_info_distri.subcabang_id',
+                'store_info_distri.store_code as kode_toko',
+                'store_info_distri.active as status_toko',
+                'pv.id as visit_id',
+                'pv.user as nama_salesman',
+                'pv.tanggal_visit as tanggal_visit',
+                'pv.time_in as waktu_masuk',
+                'pv.time_out as waktu_keluar',
+                'pv.ket as keterangan',
+                'pv.approval as approval',
+                'master_call_plan.*',
+                'master_call_plan_detail.store_id',
+                'master_call_plan_detail.date',
+                'user_info.fullname as nama_salesman',
+                'user_info.nik as nik_salesman',
+                'user_info.email as email_salesman',
+            ])
+            ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+            ->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+            ->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+            ->leftJoin(
+                DB::raw('(SELECT * FROM profil_visit WHERE profil_visit.tanggal_visit = ?) AS pv'),
+                function ($join) {
+                    $join->on('pv.tanggal_visit', '=', 'master_call_plan_detail.date')
+                        ->on('pv.store_id', '=', 'master_call_plan_detail.store_id');
+                }
+            )
+            ->where('user_info.user_id', '=', 1)
+            ->where('master_call_plan_detail.date', '=', $currDate)
+            ->when($searchByQuery, function ($query) use ($searchByQuery) {
+                $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
+            })
+            ->orderBy('store_info_distri.store_name', 'asc')
+            ->setBindings([$currDate], 'select')
+            ->get();
+
+        // dd(DB::getQueryLog());
 
         return $this->successResponse(
             statusCode: 200,
             success: true,
             msg: "Successfully fetch store.",
-            resource: $storesCache,
+            resource: $stores,
         );
     }
 
@@ -109,25 +125,24 @@ class StoreRepository extends Repository implements StoreInterface
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
             $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery)
-            {
+            function () use ($searchByQuery) {
                 return StoreInfoDistri::with('owners')
-                ->select(
-                    'store_id',
-                    'store_name as nama_toko',
-                    'store_alias as alias_toko',
-                    'store_address as alamat_toko',
-                    'store_phone as nomor_telepon_toko',
-                    'store_fax as nomor_fax_toko',
-                    'store_type_id',
-                    'subcabang_id',
-                    'store_code as kode_toko',
-                    'active as status_toko',
-                )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                    $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-                })->whereHas('owners')
-                ->orderBy('store_name', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
+                    ->select(
+                        'store_id',
+                        'store_name as nama_toko',
+                        'store_alias as alias_toko',
+                        'store_address as alamat_toko',
+                        'store_phone as nomor_telepon_toko',
+                        'store_fax as nomor_fax_toko',
+                        'store_type_id',
+                        'subcabang_id',
+                        'store_code as kode_toko',
+                        'active as status_toko',
+                    )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                        $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
+                    })->whereHas('owners')
+                    ->orderBy('store_name', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
             }
         );
 
@@ -230,9 +245,11 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getOneData(int $id): JsonResponse
     {
-        $store =  DB::table('store_info_distri')
+        $currDate = now(env('APP_TIMEZONE'))->format('Y-m-d');
+
+        $store = DB::table('master_call_plan')
             ->select([
-                'store_info_distri.store_id',
+                'master_call_plan_detail.store_id',
                 'store_info_distri.store_name as nama_toko',
                 'store_info_distri.store_alias as alias_toko',
                 'store_info_distri.store_address as alamat_toko',
@@ -240,11 +257,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'store_info_distri.store_fax as nomor_fax_toko',
                 'store_info_distri.store_type_id',
                 'store_info_distri.subcabang_id',
-                'store_info_distri.active as status_toko',
                 'store_info_distri.store_code as kode_toko',
-                'store_info_distri_person.owner as nama_pemilik',
-                'store_info_distri_person.nik_owner as nik_pemilik',
-                'store_info_distri_person.email_owner as email_pemilik',
+                'store_info_distri.active as status_toko',
                 'profil_visit.id as visit_id',
                 'profil_visit.user as nama_salesman',
                 'profil_visit.tanggal_visit as tanggal_visit',
@@ -252,11 +266,26 @@ class StoreRepository extends Repository implements StoreInterface
                 'profil_visit.time_out as waktu_keluar',
                 'profil_visit.ket as keterangan',
                 'profil_visit.approval as approval',
+                'master_call_plan.*',
+                'master_call_plan_detail.date',
+                'user_info.fullname as nama_salesman',
+                'user_info.nik as nik_salesman',
+                'user_info.email as email_salesman',
             ])
-            ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
-            ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
-            ->where('store_info_distri.store_id', $id)
+            ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+            ->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+            ->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+            ->leftJoin('profil_visit', function ($join) {
+                $join->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                    ->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id'); // Ensure correct store and visit date match
+            })
+            ->where('user_info.user_id', '=', 1) // Assuming the user_id is an integer
+            ->where('master_call_plan_detail.date', '=', $currDate)
+            ->where('store_info_distri.store_id', '=', $id)
             ->first();
+
+
+
 
         return $this->successResponse(
             statusCode: 200,
@@ -580,7 +609,7 @@ class StoreRepository extends Repository implements StoreInterface
         }
 
         $ktp_name = "";
-        
+
         $photo_other_name = "";
 
         try {
@@ -893,7 +922,7 @@ class StoreRepository extends Repository implements StoreInterface
             DB::beginTransaction();
 
             $orderCustomerSales->update([
-                'status_id' => 2,
+                'status_id' => 1,
             ]);
 
             DB::commit();

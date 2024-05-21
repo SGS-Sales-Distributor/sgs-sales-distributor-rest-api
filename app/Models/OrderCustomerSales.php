@@ -75,4 +75,18 @@ class OrderCustomerSales extends Model
     {
         return $this->hasMany(OrderCustomerSalesDetail::class, 'orderId');
     }
+
+    public function getAllData($search, array $pagination) {
+        if (!empty($search)) $pagination['offset'] = 0;
+        
+        $orders = OrderCustomerSales::withWhereHas('store', function ($query) use ($search) {
+			$query->where('store_name', 'LIKE', '%' . $search . '%');
+		})->with(['status', 'details', 'store.cabang'])
+			->orderBy('created_at', 'desc')
+            ->offset($pagination['offset'])
+            ->limit($pagination['limit'])
+			->get();
+
+        return $orders;
+    }
 }

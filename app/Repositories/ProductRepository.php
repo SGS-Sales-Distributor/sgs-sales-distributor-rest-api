@@ -30,7 +30,7 @@ class ProductRepository extends Repository implements ProductInterface
             $query->where('prod_name', 'LIKE', '%' . $searchByQuery . '%')
                 ->orWhere('prod_number', 'LIKE', '%' . $searchByQuery . '%')
                 ->orWhereHas('brand', function (Builder $query) use ($searchByQuery) {
-                    $query->where('brand_id', 'LIKE', '%' . $searchByQuery . '%');
+                    $query->where('brand_id', '=', $searchByQuery);
                 })->orderBy('prod_base_price', 'asc');
         })
         ->orderBy('prod_number', 'asc')
@@ -443,7 +443,7 @@ class ProductRepository extends Repository implements ProductInterface
 
     public function removeBasicData(string $productNumber): JsonResponse
     {
-        $product = ProductInfoDo::where('prod_number', $productNumber);
+        $product = ProductInfoDo::where('prod_number', $productNumber)->firstOrFail();
 
         $product->delete();
 
