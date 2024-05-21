@@ -193,11 +193,6 @@ Route::group([
 
     // for create new admin account.
     Route::post('/admins', [AdminController::class, 'storeOneData']);
-
-    Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
-
-    Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
-    Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
     
     Route::group([
         'middleware' => JwtAuthMiddleware::class,
@@ -248,6 +243,10 @@ Route::group([
         Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
         
         // store's routes.
+        Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
+        Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
+        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOneWithoutCallPlans']);
+        Route::get('/stores/{id}/call-plans', [StoreInfoDistriController::class, 'getOne']);
         Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
         Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
         Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'removeOne']);

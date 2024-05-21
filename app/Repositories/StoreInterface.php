@@ -15,6 +15,8 @@ interface StoreInterface
 
     public function getOneData(int $id): JsonResponse;
 
+    public function getOneDatawithoutCallPlan(int $id): JsonResponse;
+
     public function storeOneData(Request $request): JsonResponse;
 
     public function updateOneData(Request $request, int $id): JsonResponse;

@@ -284,8 +284,34 @@ class StoreRepository extends Repository implements StoreInterface
             ->where('store_info_distri.store_id', '=', $id)
             ->first();
 
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store {$id}.",
+            resource: $store
+        );
+    }
 
-
+    public function getOneDatawithoutCallPlan(int $id): JsonResponse
+    {
+        $store = DB::table('store_info_distri')
+        ->select(
+            'store_info_distri.store_id',
+            'store_info_distri.store_name as nama_toko',
+            'store_info_distri.store_alias as alias_toko',
+            'store_info_distri.store_address as alamat_toko',
+            'store_info_distri.store_phone as nomor_telepon_toko',
+            'store_info_distri.store_fax as nomor_fax_toko',
+            'store_info_distri.store_type_id',
+            'store_info_distri.subcabang_id',
+            'store_info_distri.store_code as kode_toko',
+            'store_info_distri.active as status_toko',
+            'store_info_distri_person.owner as nama_pemilik',
+            'store_info_distri_person.nik_owner as nik_pemilik',
+            'store_info_distri_person.email_owner as email_pemilik',
+        )->join('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+        ->where('store_info_distri.store_id', '=', $id)
+        ->first();
 
         return $this->successResponse(
             statusCode: 200,
