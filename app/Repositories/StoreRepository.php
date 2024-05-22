@@ -624,8 +624,6 @@ class StoreRepository extends Repository implements StoreInterface
             'owner' => ['required', 'string', 'max:255'],
             'nik_owner' => ['required', 'string', 'max:20'],
             'email_owner' => ['required', 'string', 'max:100'],
-            'ktp_owner' => ['nullable', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
-            'photo_other' => ['nullable', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
         ]);
 
         if ($validator->fails()) {
@@ -636,30 +634,24 @@ class StoreRepository extends Repository implements StoreInterface
             );
         }
 
-        $ktp_name = "";
-
-        $photo_other_name = "";
-
         try {
-            if ($request->hasFile('ktp_owner') and $request->hasFile('photo_other')) {
-                $ktp_image = $request->file('ktp_owner');
-
-                $photo_other_image = $request->file('photo_other');
-
-                $ktp_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
-
-                $photo_other_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
-
-                $ktp_destination_path = public_path('images/ktp');
-
-                $photo_other_destination_path = public_path('images/other');
-
-                $ktp_image->move($ktp_destination_path, $ktp_name);
-
-                $photo_other_image->move($photo_other_destination_path, $photo_other_name);
-            }
-
             DB::beginTransaction();
+
+            $ktp_image = $request->file('ktp_owner');
+
+            $photo_other_image = $request->file('photo_other');
+
+            $ktp_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+
+            $photo_other_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+
+            $ktp_destination_path = base_path('public/images/ktp');
+
+            $photo_other_destination_path = base_path('public/images/other');
+
+            $ktp_image->move($ktp_destination_path, $ktp_name);
+
+            $photo_other_image->move($photo_other_destination_path, $photo_other_name);
 
             $storeOwner = StoreInfoDistriPerson::create([
                 'store_id' => $id,
@@ -950,7 +942,7 @@ class StoreRepository extends Repository implements StoreInterface
             DB::beginTransaction();
 
             $orderCustomerSales->update([
-                'status_id' => 1,
+                'status_id' => 2,
             ]);
 
             DB::commit();
