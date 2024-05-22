@@ -624,6 +624,8 @@ class StoreRepository extends Repository implements StoreInterface
             'owner' => ['required', 'string', 'max:255'],
             'nik_owner' => ['required', 'string', 'max:20'],
             'email_owner' => ['required', 'string', 'max:100'],
+            'ktp_owner' => ['nullable', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
+            'photo_other' => ['nullable', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
         ]);
 
         if ($validator->fails()) {
@@ -639,8 +641,8 @@ class StoreRepository extends Repository implements StoreInterface
         $photo_other_name = "";
 
         try {
-            if ($request->hasFile('ktp_image') and $request->hasFile('photo_other')) {
-                $ktp_image = $request->file('ktp_image');
+            if ($request->hasFile('ktp_owner') and $request->hasFile('photo_other')) {
+                $ktp_image = $request->file('ktp_owner');
 
                 $photo_other_image = $request->file('photo_other');
 
