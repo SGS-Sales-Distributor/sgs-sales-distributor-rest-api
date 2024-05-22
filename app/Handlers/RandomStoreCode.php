@@ -6,7 +6,7 @@ class RandomStoreCode
 {
     public function generateRandomCode(int $length): string
     {       
-        $prefix = 'OS-';
+        $prefix = 'OS';
         $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         $code = $prefix;
 
