@@ -96,9 +96,8 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             function () use ($userNumber) {
                 return ProfilVisit::whereHas("user", function (Builder $query) use ($userNumber) {
                     $query->where('number', $userNumber);
-                })
-                    ->orderBy('user', 'asc')
-                    ->get();
+                })->orderBy('id', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
             }
         );
 
@@ -107,6 +106,26 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             success: true,
             msg: "Successfully fetch salesman {$userNumber} visits data.",
             resource: $salesmanVisitsCache,
+        );
+    }
+
+    public function countVisitsData(string $userNumber): JsonResponse
+    {
+        $currentMonth = now(env('APP_TIMEZONE'))->month;
+        $currentYear = now(env('APP_TIMEZONE'))->year;
+
+        $countVisits = ProfilVisit::whereHas("user", function (Builder $query) use ($userNumber) {
+            $query->where('number', $userNumber);
+        })
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->count();
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully count salesman {$userNumber} visits data.",
+            resource: $countVisits,
         );
     }
 
@@ -160,6 +179,61 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             success: true,
             msg: "Successfully fetch salesman {$userNumber} call plans data.",
             resource: $salesmanCallPlansCache,
+        );
+    }
+
+    public function countVisitBasedOnCallPlansData(string $userNumber): JsonResponse
+    {
+        $currDate = now(env('APP_TIMEZONE'))->format('Y-m-d');
+
+        $subQuery = DB::table('profil_visit')
+            ->select('profil_visit.*')
+            ->where('profil_visit.tanggal_visit', $currDate);
+
+        $countVisitBasedOnCallPlan = DB::table('master_call_plan')
+            ->select([
+                'store_info_distri.store_id',
+                'store_info_distri.store_name as nama_toko',
+                'store_info_distri.store_alias as alias_toko',
+                'store_info_distri.store_address as alamat_toko',
+                'store_info_distri.store_phone as nomor_telepon_toko',
+                'store_info_distri.store_fax as nomor_fax_toko',
+                'store_info_distri.store_type_id',
+                'store_info_distri.subcabang_id',
+                'store_info_distri.store_code as kode_toko',
+                'store_info_distri.active as status_toko',
+                'pv.id as visit_id',
+                'pv.user as nama_salesman',
+                'pv.tanggal_visit as tanggal_visit',
+                'pv.time_in as waktu_masuk',
+                'pv.time_out as waktu_keluar',
+                'pv.ket as keterangan',
+                'pv.approval as approval',
+                'master_call_plan.*',
+                'master_call_plan_detail.store_id',
+                'master_call_plan_detail.date',
+                'user_info.fullname as nama_salesman',
+                'user_info.nik as nik_salesman',
+                'user_info.email as email_salesman',
+            ])
+            ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+            ->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+            ->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+            ->leftJoinSub($subQuery, 'pv', function ($join) {
+                $join->on('pv.tanggal_visit', '=', 'master_call_plan_detail.date')
+                    ->on('pv.store_id', '=', 'master_call_plan_detail.store_id');
+            })
+            ->where('user_info.number', '=', $userNumber)
+            ->where('master_call_plan_detail.date', '=', $currDate)
+            ->whereNotNull('pv.id')
+            ->distinct()
+            ->count();
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully count salesman {$userNumber} visits data based on call plans.",
+            resource: $countVisitBasedOnCallPlan,
         );
     }
 

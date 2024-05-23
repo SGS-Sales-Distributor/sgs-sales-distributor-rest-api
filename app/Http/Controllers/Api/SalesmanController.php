@@ -59,6 +59,11 @@ class SalesmanController extends Controller
         return $this->salesmanInterface->getVisitsData($userNumber);
     }
 
+    public function countVisits(string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->countVisitsData($userNumber);
+    }
+
     public function getOneVisit(string $userNumber, int $visitId): JsonResponse
     {
         return $this->salesmanInterface->getOneVisitData($userNumber, $visitId);
@@ -67,6 +72,11 @@ class SalesmanController extends Controller
     public function getCallPlans(Request $request, string $userNumber): JsonResponse
     {
         return $this->salesmanInterface->getCallPlansData($request, $userNumber);
+    }
+
+    public function countVisitBasedOnCallPlans(string $userNumber): JsonResponse
+    {
+        return $this->salesmanInterface->countVisitBasedOnCallPlansData($userNumber);
     }
 
     public function getOneCallPlan(string $userNumber, int $callPlanId): JsonResponse

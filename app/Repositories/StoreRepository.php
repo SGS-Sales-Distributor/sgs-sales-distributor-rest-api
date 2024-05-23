@@ -30,11 +30,19 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getAllData(Request $request): JsonResponse
     {
+        $jwt = $request->decoded_token;
+
+        $decryptUser = $this->jwtAuthToken->decryptUserData($jwt['user']);
+
         $searchByQuery = $request->query('q');
 
         // DB::enableQueryLog();
 
         $currDate = now(env('APP_TIMEZONE'))->format('Y-m-d');
+
+        $subQuery = DB::table('profil_visit')
+            ->select('profil_visit.*')
+            ->where('profil_visit.tanggal_visit', $currDate);
 
         $stores = DB::table('master_call_plan')
             ->select([
@@ -65,20 +73,16 @@ class StoreRepository extends Repository implements StoreInterface
             ->join('master_call_plan_detail', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
             ->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
             ->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
-            ->leftJoin(
-                DB::raw('(SELECT * FROM profil_visit WHERE profil_visit.tanggal_visit = ?) AS pv'),
-                function ($join) {
-                    $join->on('pv.tanggal_visit', '=', 'master_call_plan_detail.date')
-                        ->on('pv.store_id', '=', 'master_call_plan_detail.store_id');
-                }
-            )
-            ->where('user_info.user_id', '=', 1)
+            ->leftJoinSub($subQuery, 'pv', function ($join) {
+                $join->on('pv.tanggal_visit', '=', 'master_call_plan_detail.date')
+                    ->on('pv.store_id', '=', 'master_call_plan_detail.store_id');
+            })
+            ->where('user_info.number', '=', $decryptUser["number"])
             ->where('master_call_plan_detail.date', '=', $currDate)
             ->when($searchByQuery, function ($query) use ($searchByQuery) {
                 $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
             })
             ->orderBy('store_info_distri.store_name', 'asc')
-            ->setBindings([$currDate], 'select')
             ->get();
 
         // dd(DB::getQueryLog());
@@ -295,23 +299,23 @@ class StoreRepository extends Repository implements StoreInterface
     public function getOneDatawithoutCallPlan(int $id): JsonResponse
     {
         $store = DB::table('store_info_distri')
-        ->select(
-            'store_info_distri.store_id',
-            'store_info_distri.store_name as nama_toko',
-            'store_info_distri.store_alias as alias_toko',
-            'store_info_distri.store_address as alamat_toko',
-            'store_info_distri.store_phone as nomor_telepon_toko',
-            'store_info_distri.store_fax as nomor_fax_toko',
-            'store_info_distri.store_type_id',
-            'store_info_distri.subcabang_id',
-            'store_info_distri.store_code as kode_toko',
-            'store_info_distri.active as status_toko',
-            'store_info_distri_person.owner as nama_pemilik',
-            'store_info_distri_person.nik_owner as nik_pemilik',
-            'store_info_distri_person.email_owner as email_pemilik',
-        )->join('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
-        ->where('store_info_distri.store_id', '=', $id)
-        ->first();
+            ->select(
+                'store_info_distri.store_id',
+                'store_info_distri.store_name as nama_toko',
+                'store_info_distri.store_alias as alias_toko',
+                'store_info_distri.store_address as alamat_toko',
+                'store_info_distri.store_phone as nomor_telepon_toko',
+                'store_info_distri.store_fax as nomor_fax_toko',
+                'store_info_distri.store_type_id',
+                'store_info_distri.subcabang_id',
+                'store_info_distri.store_code as kode_toko',
+                'store_info_distri.active as status_toko',
+                'store_info_distri_person.owner as nama_pemilik',
+                'store_info_distri_person.nik_owner as nik_pemilik',
+                'store_info_distri_person.email_owner as email_pemilik',
+            )->join('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+            ->where('store_info_distri.store_id', '=', $id)
+            ->first();
 
         return $this->successResponse(
             statusCode: 200,

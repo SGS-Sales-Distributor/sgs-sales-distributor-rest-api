@@ -204,10 +204,13 @@ Route::group([
         Route::post('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);
         Route::put('/salesmen/{number}', [SalesmanController::class, 'updateOne']);
         Route::patch('/salesmen/{number}/profiles', [SalesmanController::class, 'updateProfile']);
+        Route::patch('/salesmen/{number}/change-password', [SalesmanController::class, 'changePassword']);
         Route::delete('/salesmen/{number}', [SalesmanController::class, 'removeOne']);
         Route::get('/salesmen/{number}/visits', [SalesmanController::class, 'getVisits']);
+        Route::get('/salesmen/{number}/visits/count', [SalesmanController::class, 'countVisits']);
         Route::get('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
         Route::get('/salesmen/{number}/call-plans', [SalesmanController::class, 'getCallPlans']);
+        Route::get('/salesmen/{number}/call-plans/visits/count', [SalesmanController::class, 'countVisitBasedOnCallPlans']);
         Route::get('/salesmen/{number}/call-plans/{callPlanId}', [SalesmanController::class, 'getOneCallPlan']);
 
         // brand's routes.
