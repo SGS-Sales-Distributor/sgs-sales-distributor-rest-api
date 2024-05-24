@@ -81,7 +81,7 @@ class ProgramTypeRepository extends Repository implements ProgramTypeInterface
         //     msg: "Successfully fetch type program {$id}",
         //     resource: $programTypeCache,
         // );
-        $typeProgram = MasterTypeProgram::where();
+        $typeProgram = MasterTypeProgram::where('id_type', $id)->firstOrFail();
 
         return response()->json([
             'data' => $typeProgram,
@@ -230,7 +230,6 @@ class ProgramTypeRepository extends Repository implements ProgramTypeInterface
 
     public function removeOneData(int $id): JsonResponse
     {
-
         try {
             $todo = MasterTypeProgram::where('id_type', $id)->firstOrFail();
 
