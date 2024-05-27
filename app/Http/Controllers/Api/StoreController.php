@@ -8,6 +8,16 @@ use Illuminate\Http\Request;
 
 class StoreController extends Controller
 {
+    public function getAllWithoutCallPlans(Request $request): JsonResponse
+    {
+        return $this->storeInterface->getAllDataWithoutCallPlans($request);
+    }
+
+    public function getOneWithoutCallPlan($id): JsonResponse
+    {
+        return $this->storeInterface->getOneDataWithoutCallPlan($id);
+    }
+
     public function getAll(Request $request): JsonResponse
     {
         return $this->storeInterface->getAllData($request);
@@ -16,16 +26,6 @@ class StoreController extends Controller
     public function getOne(int $id): JsonResponse
     {
         return $this->storeInterface->getOneData($id);
-    }
-
-    public function getAllWithoutCallPlans(Request $request): JsonResponse
-    {
-        return $this->storeInterface->getAllDataWithoutCallPlans($request);
-    }
-
-    public function getOneWithoutCallPlans(int $id): JsonResponse
-    {
-        return $this->storeInterface->getOneDatawithoutCallPlan($id);
     }
 
     public function storeOne(Request $request): JsonResponse
@@ -101,7 +101,7 @@ class StoreController extends Controller
     public function getAllOrders(Request $request, int $id): JsonResponse
     {
         return $this->storeInterface->getAllOrdersData($request, $id);
-    }   
+    }
 
     public function getOneOrder(int $id, int $orderId): JsonResponse
     {
@@ -127,7 +127,7 @@ class StoreController extends Controller
     {
         return $this->storeInterface->updateOneTypeData($request, $id);
     }
-    
+
     public function removeOneType(int $id): JsonResponse
     {
         return $this->storeInterface->removeOneTypeData($id);

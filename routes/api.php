@@ -76,7 +76,7 @@ Route::group([
     // Router::delete('/user_info/{user_id}', 'UserInfoController@destroy');
     // Router::get('/getCboUserType', 'UserInfoController@getCboUserType');
     // Router::get('/getCboStoreCabang', 'UserInfoController@getCboStoreCabang');
-    Route::get('/getCboOutlet', 'UserInfoController@getCboOutlet');
+    // Route::get('/getCboOutlet', 'UserInfoController@getCboOutlet');
     // Router::get('/getCboPenempatan', 'UserInfoController@getCboPenempatan');
     // Router::get('/getKodeLokasi/{id}', 'UserInfoController@getKodeLokasi');
     // Router::post('/exportData', 'UserInfoController@xportData');
@@ -262,8 +262,8 @@ Route::group([
         Route::delete('/store-types/{id}', [StoreController::class, 'removeOneTypes']);
         
         Route::get('/stores', [StoreController::class, 'getAllWithoutCallPlans']); 
-        Route::get('/stores/{id}', [StoreController::class, 'getOneWithoutCallPlans']);
         Route::get('/stores/call-plans', [StoreController::class, 'getAll']);
+        Route::get('/stores/{id}', [StoreController::class, 'getOneWithoutCallPlan']);
         Route::get('/stores/{id}/call-plans', [StoreController::class, 'getOne']);
         Route::post('/stores', [StoreController::class, 'storeOne']);
         Route::put('/stores/{id}', [StoreController::class, 'updateOne']);

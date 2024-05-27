@@ -18,7 +18,9 @@ class ProductRepository extends Repository implements ProductInterface
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
-        
+
+        $sortByQuery = $request->query('sort');
+
         $products = ProductInfoDo::with([
             'status',
             'brand',
@@ -26,15 +28,120 @@ class ProductRepository extends Repository implements ProductInterface
             'productInfoLmts',
             'dataReturDetails',
         ])
-        ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-            $query->where('prod_name', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('prod_number', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhereHas('brand', function (Builder $query) use ($searchByQuery) {
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->where('prod_name', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhere('prod_number', 'LIKE', '%' . $searchByQuery . '%')
+                    ->orWhereHas('brand', function (Builder $query) use ($searchByQuery) {
+                        $query->where('brand_id', '=', $searchByQuery);
+                    })->orderBy('prod_base_price', 'asc');
+            })
+            ->orderBy('prod_number', 'asc')
+            ->get();
+
+        if ($searchByQuery === 'latest') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
                     $query->where('brand_id', '=', $searchByQuery);
-                })->orderBy('prod_base_price', 'asc');
-        })
-        ->orderBy('prod_number', 'asc')
-        ->paginate($this::DEFAULT_PAGINATE);
+                })
+                ->latest()
+                ->get();
+        }
+
+        if ($sortByQuery === 'highest-price') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', '=', $searchByQuery);
+                })
+                ->orderBy('prod_base_price', 'desc')
+                ->get();
+        }
+
+        if ($sortByQuery === 'lowest-price') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', '=', $searchByQuery);
+                })
+                ->orderBy('prod_base_price', 'asc')
+                ->get();
+        }
+
+        if ($sortByQuery === 'product-name-asc') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', '=', $searchByQuery);
+                })
+                ->orderBy('prod_name', 'asc')
+                ->get();
+        }
+
+        if ($sortByQuery === 'product-name-desc') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', '=', $searchByQuery);
+                })
+                ->orderBy('prod_name', 'desc')
+                ->get();
+        }
+
+        if ($sortByQuery === 'product-number-asc') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', '=', $searchByQuery);
+                })
+                ->orderBy('prod_number', 'asc')
+                ->get();
+        }
+
+        if ($sortByQuery === 'product-number-desc') {
+            $products = ProductInfoDo::with([
+                'status',
+                'brand',
+                'type',
+                'productInfoLmts',
+                'dataReturDetails',
+            ])
+                ->whereHas('brand', function (Builder $query) use ($searchByQuery) {
+                    $query->where('brand_id', '=', $searchByQuery);
+                })
+                ->orderBy('prod_number', 'desc')
+                ->get();
+        }
 
         return $this->successResponse(
             statusCode: 200,
@@ -348,8 +455,8 @@ class ProductRepository extends Repository implements ProductInterface
             'orderDetails',
             'dataReturDetails',
         ])->where('prod_number', $productNumber)
-        ->firstOrFail();
-        
+            ->firstOrFail();
+
         return response()->json([
             'success' => true,
             'message' => "Successfully fetch product {$productNumber}",

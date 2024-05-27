@@ -144,6 +144,42 @@ class PurchaseOrderController extends Controller
 				->get();
 		}
 
+		if ($searchByQuery === 'store-name-asc') {
+			$orders = DB::table('order_customer_sales')
+				->select(
+					'order_customer_sales.id',
+					'order_customer_sales.no_order',
+					'order_customer_sales.tgl_order',
+					'order_customer_sales.cust_code',
+					'order_customer_sales.order_sts',
+					'order_customer_sales.created_at',
+					'order_customer_sales.updated_at',
+					'store_info_distri.store_name',
+				)->join('store_info_distri', 'store_info_distri.store_code', '=', 'order_customer_sales.cust_code')
+				->whereMonth('order_customer_sales.created_at', '=', $currentMonth)
+				->whereYear('order_customer_sales.created_at', '=', $currentYear)
+				->orderBy('store_info_distri.store_name', 'asc')
+				->get();
+		}
+
+		if ($searchByQuery === 'store-name-desc') {
+			$orders = DB::table('order_customer_sales')
+				->select(
+					'order_customer_sales.id',
+					'order_customer_sales.no_order',
+					'order_customer_sales.tgl_order',
+					'order_customer_sales.cust_code',
+					'order_customer_sales.order_sts',
+					'order_customer_sales.created_at',
+					'order_customer_sales.updated_at',
+					'store_info_distri.store_name',
+				)->join('store_info_distri', 'store_info_distri.store_code', '=', 'order_customer_sales.cust_code')
+				->whereMonth('order_customer_sales.created_at', '=', $currentMonth)
+				->whereYear('order_customer_sales.created_at', '=', $currentYear)
+				->orderBy('store_info_distri.store_name', 'desc')
+				->get();
+		}
+
 		return $this->successResponse(
 			statusCode: 200,
 			success: true,

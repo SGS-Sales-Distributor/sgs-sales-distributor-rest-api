@@ -140,35 +140,121 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $searchByQuery = $request->query('q');
 
-        $storeCallPlansCache = Cache::remember(
-            "storeCallPlansCache",
-            $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery) {
-                return StoreInfoDistri::with('owners')
-                    ->select(
-                        'store_id',
-                        'store_name as nama_toko',
-                        'store_alias as alias_toko',
-                        'store_address as alamat_toko',
-                        'store_phone as nomor_telepon_toko',
-                        'store_fax as nomor_fax_toko',
-                        'store_type_id',
-                        'subcabang_id',
-                        'store_code as kode_toko',
-                        'active as status_toko',
-                    )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                        $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-                    })->whereHas('owners')
-                    ->orderBy('store_name', 'asc')
-                    ->paginate($this::DEFAULT_PAGINATE);
-            }
-        );
+        $stores = StoreInfoDistri::with('owners')
+            ->select(
+                'store_id',
+                'store_name as nama_toko',
+                'store_alias as alias_toko',
+                'store_address as alamat_toko',
+                'store_phone as nomor_telepon_toko',
+                'store_fax as nomor_fax_toko',
+                'store_type_id',
+                'subcabang_id',
+                'store_code as kode_toko',
+                'active as status_toko',
+            )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
+            })->whereHas('owners')
+            ->orderBy('store_name', 'asc')
+            ->get();
+
+        if ($searchByQuery === 'latest') {
+            $stores = StoreInfoDistri::with('owners')
+                ->select(
+                    'store_id',
+                    'store_name as nama_toko',
+                    'store_alias as alias_toko',
+                    'store_address as alamat_toko',
+                    'store_phone as nomor_telepon_toko',
+                    'store_fax as nomor_fax_toko',
+                    'store_type_id',
+                    'subcabang_id',
+                    'store_code as kode_toko',
+                    'active as status_toko',
+                )->whereHas('owners')
+                ->latest()
+                ->get();
+        }
+
+        if ($searchByQuery === 'store-name-asc') {
+            $stores = StoreInfoDistri::with('owners')
+                ->select(
+                    'store_id',
+                    'store_name as nama_toko',
+                    'store_alias as alias_toko',
+                    'store_address as alamat_toko',
+                    'store_phone as nomor_telepon_toko',
+                    'store_fax as nomor_fax_toko',
+                    'store_type_id',
+                    'subcabang_id',
+                    'store_code as kode_toko',
+                    'active as status_toko',
+                )->whereHas('owners')
+                ->orderBy('store_name', 'asc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'store-name-desc') {
+            $stores = StoreInfoDistri::with('owners')
+                ->select(
+                    'store_id',
+                    'store_name as nama_toko',
+                    'store_alias as alias_toko',
+                    'store_address as alamat_toko',
+                    'store_phone as nomor_telepon_toko',
+                    'store_fax as nomor_fax_toko',
+                    'store_type_id',
+                    'subcabang_id',
+                    'store_code as kode_toko',
+                    'active as status_toko',
+                )->whereHas('owners')
+                ->orderBy('store_name', 'desc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'store-code-asc') {
+            $stores = StoreInfoDistri::with('owners')
+                ->select(
+                    'store_id',
+                    'store_name as nama_toko',
+                    'store_alias as alias_toko',
+                    'store_address as alamat_toko',
+                    'store_phone as nomor_telepon_toko',
+                    'store_fax as nomor_fax_toko',
+                    'store_type_id',
+                    'subcabang_id',
+                    'store_code as kode_toko',
+                    'active as status_toko',
+                    'created_at',
+                    'updated_at',
+                )->whereHas('owners')
+                ->orderBy('kode_toko', 'asc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'store-code-desc') {
+            $stores = StoreInfoDistri::with('owners')
+                ->select(
+                    'store_id',
+                    'store_name as nama_toko',
+                    'store_alias as alias_toko',
+                    'store_address as alamat_toko',
+                    'store_phone as nomor_telepon_toko',
+                    'store_fax as nomor_fax_toko',
+                    'store_type_id',
+                    'subcabang_id',
+                    'store_code as kode_toko',
+                    'active as status_toko',
+                )->whereHas('owners')
+                ->orderBy('kode_toko', 'desc')
+                ->get();
+        }
 
         return $this->successResponse(
             statusCode: 200,
             success: true,
             msg: "Successfully fetch store based on call plans",
-            resource: $storeCallPlansCache,
+            resource: $stores,
         );
     }
 
@@ -221,7 +307,7 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
-    public function getOneDatawithoutCallPlan(int $id): JsonResponse
+    public function getOneDataWithoutCallPlan($id): JsonResponse
     {
         $store = DB::table('store_info_distri')
             ->select(

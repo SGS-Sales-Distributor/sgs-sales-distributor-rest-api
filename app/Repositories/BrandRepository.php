@@ -72,6 +72,62 @@ class BrandRepository extends Repository implements BrandInterface
             })->orderBy('prod_name', 'asc')
             ->get();
 
+        if ($searchByQuery === 'latest') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->latest()
+                ->get();
+        }
+
+        if ($searchByQuery === 'product-name-asc') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->orderBy('prod_name', 'asc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'product-name-desc') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->orderBy('prod_name', 'desc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'product-number-asc') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->orderBy('prod_number', 'asc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'product-number-desc') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->orderBy('prod_number', 'asc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'highest-price') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->orderBy('prod_base_price', 'desc')
+                ->get();
+        }
+
+        if ($searchByQuery === 'lowest-price') {
+            $products = ProductInfoDo::whereHas('brand', function (Builder $query) use ($id) {
+                $query->where('brand_id', $id);
+            })->with(['status'])
+                ->orderBy('prod_base_price', 'asc')
+                ->get();
+        }
+
         return $this->successResponse(
             statusCode: 200,
             success: true,
