@@ -9,17 +9,12 @@ use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\ProgramTypeController;
 use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\SalesmanController;
-use App\Http\Controllers\Api\StoreInfoDistriController;
+use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
-
-// rest api version 1
 Route::group([
     'prefix' => 'sgs',
 ], function () {
@@ -101,15 +96,15 @@ Route::group([
     // Router::delete('/store_cabang/{id}', 'StoreCabangController@destroy');
 
     // CRUD untuk Store Info Distri
-    // Router::get('/getcboIDCabang', 'StoreInfoDistriController@getcboIDCabang');
-    // Router::get('/getcboIDStore', 'StoreInfoDistriController@getcboIDStore');
-    // Router::get('/getStoreInfoDistri', 'StoreInfoDistriController@getStoreInfoDistri');
+    // Router::get('/getcboIDCabang', 'StoreController@getcboIDCabang');
+    // Router::get('/getcboIDStore', 'StoreController@getcboIDStore');
+    // Router::get('/getStoreInfoDistri', 'StoreController@getStoreInfoDistri');
     // Router::post('/exportDataToko', 'UserInfoController@xportDataToko');
-    // Router::get('/store_info_distri', 'StoreInfoDistriController@paging');
-    // Router::post('/store_info_distri', 'StoreInfoDistriController@store');
-    // Router::get('/store_info_distri/{store_id}', 'StoreInfoDistriController@show');
-    // Router::put('/store_info_distri/{store_id}', 'StoreInfoDistriController@update');
-    // Router::delete('/store_info_distri/{store_id}', 'StoreInfoDistriController@destroy');
+    // Router::get('/store_info_distri', 'StoreController@paging');
+    // Router::post('/store_info_distri', 'StoreController@store');
+    // Router::get('/store_info_distri/{store_id}', 'StoreController@show');
+    // Router::put('/store_info_distri/{store_id}', 'StoreController@update');
+    // Router::delete('/store_info_distri/{store_id}', 'StoreController@destroy');
 
     // CRUD untuk Store Cabang
     // Router::get('visits', 'ProfilVisitController@paging');
@@ -206,6 +201,7 @@ Route::group([
         Route::patch('/salesmen/{number}/profiles', [SalesmanController::class, 'updateProfile']);
         Route::patch('/salesmen/{number}/change-password', [SalesmanController::class, 'changePassword']);
         Route::delete('/salesmen/{number}', [SalesmanController::class, 'removeOne']);
+        
         Route::get('/salesmen/{number}/visits', [SalesmanController::class, 'getVisits']);
         Route::get('/salesmen/{number}/visits/count', [SalesmanController::class, 'countVisits']);
         Route::get('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
@@ -214,17 +210,27 @@ Route::group([
         Route::get('/salesmen/{number}/call-plans/{callPlanId}', [SalesmanController::class, 'getOneCallPlan']);
 
         // brand's routes.
+        Route::get('/brand-groups', [BrandController::class, 'getAllGroups']);
+        Route::get('/brand-groups/{id}', [BrandController::class, 'getOneGroup']);
+        Route::post('/brand-groups', [BrandController::class, 'storeOneGroup']);
+        Route::put('/brand-groups/{id}', [BrandController::class, 'updateOneGroup']);
+        Route::delete('/brand-groups/{id}', [BrandController::class, 'removeOneGroup']);
+
         Route::get('/brands', [BrandController::class, 'getAll']);
         Route::get('/brands/{id}', [BrandController::class, 'getOne']);
+        Route::get('/brands/{id}/products', [BrandController::class, 'getAllProducts']);
+        Route::get('/brands/{id}/products/{number}', [BrandController::class, 'getOneProduct']);
+        Route::post('/brands', [BrandController::class, 'storeOne']);
+        Route::put('/brands/{id}', [BrandController::class, 'updateOne']);
+        Route::delete('/brands/{id}', [BrandController::class, 'removeOne']);
 
-        // program type's routes.
+        // program's routes.
         Route::get('/program-types', [ProgramTypeController::class, 'getAllData']);
         Route::get('/program-types/{id}', [ProgramTypeController::class, 'getOneData']);
         Route::post('/program-types', [ProgramTypeController::class, 'storeNewProgramType']);
         Route::put('/program-types/{id}', [ProgramTypeController::class, 'updateRecentProgramType']);
         Route::delete('/program-types/{id}', [ProgramTypeController::class, 'removeRecentProgramType']);
 
-        // program's routes.
         Route::get('/programs', [ProgramController::class, 'getAll']);
         Route::get('/programs/{id}', [ProgramController::class, 'getOne']);
         Route::get('/programs/filter', [ProgramController::class, 'getAllDataByPeriodeFilter']);
@@ -242,31 +248,40 @@ Route::group([
         Route::put('/products/{number}', [ProductController::class, 'updateOne']);
         Route::delete('/programs/{number}', [ProductController::class, 'removeOne']);
 
-        Route::get('/store-cabangs', [StoreInfoDistriController::class, 'getStoreCabangs']);
-        Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
-        
         // store's routes.
-        Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
-        Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
-        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOneWithoutCallPlans']);
-        Route::get('/stores/{id}/call-plans', [StoreInfoDistriController::class, 'getOne']);
-        Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
-        Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
-        Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'removeOne']);
+        Route::get('/store-cabangs', [StoreController::class, 'getAllCabangs']);
+        Route::get('/store-cabangs/{id}', [StoreController::class, 'getOneCabang']);
+        Route::post('/store-cabangs', [StoreController::class, 'storeOneCabang']);
+        Route::put('/store-cabangs/{id}', [StoreController::class, 'updateOneCabang']);
+        Route::delete('/store-cabangs/{id}', [StoreController::class, 'removeOneCabang']);
+        
+        Route::get('/store-types', [StoreController::class, 'getAllTypes']);
+        Route::get('/store-types/{id}', [StoreController::class, 'getOneTypes']);
+        Route::post('/store-types', [StoreController::class, 'storeOneTypes']);
+        Route::put('/store-types/{id}', [StoreController::class, 'updateOneTypes']);
+        Route::delete('/store-types/{id}', [StoreController::class, 'removeOneTypes']);
+        
+        Route::get('/stores', [StoreController::class, 'getAllWithoutCallPlans']); 
+        Route::get('/stores/{id}', [StoreController::class, 'getOneWithoutCallPlans']);
+        Route::get('/stores/call-plans', [StoreController::class, 'getAll']);
+        Route::get('/stores/{id}/call-plans', [StoreController::class, 'getOne']);
+        Route::post('/stores', [StoreController::class, 'storeOne']);
+        Route::put('/stores/{id}', [StoreController::class, 'updateOne']);
+        Route::delete('/stores/{id}', [StoreController::class, 'removeOne']);
 
-        Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwners']);
-        Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwner']);
-        Route::post('/stores/{id}/owners', [StoreInfoDistriController::class, 'storeOwner']);
-        Route::put('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'updateOwner']);
-        Route::delete('/stores/{id}/owners{ownerId}', [StoreInfoDistriController::class, 'removeOwner']);
+        Route::get('/stores/{id}/owners', [StoreController::class, 'getAllOwners']);
+        Route::get('/stores/{id}/owners/{ownerId}', [StoreController::class, 'getOneOwner']);
+        Route::post('/stores/{id}/owners', [StoreController::class, 'storeOwner']);
+        Route::put('/stores/{id}/owners/{ownerId}', [StoreController::class, 'updateOwner']);
+        Route::delete('/stores/{id}/owners{ownerId}', [StoreController::class, 'removeOwner']);
         
-        Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisits']);
-        Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisit']);
-        Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrders']);
-        Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrder']);
+        Route::get('/stores/{id}/visits', [StoreController::class, 'getAllVisits']);
+        Route::get('/stores/{id}/visits/{visitId}', [StoreController::class, 'getOneVisit']);
+        Route::get('/stores/{id}/orders', [StoreController::class, 'getAllOrders']);
+        Route::get('/stores/{id}/orders/{orderId}', [StoreController::class, 'getOneOrder']);
         
-        Route::post('/stores/send-otp', [StoreInfoDistriController::class, 'sendOtp']);
-        Route::post('/stores/resend-otp', [StoreInfoDistriController::class, 'resendOtp']);
-        Route::post('/stores/confirm-otp', [StoreInfoDistriController::class, 'confirmOtp']);
+        Route::post('/stores/send-otp', [StoreController::class, 'sendOtp']);
+        Route::post('/stores/resend-otp', [StoreController::class, 'resendOtp']);
+        Route::post('/stores/confirm-otp', [StoreController::class, 'confirmOtp']);
     });
 });

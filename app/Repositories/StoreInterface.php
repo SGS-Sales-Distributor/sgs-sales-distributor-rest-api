@@ -22,16 +22,22 @@ interface StoreInterface
     public function updateOneData(Request $request, int $id): JsonResponse;
 
     public function removeOneData(int $id): JsonResponse;
+
+    public function sendOtp(Request $request): JsonResponse;
+
+    public function resendOtp(Request $request): JsonResponse;
+
+    public function confirmOtp(Request $request): JsonResponse;
     
     public function getAllOwnersData(Request $request, int $id): JsonResponse;
     
     public function getOneOwnerData(int $id, int $ownerId): JsonResponse;
 
-    public function storeOwnersData(Request $request, int $id): JsonResponse;
+    public function storeOneOwnersData(Request $request, int $id): JsonResponse;
 
-    public function updateOwnerData(Request $request, int $id, int $ownerId): JsonResponse;
+    public function updateOneOwnerData(Request $request, int $id, int $ownerId): JsonResponse;
 
-    public function removeOwnerData(int $id, int $ownerId): JsonResponse;
+    public function removeOneOwnerData(int $id, int $ownerId): JsonResponse;
 
     public function getAllVisitsData(Request $request, int $id): JsonResponse;
     
@@ -41,13 +47,23 @@ interface StoreInterface
 
     public function getOneOrderData(int $id, int $orderId): JsonResponse;
 
-    public function getStoreTypes(Request $request): JsonResponse;
+    public function getAllTypesData(Request $request): JsonResponse;
 
-    public function getStoreCabangs(Request $request): JsonResponse;
+    public function getOneTypeData(int $id): JsonResponse;
 
-    public function sendOtp(Request $request): JsonResponse;
+    public function storeOneTypeData(Request $request): JsonResponse;
 
-    public function resendOtp(Request $request): JsonResponse;
+    public function updateOneTypeData(Request $request, int $id): JsonResponse;
 
-    public function confirmOtp(Request $request): JsonResponse;
+    public function removeOneTypeData(int $id): JsonResponse;
+
+    public function getAllCabangsData(Request $request): JsonResponse;
+
+    public function getOneCabangData(int $id): JsonResponse;
+
+    public function storeOneCabangData(Request $request): JsonResponse;
+
+    public function updateOneCabangData(Request $request, int $id): JsonResponse;
+
+    public function removeOneCabangData(int $id): JsonResponse;
 }
