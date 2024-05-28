@@ -58,15 +58,15 @@ class ProgramRepository extends Repository implements ProgramInterface
         //     ->paginate($this::DEFAULT_PAGINATE);
 
         $programs = Program::with([
-            'masterTypeProgram', 
+            'type',
             'details',
         ])
-        ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-            $query->where('name_program', 'LIKE', '%' . $searchByQuery . '%');
-        })
-        ->where('periode_end', '>', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
-        ->orderBy('id', 'asc')
-        ->paginate($this::DEFAULT_PAGINATE);
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->where('name_program', 'LIKE', '%' . $searchByQuery . '%');
+            })
+            ->where('periode_end', '>', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
+            ->orderBy('id', 'asc')
+            ->paginate($this::DEFAULT_PAGINATE);
 
         // if ($request->query('q') == "ASC") {
         //     $programs = Program::with([

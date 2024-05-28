@@ -40,7 +40,7 @@ class Program extends Model
     /**
      * Many to One relationship with MasterTypeProgram model.
      */
-    public function masterTypeProgram(): BelongsTo
+    public function type(): BelongsTo
     {
         return $this->belongsTo(MasterTypeProgram::class, 'id_type_program');
     }

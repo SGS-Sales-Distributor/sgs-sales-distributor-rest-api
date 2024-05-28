@@ -225,11 +225,11 @@ Route::group([
         Route::delete('/brands/{id}', [BrandController::class, 'removeOne']);
 
         // program's routes.
-        Route::get('/program-types', [ProgramTypeController::class, 'getAllData']);
-        Route::get('/program-types/{id}', [ProgramTypeController::class, 'getOneData']);
-        Route::post('/program-types', [ProgramTypeController::class, 'storeNewProgramType']);
-        Route::put('/program-types/{id}', [ProgramTypeController::class, 'updateRecentProgramType']);
-        Route::delete('/program-types/{id}', [ProgramTypeController::class, 'removeRecentProgramType']);
+        Route::get('/program-types', [ProgramTypeController::class, 'getAll']);
+        Route::get('/program-types/{id}', [ProgramTypeController::class, 'getOne']);
+        Route::post('/program-types', [ProgramTypeController::class, 'storeOne']);
+        Route::put('/program-types/{id}', [ProgramTypeController::class, 'updateOne']);
+        Route::delete('/program-types/{id}', [ProgramTypeController::class, 'removeOne']);
 
         Route::get('/programs', [ProgramController::class, 'getAll']);
         Route::get('/programs/{id}', [ProgramController::class, 'getOne']);

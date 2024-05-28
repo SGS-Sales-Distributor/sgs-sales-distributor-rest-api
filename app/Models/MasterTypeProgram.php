@@ -52,12 +52,6 @@ class MasterTypeProgram extends Model
         return $this->hasManyThrough(ProgramDetail::class, Program::class, 'id_type_program', 'id_program');
     }
 
-    public function programa()
-    {
-        return $this->belongsTo(program::class, 'id_type_program', 'id_type');
-    }
-
-
     public function get_data_($search, $arr_pagination)
     {
     

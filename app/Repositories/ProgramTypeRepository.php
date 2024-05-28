@@ -26,41 +26,25 @@ class ProgramTypeRepository extends Repository implements ProgramTypeInterface
 
     public function getAllData(Request $request): JsonResponse
     {
-        // $searchByQuery = $request->query('q');
+        $searchByQuery = $request->query('q');
 
-        // $programTypesCache = Cache::remember("programTypesCache", $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
-        //     return MasterTypeProgram::with([
-        //         'programs',
-        //         'programDetails',
-        //     ])
-        //     ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-        //         $query->where('type', 'LIKE', '%' . $searchByQuery . '%');
-        //     })
-        //     ->orderBy('id_type', 'asc')
-        //     ->paginate($this::DEFAULT_PAGINATE);
-        // });
+        $programTypesCache = Cache::remember("programTypesCache", $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
+            return MasterTypeProgram::with([
+                'programs',
+                'programDetails',
+            ])
+            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                $query->where('type', 'LIKE', '%' . $searchByQuery . '%');
+            })
+            ->orderBy('id_type', 'asc')
+            ->paginate($this::DEFAULT_PAGINATE);
+        });
 
-        // return $this->successResponse(
-        //     statusCode: 200,
-        //     success: true,
-        //     msg: "Successfully fetch type programs",
-        //     resource: $programTypesCache,
-        // );
-        $URL =  URL::current();
-
-        if (!isset($request->search)) {
-            $count = (new MasterTypeProgram())->count();
-            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
-            $todos = (new MasterTypeProgram())->get_data_($request->search, $arr_pagination);
-        } else {
-            $arr_pagination = (new PublicModel())->paginateDataWithSearchQuery($URL, $request->limit, $request->offset, $request->search);
-            $todos =  (new MasterTypeProgram())->get_data_($request->search, $arr_pagination);
-            $count = $todos->count();
-        }
-
-        return response()->json(
-            (new PublicModel())->successResponse($todos, $count, $arr_pagination),
-            200
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch type programs",
+            resource: $programTypesCache,
         );
     }
 
