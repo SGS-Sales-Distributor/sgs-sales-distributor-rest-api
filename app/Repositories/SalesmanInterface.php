@@ -25,15 +25,11 @@ interface SalesmanInterface
 
     public function removeOneData(string $userNumber): JsonResponse;
 
-    public function getVisitsData(string $userNumber): JsonResponse;
+    public function getVisitsData(Request $request, string $userNumber): JsonResponse;
 
-    public function countVisitsData(string $userNumber): JsonResponse;
-    
     public function getOneVisitData(string $userNumber, int $visitId): JsonResponse;
 
     public function getCallPlansData(Request $request, string $userNumber): JsonResponse;
 
-    public function countVisitBasedOnCallPlansData(string $userNumber): JsonResponse;
-    
     public function getOneCallPlanData(string $userNumber, int $callPlanId): JsonResponse;
 }

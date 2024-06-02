@@ -14,6 +14,8 @@ use App\Repositories\MasterCallPlanInterface;
 use App\Repositories\MasterCallPlanRepository;
 use App\Repositories\MasterTargetNooInterface;
 use App\Repositories\MasterTargetNooRepository;
+use App\Repositories\OrderCustomerInterface;
+use App\Repositories\OrderCustomerRepository;
 use App\Repositories\ProductInterface;
 use App\Repositories\ProductRepository;
 use App\Repositories\ProgramInterface;
@@ -44,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AdminInterface::class, AdminRepository::class);
         $this->app->bind(ProductInterface::class, ProductRepository::class);
         $this->app->bind(BrandInterface::class, BrandRepository::class);
+        $this->app->bind(OrderCustomerInterface::class, OrderCustomerRepository::class);
     }
 
     /**

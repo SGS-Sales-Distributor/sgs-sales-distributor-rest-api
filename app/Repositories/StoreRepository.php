@@ -808,6 +808,10 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function storeOneOwnersData(Request $request, int $id): JsonResponse
     {
+        $jwt = $request->decoded_token;
+
+        $decryptUser = $this->jwtAuthToken->decryptUserData($jwt['user']);
+
         $validator = Validator::make($request->all(), [
             'owner' => ['required', 'string', 'max:255'],
             'nik_owner' => ['required', 'string', 'max:20'],
@@ -846,8 +850,10 @@ class StoreRepository extends Repository implements StoreInterface
                 'owner' => $request->owner,
                 'nik_owner' => $request->nik_owner,
                 'email_owner' => $request->email_owner,
-                'ktp_owner' => $ktp_name ? $ktp_name : "",
-                'photo_other' => $photo_other_name ? $photo_other_name : "",
+                'ktp_owner' => $ktp_name,
+                'photo_other' => $photo_other_image,
+                'created_by' => $decryptUser['fullname'],
+                'updated_by' => $decryptUser['fullname'],
             ]);
 
             DB::commit();

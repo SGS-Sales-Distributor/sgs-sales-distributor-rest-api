@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SalesmanController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\OrderCustomerController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -206,7 +207,6 @@ Route::group([
         Route::get('/salesmen/{number}/visits/count', [SalesmanController::class, 'countVisits']);
         Route::get('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
         Route::get('/salesmen/{number}/call-plans', [SalesmanController::class, 'getCallPlans']);
-        Route::get('/salesmen/{number}/call-plans/visits/count', [SalesmanController::class, 'countVisitBasedOnCallPlans']);
         Route::get('/salesmen/{number}/call-plans/{callPlanId}', [SalesmanController::class, 'getOneCallPlan']);
 
         // brand's routes.
@@ -271,9 +271,9 @@ Route::group([
 
         Route::get('/stores/{id}/owners', [StoreController::class, 'getAllOwners']);
         Route::get('/stores/{id}/owners/{ownerId}', [StoreController::class, 'getOneOwner']);
-        Route::post('/stores/{id}/owners', [StoreController::class, 'storeOwner']);
-        Route::put('/stores/{id}/owners/{ownerId}', [StoreController::class, 'updateOwner']);
-        Route::delete('/stores/{id}/owners{ownerId}', [StoreController::class, 'removeOwner']);
+        Route::post('/stores/{id}/owners', [StoreController::class, 'storeOneOwner']);
+        Route::put('/stores/{id}/owners/{ownerId}', [StoreController::class, 'updateOneOwner']);
+        Route::delete('/stores/{id}/owners{ownerId}', [StoreController::class, 'removeOneOwner']);
         
         Route::get('/stores/{id}/visits', [StoreController::class, 'getAllVisits']);
         Route::get('/stores/{id}/visits/{visitId}', [StoreController::class, 'getOneVisit']);
@@ -283,5 +283,14 @@ Route::group([
         Route::post('/stores/send-otp', [StoreController::class, 'sendOtp']);
         Route::post('/stores/resend-otp', [StoreController::class, 'resendOtp']);
         Route::post('/stores/confirm-otp', [StoreController::class, 'confirmOtp']);
+
+        // purchase order's routes.
+        Route::get('/orders', [OrderCustomerController::class, 'getAll']);
+        Route::get('/orders/{id}', [OrderCustomerController::class, 'getOne']);
+        Route::get('/orders/{id}/details', [OrderCustomerController::class, 'getAllDetails']);
+        Route::get('/orders/{id}/details/{detailId}', [OrderCustomerController::class, 'getOneDetail']);
+        Route::post('/orders', [OrderCustomerController::class, 'storeOne']);
+        Route::put('/orders/{id}', [OrderCustomerController::class, 'updateOne']);
+        Route::delete('/orders/{id}', [OrderCustomerController::class, 'removeOne']);
     });
 });
