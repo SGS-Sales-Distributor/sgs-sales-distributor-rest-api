@@ -20,60 +20,66 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
 {
     public function login(Request $request): JsonResponse
     {
-        # validate data.
-        $validator = Validator::make($request->all(), [ 
-            'email' => ['required', 'lowercase', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'unique' => ':attribute is unique field!',
-            'min' => ':attribute should be :min in characters',
-            'max' => ':attribute could not more than :max characters',
-            'confirmed' => ':attribute confirmation does not match!',  
-        ]);
-
-        if ($validator->fails()) {
-            return $this->clientErrorResponse(
-                statusCode: 422,
-                success: false,
-                msg: $validator->errors()->first(),
-            );
-        }
-
-        # credential for auth attempt.
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
-            return $this->clientErrorResponse(
-                statusCode: 401,
-                success: false,
-                msg: "Failed to authorized.",
-            );
-        }
-
-        # search user.
-        $user = User::where('email', $request->email)
-        ->firstOrFail();
-
-        # generate tokens.
-        $jwt = $this->jwtAuthToken->generateToken($user);
-        $refreshToken = $this->jwtAuthToken->generateRefreshToken($user);
-
-        $body = [
-            'tokens' => [
-                'access_token' => $jwt,
-                'refresh_token' => $refreshToken,
+        try {
+            $validator = Validator::make($request->all(), [ 
+                'email' => ['required', 'lowercase', 'string', 'email'],
+                'password' => ['required', 'string'],
             ],
-            'type' => 'bearer',
-        ];
-
-        return $this->successResponse(
-            statusCode: 200,
-            success: true,
-            msg: "Successfully login as {$user->email}",
-            resource: $body
-        ); 
+            [
+                'required' => ':attribute is required!',
+                'unique' => ':attribute is unique field!',
+                'min' => ':attribute should be :min in characters',
+                'max' => ':attribute could not more than :max characters',
+                'confirmed' => ':attribute confirmation does not match!',  
+            ]);
+    
+            if ($validator->fails()) {
+                return $this->clientErrorResponse(
+                    statusCode: 422,
+                    success: false,
+                    msg: $validator->errors()->first(),
+                );
+            }
+    
+            # credential for auth attempt.
+            $credentials = $request->only('email', 'password');
+            // print_r($credentials);
+    
+            if (!Auth::attempt($credentials)) {
+                return $this->clientErrorResponse(
+                    statusCode: 401,
+                    success: false,
+                    msg: "Failed to authorized.",
+                );
+            }
+    
+            # search user.
+            $user = User::where('email', $request->email)
+            ->firstOrFail();
+    
+            # generate tokens.
+            $jwt = $this->jwtAuthToken->generateToken($user);
+            $refreshToken = $this->jwtAuthToken->generateRefreshToken($user);
+    
+            $body = [
+                'tokens' => [
+                    'access_token' => $jwt,
+                    'refresh_token' => $refreshToken,
+                ],
+                'type' => 'bearer',
+            ];
+    
+            return $this->successResponse(
+                statusCode: 200,
+                success: true,
+                msg: "Successfully login as {$user->email}",
+                resource: $body
+            ); 
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 400);
+        }
+        # validate data.
+        
     }
 
     public function register(Request $request): JsonResponse
