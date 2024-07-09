@@ -12,7 +12,7 @@ class OrderCustomerRepository extends Repository implements OrderCustomerInterfa
     {
         $searchByQuery = $request->query('q');
 
-        $orderCustomersCache = Cache::remember('')
+        $orderCustomersCache = Cache::remember('');
     }
 
     public function getOneData(int $id): JsonResponse

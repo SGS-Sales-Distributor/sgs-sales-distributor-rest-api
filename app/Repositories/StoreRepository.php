@@ -36,6 +36,7 @@ class StoreRepository extends Repository implements StoreInterface
             "storesCache",
             $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery) {
+                // DB::enableQueryLog();
                 return DB::table('store_info_distri')
                     ->select([
                         'store_info_distri.store_id',
@@ -59,11 +60,19 @@ class StoreRepository extends Repository implements StoreInterface
                     ])
                     ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-                    ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
+                    ->leftJoin('profil_visit', function($leftJoin){
+                        $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
+                                    ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
+                    })
                     ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
                         $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
-                    })->orderBy('store_info_distri.store_name', 'asc')
+                    })
+                    // ->groupBy('master_call_plan_detail.date' )
+                    // ->groupBy('master_call_plan_detail.store_id' )
+                    ->orderBy('store_info_distri.store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
+                    // $log = DB::getQueryLog();
+                    // dd($log);
             }
         );
 
@@ -230,6 +239,7 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getOneData(int $id): JsonResponse
     {
+        //  DB::enableQueryLog();
         $store =  DB::table('store_info_distri')
             ->select([
                 'store_info_distri.store_id',
@@ -253,10 +263,17 @@ class StoreRepository extends Repository implements StoreInterface
                 'profil_visit.ket as keterangan',
                 'profil_visit.approval as approval',
             ])
+            ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
             ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
-            ->leftJoin('profil_visit', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
-            ->where('store_info_distri.store_id', $id)
+            ->leftJoin('profil_visit', function($leftJoin){
+                $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
+                            ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
+            })
+            ->where('master_call_plan_detail.store_id', $id)
+            ->where('master_call_plan_detail.date', Carbon::now()->format('Y-m-d'))
             ->first();
+            //  $log = DB::getQueryLog();
+                    // dd($log);
 
         return $this->successResponse(
             statusCode: 200,

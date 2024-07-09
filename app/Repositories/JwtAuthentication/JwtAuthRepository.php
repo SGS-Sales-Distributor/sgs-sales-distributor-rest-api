@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Exception;
 
 class JwtAuthRepository extends Repository implements JwtAuthInterface
 {
@@ -42,16 +43,16 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         }
 
         # credential for auth attempt.
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
+        $credentials = $request->only('email','password');
+        $atuhAttm = Auth::attempt($credentials);
+        if (!$atuhAttm) {
             return $this->clientErrorResponse(
                 statusCode: 401,
                 success: false,
                 msg: "Failed to authorized.",
             );
         }
-
+        
         # search user.
         $user = User::where('email', $request->email)
         ->firstOrFail();
