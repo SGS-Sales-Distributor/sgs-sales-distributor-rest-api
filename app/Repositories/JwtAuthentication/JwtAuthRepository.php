@@ -49,7 +49,8 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             return $this->clientErrorResponse(
                 statusCode: 401,
                 success: false,
-                msg: "Failed to authorized.",
+                // msg: "Failed to authorized.",
+                msg: "Email atau Password Salah!",
             );
         }
         

@@ -34,7 +34,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storesCache = Cache::remember(
             "storesCache",
-            $this::DEFAULT_CACHE_TTL,
+                $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery) {
                 // DB::enableQueryLog();
                 return DB::table('store_info_distri')
@@ -60,19 +60,19 @@ class StoreRepository extends Repository implements StoreInterface
                     ])
                     ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-                    ->leftJoin('profil_visit', function($leftJoin){
-                        $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                                    ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
-                    })
+                    ->leftJoin('profil_visit', function ($leftJoin) {
+                    $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
+                        ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
+                })
                     ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                        $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
-                    })
+                    $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
+                })
                     // ->groupBy('master_call_plan_detail.date' )
                     // ->groupBy('master_call_plan_detail.store_id' )
                     ->orderBy('store_info_distri.store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
-                    // $log = DB::getQueryLog();
-                    // dd($log);
+                // $log = DB::getQueryLog();
+                // dd($log);
             }
         );
 
@@ -84,13 +84,56 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
+
+    public function showDataStoreInfoDist($id): JsonResponse
+    {
+        // DB::enableQueryLog();
+        $storeShowdata = Cache::remember(
+            "storeShowdata",
+                $this::DEFAULT_CACHE_TTL,
+                function () use ($id) {
+        return DB::table('store_info_distri')
+                    ->select([
+                        'store_info_distri.store_id',
+                        'store_info_distri.store_name as nama_toko',
+                        'store_info_distri.store_alias as alias_toko',
+                        'store_info_distri.store_address as alamat_toko',
+                        'store_info_distri.store_phone as nomor_telepon_toko',
+                        'store_info_distri.store_fax as nomor_fax_toko',
+                        'store_info_distri.store_type_id',
+                        'store_info_distri.subcabang_id',
+                        'store_info_distri.store_code as kode_toko',
+                        'store_info_distri.active as status_toko',
+                        // 'store_info_distri_person.owner as owner',
+                        // 'store_info_distri_person.nik_owner as nikowner',
+                        // 'store_info_distri_person.email_owner as emailOwner',
+                        // 'store_info_distri_person.ktp_owner as ktpOwner',
+                        // 'store_info_distri_person.photo_other as otherPhoto',
+
+                    ])
+                    // ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+                    ->where('store_info_distri.store_id', $id)
+                    ->get();
+                // $log = DB::getQueryLog();
+                // dd($log);
+        });
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch Data Store Info Distri.",
+            resource: $storeShowdata,
+        );
+        // return response()->json($storeShowdata);
+    }
+
     public function getAllOwnersData(Request $request, int $id): JsonResponse
     {
         $searchByQuery = $request->query('q');
 
         $storeOwnersCache = Cache::remember(
             "stores:{$id}:owners",
-            $this::DEFAULT_CACHE_TTL,
+                $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $id) {
                 return StoreInfoDistriPerson::with([
                     'store',
@@ -117,26 +160,25 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
-            $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery)
-            {
+                $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery) {
                 return StoreInfoDistri::with('owners')
-                ->select(
-                    'store_id',
-                    'store_name as nama_toko',
-                    'store_alias as alias_toko',
-                    'store_address as alamat_toko',
-                    'store_phone as nomor_telepon_toko',
-                    'store_fax as nomor_fax_toko',
-                    'store_type_id',
-                    'subcabang_id',
-                    'store_code as kode_toko',
-                    'active as status_toko',
-                )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                    $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-                })->whereHas('owners')
-                ->orderBy('store_name', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
+                    ->select(
+                        'store_id',
+                        'store_name as nama_toko',
+                        'store_alias as alias_toko',
+                        'store_address as alamat_toko',
+                        'store_phone as nomor_telepon_toko',
+                        'store_fax as nomor_fax_toko',
+                        'store_type_id',
+                        'subcabang_id',
+                        'store_code as kode_toko',
+                        'active as status_toko',
+                    )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                        $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
+                    })->whereHas('owners')
+                    ->orderBy('store_name', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
             }
         );
 
@@ -154,7 +196,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeVisitsCache = Cache::remember(
             "stores:{$id}:visits",
-            $this::DEFAULT_CACHE_TTL,
+                $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $id) {
                 return ProfilVisit::with([
                     'store',
@@ -186,11 +228,8 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeInfoDistriByTypeFilterCache = Cache::remember(
             'storeInfoDistriByTypeFilter',
-            $this::DEFAULT_CACHE_TTL,
-            function () use (
-                $filterByDateRange,
-                $filterByDate,
-            ) {
+                $this::DEFAULT_CACHE_TTL,
+            function () use ($filterByDateRange, $filterByDate, ) {
                 if ($filterByDateRange) {
                     return StoreInfoDistri::with([
                         'type',
@@ -240,7 +279,7 @@ class StoreRepository extends Repository implements StoreInterface
     public function getOneData(int $id): JsonResponse
     {
         //  DB::enableQueryLog();
-        $store =  DB::table('store_info_distri')
+        $store = DB::table('store_info_distri')
             ->select([
                 'store_info_distri.store_id',
                 'store_info_distri.store_name as nama_toko',
@@ -265,15 +304,15 @@ class StoreRepository extends Repository implements StoreInterface
             ])
             ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
             ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
-            ->leftJoin('profil_visit', function($leftJoin){
+            ->leftJoin('profil_visit', function ($leftJoin) {
                 $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                            ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
+                    ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
             })
             ->where('master_call_plan_detail.store_id', $id)
             ->where('master_call_plan_detail.date', Carbon::now()->format('Y-m-d'))
             ->first();
-            //  $log = DB::getQueryLog();
-                    // dd($log);
+        //  $log = DB::getQueryLog();
+        // dd($log);
 
         return $this->successResponse(
             statusCode: 200,
@@ -283,11 +322,12 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
+
     public function getOneOwnerData(int $id, int $ownerId): JsonResponse
     {
         $storeOwnerCache = Cache::remember(
             "stores:{$id}:owners:{$ownerId}",
-            $this::DEFAULT_CACHE_TTL,
+                $this::DEFAULT_CACHE_TTL,
             function () use ($id, $ownerId) {
                 return StoreInfoDistriPerson::with([
                     'store'
@@ -310,7 +350,7 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $storeVisitCache = Cache::remember(
             "stores:{$id}:visits:{$visitId}",
-            $this::DEFAULT_CACHE_TTL,
+                $this::DEFAULT_CACHE_TTL,
             function () use ($id, $visitId) {
                 return ProfilVisit::with([
                     'store',
@@ -336,7 +376,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeOrdersCache = Cache::remember(
             "stores:{$id}:orders",
-            $this::DEFAULT_CACHE_TTL,
+                $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $id) {
                 return OrderCustomerSales::with([
                     'status',
@@ -444,6 +484,8 @@ class StoreRepository extends Repository implements StoreInterface
 
         try {
             DB::beginTransaction();
+            $lastId = StoreInfoDistri::orderBy('store_id', 'desc')->first()->store_id;
+            $setLastId = $lastId + 1;
 
             $store = StoreInfoDistri::create([
                 'store_name' => $request->store_name,
@@ -454,7 +496,7 @@ class StoreRepository extends Repository implements StoreInterface
                 'store_type_id' => $request->store_type_id,
                 'subcabang_id' => $request->subcabang_id,
                 'subcabang_idnew' => $request->subcabang_id,
-                'store_code' => $this->randomStoreCode->generateRandomCode(20),
+                'store_code' => 'OS' . implode(',', str_split(sprintf('%03d', $request->subcabang_id), 3)) . "-" . sprintf('%04d', $setLastId),
                 'active' => 1,
             ]);
 
@@ -597,7 +639,7 @@ class StoreRepository extends Repository implements StoreInterface
         }
 
         $ktp_name = "";
-        
+
         $photo_other_name = "";
 
         try {
@@ -763,7 +805,8 @@ class StoreRepository extends Repository implements StoreInterface
 
             foreach ($objectOrder as $key => $value) {
                 $initialNum += $objectOrder[$key]['qty'];
-            };
+            }
+            ;
 
             $nomor_po = date('YmdHis') . $request->idToko;
 
