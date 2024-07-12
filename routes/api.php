@@ -258,5 +258,7 @@ Route::group([
         Route::post('/stores/send-otp', [StoreInfoDistriController::class, 'sendOtp']);
         Route::post('/stores/resend-otp', [StoreInfoDistriController::class, 'resendOtp']);
         Route::post('/stores/confirm-otp', [StoreInfoDistriController::class, 'confirmOtp']);
+        Route::get('/stores/countPObyStore', [StoreInfoDistriController::class, 'countPObyStore']);
+        Route::get('/stores/storeNameGet', [StoreInfoDistriController::class, 'storeNameGet']);
     });
 });
