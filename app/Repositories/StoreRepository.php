@@ -10,6 +10,7 @@ use App\Models\StoreCabang;
 use App\Models\StoreInfoDistri;
 use App\Models\StoreInfoDistriPerson;
 use App\Models\StoreType;
+use Auth;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
@@ -18,6 +19,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use SebastianBergmann\Environment\Console;
+use App\Models\User;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class StoreRepository extends Repository implements StoreInterface
 {
@@ -791,14 +795,42 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
+    public function countPObyStore(int $storeId)
+    {
+        // DB::enableQueryLog();
+        $count = DB::table('order_customer_sales')->
+        where('store_id', $storeId)->
+        selectRaw('count(id) as jmlPo')
+        ->pluck('jmlPo')
+        ->first();
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+        return $count;
+        
+    }
+
+    public function storeNameGet(int $storeId){
+        $storeInfo = DB::table('store_info_distri')
+        ->where('store_id', $storeId)
+        ->select('store_name as namaToko')
+        ->pluck('namaToko')
+        ->first();
+        
+        return $storeInfo;
+    }
+
     public function sendOtp(Request $request): JsonResponse
     {
         $store = StoreInfoDistri::where('store_id', $request->idToko)
-            ->firstOrFail();
+        ->firstOrFail();
 
         try {
             DB::beginTransaction();
 
+            $countPo =  $this->countPObyStore($request->idToko);
+            $storeName = $this->storeNameGet($request->idToko);
+            
             $objectOrder = $request->objOrder;
 
             $initialNum = 0;
@@ -806,9 +838,13 @@ class StoreRepository extends Repository implements StoreInterface
             foreach ($objectOrder as $key => $value) {
                 $initialNum += $objectOrder[$key]['qty'];
             }
-            ;
-
-            $nomor_po = date('YmdHis') . $request->idToko;
+            
+            //generate NO PO
+            $dayPo = date('d');
+            $monthPo = date('m');
+            $yearP0 = date('Y');
+            $generTeNomerPo = $countPo.$dayPo.$monthPo.$yearP0.$request->idToko;
+            $nomor_po = $generTeNomerPo;
 
             $id_table = OrderCustomerSales::create([
                 'no_order' => $nomor_po,
@@ -827,9 +863,11 @@ class StoreRepository extends Repository implements StoreInterface
                 'llb_gabungan_reff' => null,
                 'llb_gabungan_sts' => "Open",
                 'uploaded_at' => date('Y-m-d H:i:s'),
-                'uploaded_by' => "iduser",
+                'uploaded_by' => $storeName,
                 'store_id' => $request->idToko,
                 'status_id' => 1,
+                'created_by' => $request->userNumber,
+                'updated_by' => $request->userNumber,
             ])->id;
 
             $n = 0;
@@ -843,7 +881,11 @@ class StoreRepository extends Repository implements StoreInterface
                     'itemCodeCust' => $objectOrder[$key]['prodNumber'],
                     'itemCode' => $objectOrder[$key]['prodNumber'],
                     'qtyOrder' => $objectOrder[$key]['qty'],
+                    'releaseOrder' =>0,
+                    'add_disc_1' => 0,
                     'add_disc_2' => $objectOrder[$key]['statusBonus'],
+                    'created_by' => $request->userNumber,
+                    'updated_by' => $request->userNumber,
                 ]);
             }
 
