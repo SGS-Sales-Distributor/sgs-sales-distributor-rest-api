@@ -162,6 +162,7 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $searchByQuery = $request->query('q');
 
+        DB::enableQueryLog();
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
                 $this::DEFAULT_CACHE_TTL,
@@ -183,6 +184,8 @@ class StoreRepository extends Repository implements StoreInterface
                     })->whereHas('owners')
                     ->orderBy('store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
+                    $log = DB::getQueryLog();
+                    dd($log);
             }
         );
 
@@ -502,6 +505,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'subcabang_idnew' => $request->subcabang_id,
                 'store_code' => 'OS' . implode(',', str_split(sprintf('%03d', $request->subcabang_id), 3)) . "-" . sprintf('%04d', $setLastId),
                 'active' => 1,
+                'created_by' => $request->userNumber,
+                'updated_by' => $request->userNumber,
             ]);
 
             DB::commit();
