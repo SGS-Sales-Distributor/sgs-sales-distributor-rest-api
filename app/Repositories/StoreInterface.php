@@ -49,6 +49,6 @@ interface StoreInterface
 
     public function confirmOtp(Request $request): JsonResponse;
 
-    public function showDataStoreInfoDist(Request $request): JsonResponse;
+    public function showDataStoreInfoDist(Request $request, int $id): JsonResponse;
     
 }

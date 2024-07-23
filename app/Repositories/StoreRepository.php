@@ -89,14 +89,10 @@ class StoreRepository extends Repository implements StoreInterface
     }
 
 
-    public function showDataStoreInfoDist($id): JsonResponse
+    public function showDataStoreInfoDist(Request $request, int $id): JsonResponse
     {
         // DB::enableQueryLog();
-        $storeShowdata = Cache::remember(
-            "storeShowdata",
-                $this::DEFAULT_CACHE_TTL,
-                function () use ($id) {
-        return DB::table('store_info_distri')
+        $storeShowdata = DB::table('store_info_distri')
                     ->select([
                         'store_info_distri.store_id',
                         'store_info_distri.store_name as nama_toko',
@@ -108,19 +104,19 @@ class StoreRepository extends Repository implements StoreInterface
                         'store_info_distri.subcabang_id',
                         'store_info_distri.store_code as kode_toko',
                         'store_info_distri.active as status_toko',
-                        // 'store_info_distri_person.owner as owner',
-                        // 'store_info_distri_person.nik_owner as nikowner',
-                        // 'store_info_distri_person.email_owner as emailOwner',
-                        // 'store_info_distri_person.ktp_owner as ktpOwner',
-                        // 'store_info_distri_person.photo_other as otherPhoto',
+                        'store_info_distri_person.owner as owner',
+                        'store_info_distri_person.nik_owner as nikowner',
+                        'store_info_distri_person.email_owner as emailOwner',
+                        'store_info_distri_person.ktp_owner as ktpOwner',
+                        'store_info_distri_person.photo_other as otherPhoto',
 
                     ])
-                    // ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+                    ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
                     ->where('store_info_distri.store_id', $id)
-                    ->get();
+                    ->first();
                 // $log = DB::getQueryLog();
                 // dd($log);
-        });
+        ;
 
         return $this->successResponse(
             statusCode: 200,
