@@ -113,9 +113,9 @@ class StoreInfoDistriController extends Controller
         return $this->storeInterface->confirmOtp($request);
     }
 
-    public function showDataStoreInfoDist(Request $request): JsonResponse
+    public function showDataStoreInfoDist(Request $request,int $id): JsonResponse
     {
-        return $this->storeInterface->showDataStoreInfoDist($request);
+        return $this->storeInterface->showDataStoreInfoDist($request,$id);
     }
     
 }
