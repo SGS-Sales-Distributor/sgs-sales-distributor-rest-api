@@ -72,8 +72,8 @@ class StoreRepository extends Repository implements StoreInterface
                     $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
                 })
                 ->orderBy('store_info_distri.store_name', 'asc')
-                ->groupBy('store_info_distri.store_id' )
-                ->groupBy('master_call_plan_detail.date' )
+                // ->groupBy('store_info_distri.store_id' )
+                // ->groupBy('master_call_plan_detail.date' )
                     ->paginate($this::DEFAULT_PAGINATE);
                 //$log = DB::getQueryLog();
                 //dd($log);
