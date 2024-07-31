@@ -64,8 +64,6 @@ class StoreRepository extends Repository implements StoreInterface
                     ])
                     ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-                    ->groupBy('master_call_plan_detail.date' )
-                    ->groupBy('master_call_plan_detail.store_id' )
                     ->leftJoin('profil_visit', function ($leftJoin) {
                     $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
                         ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
@@ -73,7 +71,9 @@ class StoreRepository extends Repository implements StoreInterface
                     ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
                     $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
                 })
-                    ->orderBy('store_info_distri.store_name', 'asc')
+                ->orderBy('store_info_distri.store_name', 'asc')
+                ->groupBy('store_info_distri.store_id' )
+                ->groupBy('master_call_plan_detail.date' )
                     ->paginate($this::DEFAULT_PAGINATE);
                 //$log = DB::getQueryLog();
                 //dd($log);
