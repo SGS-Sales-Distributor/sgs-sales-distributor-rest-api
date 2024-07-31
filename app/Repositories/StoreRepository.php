@@ -40,7 +40,7 @@ class StoreRepository extends Repository implements StoreInterface
             "storesCache",
                 $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery) {
-                 DB::enableQueryLog();
+                //  DB::enableQueryLog();
                 return DB::table('store_info_distri')
                     ->select([
                         'store_info_distri.store_id',
@@ -72,11 +72,11 @@ class StoreRepository extends Repository implements StoreInterface
                     $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
                 })
                     // ->groupBy('master_call_plan_detail.date' )
-                    // ->groupBy('master_call_plan_detail.store_id' )
+                    ->groupBy('master_call_plan_detail.store_id' )
                     ->orderBy('store_info_distri.store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
-                $log = DB::getQueryLog();
-                dd($log);
+                //$log = DB::getQueryLog();
+                //dd($log);
             }
         );
 
