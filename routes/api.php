@@ -174,6 +174,7 @@ Route::group([
     ], function () {
         Route::post('/login', [JwtAuthController::class, 'login']);
         Route::post('/refresh', [JwtAuthController::class, 'refreshToken']);
+        Route::post('/register', [JwtAuthController::class, 'register']);
         Route::group([
             'middleware' => JwtAuthMiddleware::class
         ], function () {

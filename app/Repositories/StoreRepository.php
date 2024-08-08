@@ -65,10 +65,12 @@ class StoreRepository extends Repository implements StoreInterface
                     ])
                     ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-                    ->leftJoin('profil_visit', function ($leftJoin) {
+                    ->leftJoin('profil_visit', function ($leftJoin) use ($userId) {
                     $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                        ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
-                })
+                             ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                             ->on('profil_visit.user', '=',DB::raw("'".$userId."'"));
+                    })
+                    // ->on('profil_visit .user','=', $userId)
                     ->leftJoin('master_call_plan', function ($leftJoin2) {
                     $leftJoin2->on('master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id');
                 })
