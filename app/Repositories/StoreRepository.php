@@ -35,11 +35,12 @@ class StoreRepository extends Repository implements StoreInterface
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
+        $userId = $request->userId;
 
         $storesCache = Cache::remember(
             "storesCache",
                 $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery) {
+            function () use ($searchByQuery, $userId) {
                 //  DB::enableQueryLog();
                 return DB::table('store_info_distri')
                     ->select([
@@ -64,26 +65,30 @@ class StoreRepository extends Repository implements StoreInterface
                     ])
                     ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
-                    ->leftJoin('profil_visit', function ($leftJoin) {
+                    ->leftJoin('profil_visit', function ($leftJoin) use ($userId) {
                     $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                        ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
+                             ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                             ->on('profil_visit.user', '=',DB::raw("'".$userId."'"));
+                    })
+                    // ->on('profil_visit .user','=', $userId)
+                    ->leftJoin('master_call_plan', function ($leftJoin2) {
+                    $leftJoin2->on('master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id');
                 })
+                    ->where('master_call_plan.user_id', '=', $userId)
                     ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
                     $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
                 })
-                ->orderBy('store_info_distri.store_name', 'asc')
-                // ->groupBy('store_info_distri.store_id' )
-                // ->groupBy('master_call_plan_detail.date' )
+                    ->orderBy('store_info_distri.store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
-                //$log = DB::getQueryLog();
-                //dd($log);
+                // $log = DB::getQueryLog();
+                // dd($log);
             }
         );
 
         return $this->successResponse(
             statusCode: 200,
             success: true,
-            msg: "Successfully fetch store.",
+            msg: "Successfully fetch store",
             resource: $storesCache,
         );
     }
@@ -93,29 +98,29 @@ class StoreRepository extends Repository implements StoreInterface
     {
         // DB::enableQueryLog();
         $storeShowdata = DB::table('store_info_distri')
-                    ->select([
-                        'store_info_distri.store_id',
-                        'store_info_distri.store_name as nama_toko',
-                        'store_info_distri.store_alias as alias_toko',
-                        'store_info_distri.store_address as alamat_toko',
-                        'store_info_distri.store_phone as nomor_telepon_toko',
-                        'store_info_distri.store_fax as nomor_fax_toko',
-                        'store_info_distri.store_type_id',
-                        'store_info_distri.subcabang_id',
-                        'store_info_distri.store_code as kode_toko',
-                        'store_info_distri.active as status_toko',
-                        'store_info_distri_person.owner as owner',
-                        'store_info_distri_person.nik_owner as nikowner',
-                        'store_info_distri_person.email_owner as emailOwner',
-                        'store_info_distri_person.ktp_owner as ktpOwner',
-                        'store_info_distri_person.photo_other as otherPhoto',
+            ->select([
+                'store_info_distri.store_id',
+                'store_info_distri.store_name as nama_toko',
+                'store_info_distri.store_alias as alias_toko',
+                'store_info_distri.store_address as alamat_toko',
+                'store_info_distri.store_phone as nomor_telepon_toko',
+                'store_info_distri.store_fax as nomor_fax_toko',
+                'store_info_distri.store_type_id',
+                'store_info_distri.subcabang_id',
+                'store_info_distri.store_code as kode_toko',
+                'store_info_distri.active as status_toko',
+                'store_info_distri_person.owner as owner',
+                'store_info_distri_person.nik_owner as nikowner',
+                'store_info_distri_person.email_owner as emailOwner',
+                'store_info_distri_person.ktp_owner as ktpOwner',
+                'store_info_distri_person.photo_other as otherPhoto',
 
-                    ])
-                    ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
-                    ->where('store_info_distri.store_id', $id)
-                    ->first();
-                // $log = DB::getQueryLog();
-                // dd($log);
+            ])
+            ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+            ->where('store_info_distri.store_id', $id)
+            ->first();
+        // $log = DB::getQueryLog();
+        // dd($log);
         ;
 
         return $this->successResponse(
@@ -180,8 +185,8 @@ class StoreRepository extends Repository implements StoreInterface
                     })->whereHas('owners')
                     ->orderBy('store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
-                    $log = DB::getQueryLog();
-                    dd($log);
+                $log = DB::getQueryLog();
+                dd($log);
             }
         );
 
@@ -800,38 +805,39 @@ class StoreRepository extends Repository implements StoreInterface
     {
         // DB::enableQueryLog();
         $count = DB::table('order_customer_sales')->
-        where('store_id', $storeId)->
-        selectRaw('count(id) as jmlPo')
-        ->pluck('jmlPo')
-        ->first();
+            where('store_id', $storeId)->
+            selectRaw('count(id) as jmlPo')
+            ->pluck('jmlPo')
+            ->first();
         // $log = DB::getQueryLog();
         // dd($log);
 
         return $count;
-        
+
     }
 
-    public function storeNameGet(int $storeId){
+    public function storeNameGet(int $storeId)
+    {
         $storeInfo = DB::table('store_info_distri')
-        ->where('store_id', $storeId)
-        ->select('store_name as namaToko')
-        ->pluck('namaToko')
-        ->first();
-        
+            ->where('store_id', $storeId)
+            ->select('store_name as namaToko')
+            ->pluck('namaToko')
+            ->first();
+
         return $storeInfo;
     }
 
     public function sendOtp(Request $request): JsonResponse
     {
         $store = StoreInfoDistri::where('store_id', $request->idToko)
-        ->firstOrFail();
+            ->firstOrFail();
 
         try {
             DB::beginTransaction();
 
-            $countPo =  $this->countPObyStore($request->idToko);
+            $countPo = $this->countPObyStore($request->idToko);
             $storeName = $this->storeNameGet($request->idToko);
-            
+
             $objectOrder = $request->objOrder;
 
             $initialNum = 0;
@@ -839,12 +845,12 @@ class StoreRepository extends Repository implements StoreInterface
             foreach ($objectOrder as $key => $value) {
                 $initialNum += $objectOrder[$key]['qty'];
             }
-            
+
             //generate NO PO
             $dayPo = date('d');
             $monthPo = date('m');
             $yearP0 = date('Y');
-            $generTeNomerPo = $countPo.$dayPo.$monthPo.$yearP0.$request->idToko;
+            $generTeNomerPo = $countPo . $dayPo . $monthPo . $yearP0 . $request->idToko;
             $nomor_po = $generTeNomerPo;
 
             $id_table = OrderCustomerSales::create([
@@ -882,7 +888,7 @@ class StoreRepository extends Repository implements StoreInterface
                     'itemCodeCust' => $objectOrder[$key]['prodNumber'],
                     'itemCode' => $objectOrder[$key]['prodNumber'],
                     'qtyOrder' => $objectOrder[$key]['qty'],
-                    'releaseOrder' =>0,
+                    'releaseOrder' => 0,
                     'add_disc_1' => 0,
                     'add_disc_2' => $objectOrder[$key]['statusBonus'],
                     'created_by' => $request->userNumber,

@@ -27,6 +27,7 @@ class JwtAuthToken
         $serverName = $request->fullUrl();
 
         $userData = [
+            "user_id" => $user->user_id,
             "number" => $user->number,
             "nik" => $user->nik,
             "fullname" => $user->fullname,

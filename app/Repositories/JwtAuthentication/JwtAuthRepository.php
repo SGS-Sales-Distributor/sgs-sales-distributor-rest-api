@@ -81,15 +81,15 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'number' => ['required', 'string', 'max:10'],
+            'number' => ['nullable', 'string', 'max:10'],
             'nik' => ['required', 'string', 'max:20'],
             'fullname' => ['required', 'string', 'max:200'],
             'phone' => ['required', 'string', 'max:20', 'unique:user_info,phone'],
             'email' => ['required', 'string', 'email', 'lowercase', 'max:255', 'unique:user_info,email'],
-            'name' => ['required', 'string', 'max:50'],
+            'name' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()],
-            'type_id' => ['required', 'integer'],
-            'status' => ['required', 'integer'],
+            'type_id' => ['nullable', 'integer'],
+            'status' => ['nullable', 'integer'],
         ]);
 
         if ($validator->fails()) {
@@ -103,16 +103,20 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         try {
             DB::beginTransaction();
 
+            $lastId = User::orderBy('user_id', 'desc')->first()->user_id;
+            $setLastId = $lastId + 1;
+
             $user = User::create([
-                'number' => $request->number,
+                // 'number' => $request->number,
+                'number' => sprintf('%06d',$setLastId),
                 'nik' => $request->nik,
                 'fullname' => $request->fullname,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'name' => $request->name,
                 'password' => $request->password,
-                'type_id' => $request->type_id,
-                'status' => $request->status,
+                'type_id' => 2,
+                'status' => 1,
             ]);
 
             DB::commit();
