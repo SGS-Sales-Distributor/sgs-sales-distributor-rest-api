@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SalesmanController;
 use App\Http\Controllers\Api\StoreInfoDistriController;
 use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\KodeLokasiController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,10 @@ Route::group([
     Route::get('/profil_visit/{id}', [ProfilVisitController::class, 'getOne']);
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
     Route::delete('/profil_visit/{id}', [ProfilVisitController::class, 'removeOne']);
+
+    //kodelokasi route
+    // Route::get('/area', [KodeLokasiController::class, 'getAll']);
+
 
     // call plan's routes.
     Route::get('/call-plans', [MasterCallPlanController::class, 'getAll']);
@@ -49,7 +54,7 @@ Route::group([
     Route::get('/store_type/{store_type_id}', [StoreTypeController::class, 'show']);
     Route::put('/store_type/{store_type_id}', [StoreTypeController::class, 'update']);
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
-    
+
     // // CRUD untuk Product Info Do
     Route::get('/getMasterProduk', [ProductController::class, 'getAllBasic']);
     Route::get('/product_info_do', [ProductController::class, 'getAllBasicWithPaging']);
@@ -57,7 +62,7 @@ Route::group([
     Route::post('/product_info_do', [ProductController::class, 'storeBasicData']);
     Route::put('/product_info_do/{prod_number}', [ProductController::class, 'updateBasicData']);
     Route::delete('/product_info_do/{prod_number}', [ProductController::class, 'removeBasicData']);
-    
+
     Route::get('/order_customer_sales', [PurchaseOrderController::class, 'getAll']);
     Route::post('/order_customer_sales', [PurchaseOrderController::class, 'storeOne']);
     Route::get('/order_customer_sales/{id}', [PurchaseOrderController::class, 'getOne']);
@@ -175,13 +180,15 @@ Route::group([
         Route::post('/login', [JwtAuthController::class, 'login']);
         Route::post('/refresh', [JwtAuthController::class, 'refreshToken']);
         Route::post('/register', [JwtAuthController::class, 'register']);
+        
         Route::group([
             'middleware' => JwtAuthMiddleware::class
         ], function () {
             Route::get('/me', [JwtAuthController::class, 'checkSelf']);
         });
     });
-
+    Route::get('/area', [KodeLokasiController::class,'getAll']);
+    
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
 
@@ -235,9 +242,9 @@ Route::group([
 
         Route::get('/store-cabangs', [StoreInfoDistriController::class, 'getStoreCabangs']);
         Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
-        
+
         // store's routes.
-        Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
+        Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']);
         Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
         Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
         Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
@@ -250,12 +257,12 @@ Route::group([
         Route::post('/stores/{id}/owners', [StoreInfoDistriController::class, 'storeOwner']);
         Route::put('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'updateOwner']);
         Route::delete('/stores/{id}/owners{ownerId}', [StoreInfoDistriController::class, 'removeOwner']);
-        
+
         Route::get('/stores/{id}/visits', [StoreInfoDistriController::class, 'getAllVisits']);
         Route::get('/stores/{id}/visits/{visitId}', [StoreInfoDistriController::class, 'getOneVisit']);
         Route::get('/stores/{id}/orders', [StoreInfoDistriController::class, 'getAllOrders']);
         Route::get('/stores/{id}/orders/{orderId}', [StoreInfoDistriController::class, 'getOneOrder']);
-        
+
         Route::post('/stores/send-otp', [StoreInfoDistriController::class, 'sendOtp']);
         Route::post('/stores/resend-otp', [StoreInfoDistriController::class, 'resendOtp']);
         Route::post('/stores/confirm-otp', [StoreInfoDistriController::class, 'confirmOtp']);

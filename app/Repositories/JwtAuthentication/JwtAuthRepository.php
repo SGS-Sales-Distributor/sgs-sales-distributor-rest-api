@@ -22,17 +22,20 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
     public function login(Request $request): JsonResponse
     {
         # validate data.
-        $validator = Validator::make($request->all(), [ 
-            'email' => ['required', 'lowercase', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'unique' => ':attribute is unique field!',
-            'min' => ':attribute should be :min in characters',
-            'max' => ':attribute could not more than :max characters',
-            'confirmed' => ':attribute confirmation does not match!',  
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'email' => ['required', 'lowercase', 'string', 'email'],
+                'password' => ['required', 'string'],
+            ],
+            [
+                'required' => ':attribute is required!',
+                'unique' => ':attribute is unique field!',
+                'min' => ':attribute should be :min in characters',
+                'max' => ':attribute could not more than :max characters',
+                'confirmed' => ':attribute confirmation does not match!',
+            ]
+        );
 
         if ($validator->fails()) {
             return $this->clientErrorResponse(
@@ -43,7 +46,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         }
 
         # credential for auth attempt.
-        $credentials = $request->only('email','password');
+        $credentials = $request->only('email', 'password');
         $atuhAttm = Auth::attempt($credentials);
         if (!$atuhAttm) {
             return $this->clientErrorResponse(
@@ -53,10 +56,10 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
                 msg: "Email atau Password Salah!",
             );
         }
-        
+
         # search user.
         $user = User::where('email', $request->email)
-        ->firstOrFail();
+            ->firstOrFail();
 
         # generate tokens.
         $jwt = $this->jwtAuthToken->generateToken($user);
@@ -75,14 +78,14 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             success: true,
             msg: "Successfully login as {$user->email}",
             resource: $body
-        ); 
+        );
     }
 
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'number' => ['nullable', 'string', 'max:10'],
-            'nik' => ['required', 'string', 'max:20'],
+            // 'number' => ['nullable', 'string', 'max:10'],
+            // 'nik' => ['required', 'string', 'max:20'],
             'fullname' => ['required', 'string', 'max:200'],
             'phone' => ['required', 'string', 'max:20', 'unique:user_info,phone'],
             'email' => ['required', 'string', 'email', 'lowercase', 'max:255', 'unique:user_info,email'],
@@ -106,17 +109,22 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             $lastId = User::orderBy('user_id', 'desc')->first()->user_id;
             $setLastId = $lastId + 1;
 
+            //generate NIK
+            $month = date('m');
+            $year = date('y');
+            $generateNik = '06' . $request->subcabang_id . $month . $year .sprintf('%06d', $setLastId);
+
             $user = User::create([
                 // 'number' => $request->number,
-                'number' => sprintf('%06d',$setLastId),
-                'nik' => $request->nik,
+                'number' => sprintf('%06d', $setLastId),
+                'nik' => $generateNik,
                 'fullname' => $request->fullname,
                 'phone' => $request->phone,
                 'email' => $request->email,
-                'name' => $request->name,
+                'name' => $request->fullname,
                 'password' => $request->password,
                 'type_id' => 2,
-                'status' => 1,
+                'status' => 0,
             ]);
 
             DB::commit();
@@ -126,7 +134,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
                 success: true,
                 msg: "Successfully register new salesman account",
                 resource: $user
-            );             
+            );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
 
@@ -145,13 +153,13 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
                 msg: $e->getMessage(),
             );
-        } 
+        }
     }
 
     public function checkSelf(Request $request): JsonResponse
@@ -176,19 +184,22 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
                 'current_datetime' => Carbon::now(timezone: env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
                 'token_expiration_datetime' => $tokenExpTime->format('Y-m-d H:i:s'),
             ],
-        );    
+        );
     }
-    
+
     public function refreshToken(Request $request): JsonResponse
     {
-        
-        $validator = Validator::make($request->all(), [
-            'refresh_token' => ['required', 'string'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'string' => ':attribute should be a string | token',
-        ]);
+
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'refresh_token' => ['required', 'string'],
+            ],
+            [
+                'required' => ':attribute is required!',
+                'string' => ':attribute should be a string | token',
+            ]
+        );
 
         if ($validator->fails()) {
             return $this->clientErrorResponse(

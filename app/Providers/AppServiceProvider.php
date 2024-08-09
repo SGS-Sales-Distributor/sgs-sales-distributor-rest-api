@@ -10,6 +10,8 @@ use App\Repositories\BrandInterface;
 use App\Repositories\BrandRepository;
 use App\Repositories\JwtAuthentication\JwtAuthInterface;
 use App\Repositories\JwtAuthentication\JwtAuthRepository;
+use App\Repositories\KodeLokasiInterface;
+use App\Repositories\KodeLokasiRepository;
 use App\Repositories\MasterCallPlanInterface;
 use App\Repositories\MasterCallPlanRepository;
 use App\Repositories\MasterTargetNooInterface;
@@ -44,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AdminInterface::class, AdminRepository::class);
         $this->app->bind(ProductInterface::class, ProductRepository::class);
         $this->app->bind(BrandInterface::class, BrandRepository::class);
+        $this->app->bind(KodeLokasiInterface::class, KodeLokasiRepository::class);
     }
 
     /**

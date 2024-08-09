@@ -8,6 +8,7 @@ use App\Repositories\BrandInterface;
 use App\Repositories\JwtAuthentication\JwtAuthInterface;
 use App\Repositories\MasterCallPlanInterface;
 use App\Repositories\MasterTargetNooInterface;
+use App\Repositories\KodeLokasiInterface;
 use App\Repositories\ProductInterface;
 use App\Repositories\ProgramInterface;
 use App\Repositories\ProgramTypeInterface;
@@ -30,6 +31,8 @@ abstract class Controller
     protected AdminInterface $adminInterface;
     protected ProductInterface $productInterface;
     protected BrandInterface $brandInterface;
+    protected kodeLokasiInterface $kodeLokasiInterface;
+    
 
     public function __construct(
         JwtAuthInterface $jwtAuthInterface,
@@ -43,6 +46,7 @@ abstract class Controller
         AdminInterface $adminInterface,
         ProductInterface $productInterface,
         BrandInterface $brandInterface,
+        kodeLokasiInterface $kodeLokasiInterface,
     )
     {
         $this->jwtAuthInterface = $jwtAuthInterface;
@@ -56,5 +60,6 @@ abstract class Controller
         $this->adminInterface = $adminInterface;
         $this->productInterface = $productInterface;
         $this->brandInterface = $brandInterface;
+        $this->kodeLokasiInterface = $kodeLokasiInterface;
     }
 }
