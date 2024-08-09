@@ -14,7 +14,10 @@ class KodeLokasi extends Model
 
     protected $table = 'kode_lokasi';
 
+    protected $primaryKey = "id";
+
     protected $fillable = [
+        'id',
         'kode_cabang',
         'nama_cabang',
         'kode_lokasi',

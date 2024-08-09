@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SalesmanController;
 use App\Http\Controllers\Api\StoreInfoDistriController;
 use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\KodeLokasiController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -235,6 +236,8 @@ Route::group([
 
         Route::get('/store-cabangs', [StoreInfoDistriController::class, 'getStoreCabangs']);
         Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
+        Route::get('/area', [KodeLokasiController::class,'getAll']);
+
         
         // store's routes.
         Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']); 
