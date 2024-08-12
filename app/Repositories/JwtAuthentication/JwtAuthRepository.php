@@ -50,9 +50,9 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         // ->firstOrFail();
         ->first();
 
-        if (!$user || $user == null) {
+        if (!$user) {
             return $this->ErrorResponse(
-                statusCode: 404,
+                statusCode: 401,
                 success: false,
                 // msg: "Failed to authorized.",
                 msg: "User Email Belum Terdaftar!",
