@@ -284,10 +284,11 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
-    public function getOneData(int $id): JsonResponse
+    public function getOneData(Request $request,int $id): JsonResponse
     {
+        $userId = $request->userId;
         //  DB::enableQueryLog();
-        $store = DB::table('store_info_distri')
+        $store = DB::table('master_call_plan_detail')
             ->select([
                 'store_info_distri.store_id',
                 'store_info_distri.store_name as nama_toko',
@@ -310,14 +311,17 @@ class StoreRepository extends Repository implements StoreInterface
                 'profil_visit.ket as keterangan',
                 'profil_visit.approval as approval',
             ])
-            ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
-            ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
+            ->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+            ->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+            ->join('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
             ->leftJoin('profil_visit', function ($leftJoin) {
-                $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                    ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date');
+                $leftJoin->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                    ->on('profil_visit.user', '=', 'master_call_plan.user_id')
+                    ->on('profil_visit.store_id','=','master_call_plan_detail.store_id');
             })
             ->where('master_call_plan_detail.store_id', $id)
             ->where('master_call_plan_detail.date', Carbon::now()->format('Y-m-d'))
+            ->where('master_call_plan.user_id', '=',DB::raw("'".$userId."'"))
             ->first();
         //  $log = DB::getQueryLog();
         // dd($log);

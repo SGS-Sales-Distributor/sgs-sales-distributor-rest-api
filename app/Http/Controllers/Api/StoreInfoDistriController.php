@@ -18,9 +18,9 @@ class StoreInfoDistriController extends Controller
         return $this->storeInterface->getAllDataWithoutCallPlans($request);
     }
 
-    public function getOne(int $id): JsonResponse
+    public function getOne(Request $request,int $id): JsonResponse
     {
-        return $this->storeInterface->getOneData($id);
+        return $this->storeInterface->getOneData($request,$id);
     }
 
     public function storeOne(Request $request): JsonResponse

@@ -86,6 +86,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         $validator = Validator::make($request->all(), [
             // 'number' => ['nullable', 'string', 'max:10'],
             // 'nik' => ['required', 'string', 'max:20'],
+            'area' => ['nullable','integer'],
             'fullname' => ['required', 'string', 'max:200'],
             'phone' => ['required', 'string', 'max:20', 'unique:user_info,phone'],
             'email' => ['required', 'string', 'email', 'lowercase', 'max:255', 'unique:user_info,email'],
@@ -112,7 +113,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             //generate NIK
             $month = date('m');
             $year = date('y');
-            $generateNik = '06' . $request->subcabang_id . $month . $year .sprintf('%06d', $setLastId);
+            $generateNik = '06' . $request->kode_lokasi . $month . $year .sprintf('%05d', $setLastId);
 
             $user = User::create([
                 // 'number' => $request->number,
@@ -124,7 +125,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
                 'name' => $request->fullname,
                 'password' => $request->password,
                 'type_id' => 2,
-                'status' => 0,
+                'status' => 2,
             ]);
 
             DB::commit();

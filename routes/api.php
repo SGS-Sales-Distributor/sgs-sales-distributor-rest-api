@@ -246,7 +246,7 @@ Route::group([
         // store's routes.
         Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']);
         Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
-        Route::get('/stores/{id}', [StoreInfoDistriController::class, 'getOne']);
+        Route::get('/stores/{id}/', [StoreInfoDistriController::class, 'getOne']);
         Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
         Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
         Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'removeOne']);

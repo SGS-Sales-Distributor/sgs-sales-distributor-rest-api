@@ -13,7 +13,7 @@ interface StoreInterface
 
     public function getAllDataByOrderDateFilter(Request $request): JsonResponse;
 
-    public function getOneData(int $id): JsonResponse;
+    public function getOneData(Request $request,int $id): JsonResponse;
 
     public function storeOneData(Request $request): JsonResponse;
 
