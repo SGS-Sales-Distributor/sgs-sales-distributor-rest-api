@@ -45,7 +45,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             );
         }
 
-        
+
         # credential for auth attempt.
         $credentials = $request->only('email', 'password');
         $atuhAttm = Auth::attempt($credentials);
@@ -56,20 +56,18 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
                 // msg: "Failed to authorized.",
                 msg: "Email atau Password Salah!",
             );
-        } 
+        }
 
         # search user.
         $user = User::where('email', $request->email)
-        ->firstOrFail();
-        
-        if (!$user || $user == null || $user == "") {
-            return $this->clientErrorResponse(
-                statusCode: 401,
-                success: false,
-                // msg: "Failed to authorized.",
-                msg: "User Email Belum Terdaftar!",
-            );
-        } 
+            ->firstOrFail();
+
+        return $this->ErrorResponse(
+            statusCode: 401,
+            success: false,
+            // msg: "Failed to authorized.",
+            msg: "User Email Belum Terdaftar!",
+        );
 
 
         # generate tokens.
