@@ -110,15 +110,16 @@ class ProfilVisitController extends Controller
 			DB::beginTransaction();
 
 			$visit->update([
-				'photo_visit' => $request->photo_visit,
-				'photo_visit_out' => $request->photo_visit_out,
-				'tanggal_visit' => $request->tanggal_visit,
-				'purchase_order_in' => $request->purchase_order_in,
-				'condit_owner' => $request->condit_owner,
-				'lat_in' => $request->lat_in,
-				'long_in' => $request->long_in,
-				'lat_out' => $request->lat_out,
-				'long_out' => $request->long_out,
+				// 'photo_visit' => $request->photo_visit,
+				// 'photo_visit_out' => $request->photo_visit_out,
+				// 'tanggal_visit' => $request->tanggal_visit,
+				// 'purchase_order_in' => $request->purchase_order_in,
+				// 'condit_owner' => $request->condit_owner,
+				// 'lat_in' => $request->lat_in,
+				// 'long_in' => $request->long_in,
+				// 'lat_out' => $request->lat_out,
+				// 'long_out' => $request->long_out,
+				'approval' => 1,
 			]);
 
 			DB::commit();
