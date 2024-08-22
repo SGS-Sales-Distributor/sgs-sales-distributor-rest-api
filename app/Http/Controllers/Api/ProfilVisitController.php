@@ -54,7 +54,7 @@ class ProfilVisitController extends Controller
 			->leftJoin('profil_visit', function ($leftJoin) {
 				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
 					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
-					->on('profil_visit.store_id','=','master_cagit ll_plan_detail.store_id');
+					->on('profil_visit.store_id','=','master_call_plan_detail.store_id');
 			})
 			->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
 				$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
