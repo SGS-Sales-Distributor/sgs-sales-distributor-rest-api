@@ -66,4 +66,8 @@ class ProfilVisit extends Model
     {
         return $this->belongsTo(User::class, 'user');
     }
+
+    public function masterPlanDtl() : BelongsTo {
+        return $this->belongsTo(MasterCallPlanDetail::class,'store_id');        
+    }
 }
