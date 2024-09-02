@@ -20,7 +20,7 @@ class ProfilVisitController extends Controller
 
 		$limitQuery = $request->query('limit');
 
-		DB::enableQueryLog();
+		// DB::enableQueryLog();
 		// $visits = ProfilVisit::with(['user', 'store', 'masterPlanDtl'])
 		$visits = DB::table('master_call_plan_detail')
 			->select([
@@ -61,8 +61,8 @@ class ProfilVisitController extends Controller
 			})->orderBy('master_call_plan_detail.date', 'asc')
 
 			->paginate(50);
-		$log = DB::getQueryLog();
-		dd($log);
+		// $log = DB::getQueryLog();
+		// dd($log);
 
 		return $this->successResponse(
 			statusCode: 200,
