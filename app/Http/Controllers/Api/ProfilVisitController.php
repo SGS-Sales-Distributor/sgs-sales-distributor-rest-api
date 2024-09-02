@@ -59,8 +59,7 @@ class ProfilVisitController extends Controller
 			->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
 				$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
 			})->orderBy('master_call_plan_detail.date', 'asc')
-
-			->paginate(50);
+			->get();
 		// $log = DB::getQueryLog();
 		// dd($log);
 
