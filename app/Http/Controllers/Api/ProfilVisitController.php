@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class ProfilVisitController extends Controller
 {
@@ -59,7 +60,7 @@ class ProfilVisitController extends Controller
 			->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
 				$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
 			})->orderBy('master_call_plan_detail.date', 'asc')
-			->get();
+			->paginate(50);
 		// $log = DB::getQueryLog();
 		// dd($log);
 
@@ -121,7 +122,7 @@ class ProfilVisitController extends Controller
 		);
 	}
 
-	public function getVisitUser(int $userId, Request $request): JsonResponse
+	public function getVisitUser(String $userId, Request $request): JsonResponse
 	{
 		// $searchByQuery = $request->query('q');
 		// DB::enableQueryLog();
@@ -160,9 +161,75 @@ class ProfilVisitController extends Controller
 					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
 			})
 			// ->when($searchByQuery, function (Builder $query) use ($searchByQuery,$userId) {
-				// $query	->where('nama_toko', 'LIKE', '%' . $searchByQuery . '%')
-						->where('master_call_plan.user_id', DB::raw("'".$userId."'"))
-						->where('user_info.user_id',  DB::raw("'".$userId."'"))
+			// $query	->where('nama_toko', 'LIKE', '%' . $searchByQuery . '%')
+			->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
+			->where('user_info.user_id', DB::raw("'" . $userId . "'"))
+			->whereBetween('master_call_plan_detail.date', ["2024-09-02",Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d')])
+			->orderBy('master_call_plan_detail.date', 'desc')
+			->get();
+
+		// $log = DB::getQueryLog();
+		// dd($log);
+
+		if (!$visit) {
+			return $this->clientErrorResponse(
+				statusCode: 404,
+				success: false,
+				msg: "Visit data UserId : {$userId} not found.",
+			);
+		}
+
+		return $this->successResponse(
+			statusCode: 200,
+			success: true,
+			msg: "Successfully fetch Visit UserId : {$userId} data.",
+			resource: $visit,
+		);
+	}
+
+	public function getVisitUserByTanggal(int $userId, Request $request) : JsonResponse
+	{
+		// $searchByQuery = $request->query('q');
+		// DB::enableQueryLog();
+		$visit = DB::table('master_call_plan_detail')
+			->select([
+				'profil_visit.id as id',
+				'store_info_distri.store_id',
+				'store_info_distri.store_name as nama_toko',
+				'store_info_distri.store_alias as alias_toko',
+				'store_info_distri.store_address as alamat_toko',
+				'store_info_distri.store_phone as nomor_telepon_toko',
+				'store_info_distri.store_fax as nomor_fax_toko',
+				'store_info_distri.store_type_id',
+				'store_info_distri.subcabang_id',
+				'store_info_distri.active as status_toko',
+				'store_info_distri.store_code as kode_toko',
+				'profil_visit.id as visit_id',
+				'profil_visit.user as nama_salesman',
+				'profil_visit.tanggal_visit as tanggal_visit',
+				'profil_visit.time_in as waktu_masuk',
+				'profil_visit.time_out as waktu_keluar',
+				'profil_visit.photo_visit as photo_visit',
+				'profil_visit.photo_visit_out as photo_visit_out',
+				'profil_visit.ket as keterangan',
+				'profil_visit.approval as approval',
+				'profil_visit.ket as keterangan',
+				'master_call_plan_detail.date as tanggal_plan',
+				'user_info.fullname as userSalesman',
+			])
+			->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+			->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+			->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+			->leftJoin('profil_visit', function ($leftJoin) {
+				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
+					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+			})
+			// ->when($searchByQuery, function (Builder $query) use ($searchByQuery,$userId) {
+			// $query	->where('nama_toko', 'LIKE', '%' . $searchByQuery . '%')
+			->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
+			->where('user_info.user_id', DB::raw("'" . $userId . "'"))
+			->whereBetween('master_call_plan_detail.date', ["'".$request->dariTanggal."'","'".$request->sampaiTanggal."'"])
 			->orderBy('master_call_plan_detail.date', 'desc')
 			->get();
 
