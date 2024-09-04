@@ -30,6 +30,7 @@ Route::group([
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
     Route::delete('/profil_visit/{id}', [ProfilVisitController::class, 'removeOne']);
     Route::get('/profil_visit/user/{userId}',[ProfilVisitController::class, 'getVisitUser']);
+    Route::post('/profil_visit/user/{userId}/filter',[ProfilVisitController::class, 'getVisitUserByTanggal']);
 
     //kodelokasi route
     // Route::get('/area', [KodeLokasiController::class, 'getAll']);
