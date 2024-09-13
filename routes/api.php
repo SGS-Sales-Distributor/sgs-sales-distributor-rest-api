@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\StoreInfoDistriController;
 use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\KodeLokasiController;
+use App\Http\Controllers\Api\profilNotvisit;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +31,7 @@ Route::group([
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
     Route::delete('/profil_visit/{id}', [ProfilVisitController::class, 'removeOne']);
     Route::get('/profil_visit/user/{userId}',[ProfilVisitController::class, 'getVisitUser']);
-    Route::post('/profil_visit/user/{userId}/filter',[ProfilVisitController::class, 'getVisitUserByTanggal']);
+    Route::get('/profil_visit/user/{userId}/filter',[ProfilVisitController::class, 'getVisitUserByTanggal']);
 
     //kodelokasi route
     // Route::get('/area', [KodeLokasiController::class, 'getAll']);
@@ -42,6 +43,7 @@ Route::group([
     Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
     Route::put('/call-plans/{id}', [MasterCallPlanController::class, 'updateOne']);
     Route::delete('/call-plans/{id}', [MasterCallPlanController::class, 'removeOne']);
+    Route::get('/call-plans/notVisited/{UserId}', [MasterCallPlanController::class, 'notVisitedUser']);
 
     // type program's routes.
     Route::get('/master_type_program_x', [ProgramTypeController::class, 'getAll']);
@@ -270,5 +272,8 @@ Route::group([
         Route::post('/stores/confirm-otp', [StoreInfoDistriController::class, 'confirmOtp']);
         Route::get('/stores/countPObyStore', [StoreInfoDistriController::class, 'countPObyStore']);
         Route::get('/stores/storeNameGet', [StoreInfoDistriController::class, 'storeNameGet']);
+
+        //plant's route
+        Route::post('/plantsNotvisit', [profilNotvisit::class, 'saveOneData']);
     });
 });

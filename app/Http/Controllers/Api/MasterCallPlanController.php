@@ -33,6 +33,10 @@ class MasterCallPlanController extends Controller
         return $this->masterCallPlanInterface->updateOneData($request, $id);
     }
 
+    public function notVisitedUser(Request $request, int $userId): JsonResponse {
+        return $this->masterCallPlanInterface->notVisitedUsers($request, $userId);
+    } 
+
     public function removeOne(int $id): JsonResponse
     {
         return $this->masterCallPlanInterface->removeOneData($id);

@@ -18,4 +18,6 @@ interface MasterCallPlanInterface
     public function updateOneData(Request $request, int $id): JsonResponse;
 
     public function removeOneData(int $id): JsonResponse;
+
+    public function notVisitedUsers(Request $request, int $userId): JsonResponse;
 }
