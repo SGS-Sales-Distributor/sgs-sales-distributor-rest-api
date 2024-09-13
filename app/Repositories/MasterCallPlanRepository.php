@@ -13,35 +13,35 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class MasterCallPlanRepository extends Repository implements MasterCallPlanInterface
-{   
+{
     public function getAllData(Request $request): JsonResponse
     {
         $searchByQuery = $request->query('q');
 
         $masterCallPlanCache = Cache::remember(
-            'masterCallPlan', 
-            $this::DEFAULT_CACHE_TTL, 
-            function() use ($searchByQuery)  
-        {
-            return MasterCallPlan::with([
-                'user.type',
-                'user.status',
-                'details.store',
-            ])
-            ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                $query->whereHas('user', function (Builder $subQuery) use ($searchByQuery) {
-                    $subQuery->where('fullname', 'LIKE', '%' .$searchByQuery . '%')
-                    ->orWhere('email', 'LIKE', '%' . $searchByQuery . '%');
-                });
-            })
-            ->orderBy('id', 'asc')
-            ->paginate($this::DEFAULT_PAGINATE);
-        });
+            'masterCallPlan',
+                $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery) {
+                return MasterCallPlan::with([
+                    'user.type',
+                    'user.status',
+                    'details.store',
+                ])
+                    ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+                        $query->whereHas('user', function (Builder $subQuery) use ($searchByQuery) {
+                            $subQuery->where('fullname', 'LIKE', '%' . $searchByQuery . '%')
+                                ->orWhere('email', 'LIKE', '%' . $searchByQuery . '%');
+                        });
+                    })
+                    ->orderBy('id', 'asc')
+                    ->paginate($this::DEFAULT_PAGINATE);
+            }
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch master call plan.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch master call plan.",
             resource: $masterCallPlanCache,
         );
     }
@@ -59,80 +59,71 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $filterByYear = $this->dateRangeFilter->parseYear($searchByDateQuery);
 
         $masterCallPlanByDateFilterCache = Cache::remember(
-            'masterCallPlanByDateFilter', 
-            $this::DEFAULT_CACHE_TTL, 
-            function() use (
-                $filterByDateRange, 
-                $filterByDate,
-                $filterByYearRange,
-                $filterByYear,
-            ) 
-        {
-            if ($filterByDateRange)
-            {
-                return MasterCallPlan::with([
-                    'user', 
-                    'details'
-                ])
-                ->when($filterByDateRange, function (Builder $query) use ($filterByDateRange) {
-                    $query->whereHas('details', function (Builder $subQuery) use ($filterByDateRange) {
-                        $subQuery->whereBetween('date', $filterByDateRange);
-                    });
-                })
-                ->orderBy('id', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
-            }
+            'masterCallPlanByDateFilter',
+                $this::DEFAULT_CACHE_TTL,
+            function () use ($filterByDateRange, $filterByDate, $filterByYearRange, $filterByYear, ) {
+                if ($filterByDateRange) {
+                    return MasterCallPlan::with([
+                        'user',
+                        'details'
+                    ])
+                        ->when($filterByDateRange, function (Builder $query) use ($filterByDateRange) {
+                            $query->whereHas('details', function (Builder $subQuery) use ($filterByDateRange) {
+                                $subQuery->whereBetween('date', $filterByDateRange);
+                            });
+                        })
+                        ->orderBy('id', 'asc')
+                        ->paginate($this::DEFAULT_PAGINATE);
+                }
 
-            if ($filterByDate)
-            {
-                return MasterCallPlan::with([
-                    'user', 
-                    'details'
-                ])
-                ->when($filterByDate, function (Builder $query) use ($filterByDate) {
-                    $query->whereHas('details', function (Builder $subQuery) use ($filterByDate) {
-                        $subQuery->whereDate('date', '=', $filterByDate);
-                    });
-                })
-                ->orderBy('id', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
-            }
+                if ($filterByDate) {
+                    return MasterCallPlan::with([
+                        'user',
+                        'details'
+                    ])
+                        ->when($filterByDate, function (Builder $query) use ($filterByDate) {
+                            $query->whereHas('details', function (Builder $subQuery) use ($filterByDate) {
+                                $subQuery->whereDate('date', '=', $filterByDate);
+                            });
+                        })
+                        ->orderBy('id', 'asc')
+                        ->paginate($this::DEFAULT_PAGINATE);
+                }
 
-            if ($filterByYearRange)
-            {
-                return MasterCallPlan::with([
-                    'user', 
-                    'details'
-                ])
-                ->when($filterByYearRange, function (Builder $query) use ($filterByYearRange) {
-                    $query->whereHas('details', function (Builder $subQuery) use ($filterByYearRange) {
-                        $subQuery->whereBetween('date', $filterByYearRange);
-                    });
-                })
-                ->orderBy('id', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
-            }
+                if ($filterByYearRange) {
+                    return MasterCallPlan::with([
+                        'user',
+                        'details'
+                    ])
+                        ->when($filterByYearRange, function (Builder $query) use ($filterByYearRange) {
+                            $query->whereHas('details', function (Builder $subQuery) use ($filterByYearRange) {
+                                $subQuery->whereBetween('date', $filterByYearRange);
+                            });
+                        })
+                        ->orderBy('id', 'asc')
+                        ->paginate($this::DEFAULT_PAGINATE);
+                }
 
-            if ($filterByYear)
-            {
-                return MasterCallPlan::with([
-                    'user', 
-                    'details'
-                ])
-                ->when($filterByYear, function (Builder $query) use ($filterByYear) {
-                    $query->whereHas('details', function (Builder $subQuery) use ($filterByYear) {
-                        $subQuery->whereYear('date', $filterByYear);
-                    });
-                })
-                ->orderBy('id', 'asc')
-                ->paginate($this::DEFAULT_PAGINATE);
+                if ($filterByYear) {
+                    return MasterCallPlan::with([
+                        'user',
+                        'details'
+                    ])
+                        ->when($filterByYear, function (Builder $query) use ($filterByYear) {
+                            $query->whereHas('details', function (Builder $subQuery) use ($filterByYear) {
+                                $subQuery->whereYear('date', $filterByYear);
+                            });
+                        })
+                        ->orderBy('id', 'asc')
+                        ->paginate($this::DEFAULT_PAGINATE);
+                }
             }
-        });
+        );
 
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch master call plan with date filter {$request->input('q')}", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch master call plan with date filter {$request->input('q')}",
             resource: $masterCallPlanByDateFilterCache,
         );
     }
@@ -140,40 +131,43 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
     public function getOneData(int $id): JsonResponse
     {
         $masterCallPlanCache = Cache::remember(
-            "masterCallPlan:{$id}", 
-            $this::DEFAULT_CACHE_TTL, 
-            function () use ($id) 
-        {
-           return MasterCallPlan::with(['user', 'details'])
-           ->where('id', $id)
-           ->firstOrFail();  
-        });
-        
+            "masterCallPlan:{$id}",
+                $this::DEFAULT_CACHE_TTL,
+            function () use ($id) {
+                return MasterCallPlan::with(['user', 'details'])
+                    ->where('id', $id)
+                    ->firstOrFail();
+            }
+        );
+
         return $this->successResponse(
-            statusCode: 200, 
-            success: true, 
-            msg: "Successfully fetch master call plan {$id}.", 
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch master call plan {$id}.",
             resource: $masterCallPlanCache,
         );
     }
 
     public function storeOneData(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'call_plan_id' => ['required', 'integer'],
-            'month_plan' => ['required', 'integer'],
-            'year_plan' => ['required', 'integer'],
-            'user_id' => ['required', 'integer'],
-            'store_id' => ['required', 'integer'],
-            'date' => ['required', 'date'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'unique' => ':attribute is unique field!',
-            'min' => ':attribute should be :min in characters',
-            'max' => ':attribute could not more than :max characters',
-            'confirmed' => ':attribute confirmation does not match!',  
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'call_plan_id' => ['required', 'integer'],
+                'month_plan' => ['required', 'integer'],
+                'year_plan' => ['required', 'integer'],
+                'user_id' => ['required', 'integer'],
+                'store_id' => ['required', 'integer'],
+                'date' => ['required', 'date'],
+            ],
+            [
+                'required' => ':attribute is required!',
+                'unique' => ':attribute is unique field!',
+                'min' => ':attribute should be :min in characters',
+                'max' => ':attribute could not more than :max characters',
+                'confirmed' => ':attribute confirmation does not match!',
+            ]
+        );
 
         if ($validator->fails()) {
             return $this->clientErrorResponse(
@@ -201,9 +195,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
-                msg: "Successfully create new master call plan data", 
+                statusCode: 201,
+                success: true,
+                msg: "Successfully create new master call plan data",
                 resource: $masterCallPlan
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -224,32 +218,35 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
                 msg: $e->getMessage(),
             );
-        } 
+        }
     }
 
     public function updateOneData(Request $request, int $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'call_plan_id' => ['nullable', 'integer'],
-            'month_plan' => ['nullable', 'integer'],
-            'year_plan' => ['nullable', 'integer'],
-            'user_id' => ['required', 'integer'],
-            'store_id' => ['required', 'integer'],
-            'date' => ['required', 'date'],
-        ],
-        [
-            'required' => ':attribute is required!',
-            'unique' => ':attribute is unique field!',
-            'min' => ':attribute should be :min in characters',
-            'max' => ':attribute could not more than :max characters',
-            'confirmed' => ':attribute confirmation does not match!',  
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'call_plan_id' => ['nullable', 'integer'],
+                'month_plan' => ['nullable', 'integer'],
+                'year_plan' => ['nullable', 'integer'],
+                'user_id' => ['required', 'integer'],
+                'store_id' => ['required', 'integer'],
+                'date' => ['required', 'date'],
+            ],
+            [
+                'required' => ':attribute is required!',
+                'unique' => ':attribute is unique field!',
+                'min' => ':attribute should be :min in characters',
+                'max' => ':attribute could not more than :max characters',
+                'confirmed' => ':attribute confirmation does not match!',
+            ]
+        );
 
         if ($validator->fails()) {
             return $this->clientErrorResponse(
@@ -281,9 +278,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             DB::commit();
 
             return $this->successResponse(
-                statusCode: 201, 
-                success: true, 
-                msg: "Successfully update master call plan {$id}", 
+                statusCode: 201,
+                success: true,
+                msg: "Successfully update master call plan {$id}",
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
@@ -303,22 +300,22 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return $this->errorResponse(
                 statusCode: 500,
                 success: false,
                 msg: $e->getMessage(),
             );
-        } 
+        }
     }
 
     public function removeOneData(int $id): JsonResponse
     {
         $masterCallPlanDetail = MasterCallPlanDetail::where('call_plan_id', $id)
-        ->firstOrFail();
+            ->firstOrFail();
 
         $masterCallPlan = MasterCallPlan::where('id', $id)
-        ->firstOrFail();
+            ->firstOrFail();
 
         $masterCallPlanDetail->delete();
 
@@ -328,6 +325,53 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             statusCode: 200,
             success: true,
             msg: "Successfully remove master call plan {$id} and it's detail.",
+        );
+    }
+
+    public function notVisitedUsers(Request $request, int $userId): JsonResponse
+    {
+        // DB::enableQueryLog();
+        $plansUsr = DB::table('master_call_plan_detail')
+            ->select([
+                'master_call_plan.user_id as user',
+                'store_info_distri.store_name as nama_toko',
+                'store_info_distri.store_address as alamat_toko',
+                'master_call_plan_detail.id as idPlanDetail',
+                'master_call_plan_detail.call_plan_id as idPlan',
+                'master_call_plan_detail.store_id as idToko',
+                'master_call_plan_detail.date as tanggal plan',
+                'profil_visit.id as realisasi_visit',
+            ])
+            ->join('master_call_plan','master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+            ->join('store_info_distri','store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+            ->leftJoin('profil_visit', function ($leftJoin) {
+				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
+					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+			})
+            ->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
+            // ->where('master_call_plan_detail.date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
+            ->where('master_call_plan_detail.date', "$request->tomorrow")
+            ->whereRaw('profil_visit.id is null')
+            ->orderBy('master_call_plan_detail.date', 'desc')
+            ->get();
+
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+        if (!$plansUsr) {
+            return $this->clientErrorResponse(
+                statusCode: 404,
+                success: false,
+                msg: "Unsuccessful Plan data UserId : {$userId} not found.",
+            );
+        }
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch Plan User : {$userId} data.",
+            resource: $plansUsr,
         );
     }
 }

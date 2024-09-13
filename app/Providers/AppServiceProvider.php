@@ -18,6 +18,8 @@ use App\Repositories\MasterTargetNooInterface;
 use App\Repositories\MasterTargetNooRepository;
 use App\Repositories\ProductInterface;
 use App\Repositories\ProductRepository;
+use App\Repositories\ProfilNotvisitInterface;
+use App\Repositories\ProfilNotvisitRepository;
 use App\Repositories\ProgramInterface;
 use App\Repositories\ProgramRepository;
 use App\Repositories\ProgramTypeInterface;
@@ -47,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProductInterface::class, ProductRepository::class);
         $this->app->bind(BrandInterface::class, BrandRepository::class);
         $this->app->bind(KodeLokasiInterface::class, KodeLokasiRepository::class);
+        $this->app->bind(ProfilNotvisitInterface::class,ProfilNotvisitRepository::class);
     }
 
     /**

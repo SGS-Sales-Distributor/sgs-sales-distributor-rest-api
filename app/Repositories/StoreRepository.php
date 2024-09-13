@@ -163,7 +163,7 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $searchByQuery = $request->query('q');
 
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
                 $this::DEFAULT_CACHE_TTL,
@@ -185,8 +185,8 @@ class StoreRepository extends Repository implements StoreInterface
                     })->whereHas('owners')
                     ->orderBy('store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
-                $log = DB::getQueryLog();
-                dd($log);
+                // $log = DB::getQueryLog();
+                // dd($log);
             }
         );
 
@@ -324,7 +324,7 @@ class StoreRepository extends Repository implements StoreInterface
             ->where('master_call_plan.user_id', '=',DB::raw("'".$userId."'"))
             ->first();
         //  $log = DB::getQueryLog();
-        // dd($log);
+        //  dd($log);
 
         return $this->successResponse(
             statusCode: 200,
