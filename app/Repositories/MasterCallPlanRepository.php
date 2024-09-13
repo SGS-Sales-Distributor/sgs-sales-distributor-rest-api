@@ -341,6 +341,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 'master_call_plan_detail.store_id as idToko',
                 'master_call_plan_detail.date as tanggal plan',
                 'profil_visit.id as realisasi_visit',
+                'profil_notvisit.id as idKetVisit',
             ])
             ->join('master_call_plan','master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
             ->join('store_info_distri','store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
@@ -348,6 +349,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
 					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
 					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+			})
+            ->leftJoin('profil_notvisit', function ($leftJoin2) {
+				$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
 			})
             ->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
             // ->where('master_call_plan_detail.date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
