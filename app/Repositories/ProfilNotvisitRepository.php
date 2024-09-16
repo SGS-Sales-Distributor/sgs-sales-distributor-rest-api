@@ -87,7 +87,7 @@ class ProfilNotvisitRepository extends Repository implements ProfilNotvisitInter
                 'store_info_distri.store_name as nama_toko',
                 'master_call_plan_detail.id as idPlan',
                 'master_call_plan_detail.store_id as idToko',
-                'master_call_plan_detail.date as tgl_plan',
+                'master_call_plan_detail.date as tgl_plan'
             ])
             ->join('master_call_plan_detail', 'profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id')
             ->join('store_info_distri', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
