@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
-class profilNotvisit extends Controller
+class ProfilNotvisit extends Controller
 {
     public function saveOneData(Request $request): JsonResponse
     {
