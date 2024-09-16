@@ -48,7 +48,7 @@ abstract class Controller
         AdminInterface $adminInterface,
         ProductInterface $productInterface,
         BrandInterface $brandInterface,
-        kodeLokasiInterface $kodeLokasiInterface,
+        KodeLokasiInterface $kodeLokasiInterface,
         profilNotvisitInterface $profilNotvisitInterface,
     )
     {
