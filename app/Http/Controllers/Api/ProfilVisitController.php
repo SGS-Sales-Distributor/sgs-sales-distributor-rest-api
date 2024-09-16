@@ -48,8 +48,8 @@ class ProfilVisitController extends Controller
 				'profil_visit.ket as keterangan',
 				'master_call_plan_detail.date as tanggal_plan',
 				'user_info.fullname as userSalesman',
-				'profil_notvisit.id as idNotVisit',
-				'profil_notvisit.ket as ketNotVisit'
+				// 'profil_notvisit.id as idNotVisit',
+				// 'profil_notvisit.ket as ketNotVisit',
 			])
 			->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
 			->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
