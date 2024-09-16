@@ -216,6 +216,8 @@ class ProfilVisitController extends Controller
 				'profil_visit.ket as keterangan',
 				'master_call_plan_detail.date as tanggal_plan',
 				'user_info.fullname as userSalesman',
+				'profil_notvisit.id as idNotVisit',
+				'profil_notvisit.ket as ketNotVisit',
 			])
 			->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
 			->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
@@ -224,6 +226,9 @@ class ProfilVisitController extends Controller
 				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
 					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
 					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+			})
+			->leftJoin('profil_notvisit', function ($leftJoin2) {
+				$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
 			})
 			// ->when($searchByQuery, function (Builder $query) use ($searchByQuery,$userId) {
 			// $query	->where('nama_toko', 'LIKE', '%' . $searchByQuery . '%')
