@@ -13,7 +13,7 @@ use Carbon\Carbon;
 
 class ProfilVisitController extends Controller
 {
-	public function getAll(Request $request)
+	public function getAll(Request $request): JsonResponse
 	{
 		$searchByQuery = $request->query('q');
 
