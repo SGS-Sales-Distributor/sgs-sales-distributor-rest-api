@@ -32,7 +32,7 @@ abstract class Controller
     protected AdminInterface $adminInterface;
     protected ProductInterface $productInterface;
     protected BrandInterface $brandInterface;
-    protected kodeLokasiInterface $kodeLokasiInterface;
+    protected KodeLokasiInterface $kodeLokasiInterface;
     protected profilNotvisitInterface $profilNotvisitInterface;
     
 
