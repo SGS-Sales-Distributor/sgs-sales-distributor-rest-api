@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\StoreInfoDistriController;
 use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\KodeLokasiController;
-use App\Http\Controllers\Api\profilNotvisit;
+use App\Http\Controllers\Api\ProfilNotvisit;
 use App\Http\Middleware\JwtAuthMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -274,6 +274,6 @@ Route::group([
         Route::get('/stores/storeNameGet', [StoreInfoDistriController::class, 'storeNameGet']);
 
         //plant's route
-        Route::post('/plantsNotvisit', [profilNotvisit::class, 'saveOneData']);
+        Route::post('/plantsNotvisit', [ProfilNotvisit::class, 'saveOneData']);
     });
 });

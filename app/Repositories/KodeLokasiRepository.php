@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class KodeLokasiRepository extends Repository implements KodeLokasiInterface
+class kodeLokasiRepository extends Repository implements kodeLokasiInterface
 {
     public function getAllData(Request $request): JsonResponse
     {

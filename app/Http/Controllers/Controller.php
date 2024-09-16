@@ -33,7 +33,7 @@ abstract class Controller
     protected ProductInterface $productInterface;
     protected BrandInterface $brandInterface;
     protected kodeLokasiInterface $kodeLokasiInterface;
-    protected ProfilNotvisitInterface $profilNotvisitInterface;
+    protected profilNotvisitInterface $profilNotvisitInterface;
     
 
     public function __construct(
@@ -49,7 +49,7 @@ abstract class Controller
         ProductInterface $productInterface,
         BrandInterface $brandInterface,
         kodeLokasiInterface $kodeLokasiInterface,
-        ProfilNotvisitInterface $profilNotvisitInterface,
+        profilNotvisitInterface $profilNotvisitInterface,
     )
     {
         $this->jwtAuthInterface = $jwtAuthInterface;

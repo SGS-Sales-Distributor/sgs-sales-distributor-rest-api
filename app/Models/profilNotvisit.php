@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class profilNotvisit extends Model
+class ProfilNotvisit extends Model
 {
     use HasFactory, SoftDeletes;
 
     public $timestamps = true;
 
+    protected $primaryKey = "id";
 
     protected $table="profil_notvisit";
 
