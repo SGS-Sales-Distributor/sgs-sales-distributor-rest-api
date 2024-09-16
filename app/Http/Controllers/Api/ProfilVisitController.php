@@ -59,9 +59,9 @@ class ProfilVisitController extends Controller
 					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
 					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
 			})
-			->leftJoin('profil_notvisit', function ($leftJoin2) {
-				$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
-			})
+			// ->leftJoin('profil_notvisit', function ($leftJoin2) {
+			// 	$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
+			// })
 			->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
 				$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
 			})->orderBy('master_call_plan_detail.date', 'asc')
