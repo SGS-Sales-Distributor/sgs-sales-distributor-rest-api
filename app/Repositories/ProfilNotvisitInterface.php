@@ -8,4 +8,6 @@ use Illuminate\Http\Request;
 interface profilNotvisitInterface{
 
     public function saveOneData(Request $request):JsonResponse;
+
+    public function getOneData(int $id):JsonResponse;
 }
