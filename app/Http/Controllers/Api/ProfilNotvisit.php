@@ -12,4 +12,9 @@ class ProfilNotvisit extends Controller
     {
         return $this->profilNotvisitInterface->saveOneData($request);
     }
+
+    public function getOneData(int $id): JsonResponse
+    {
+        return $this->profilNotvisitInterface->getOneData($id);
+    }
 }

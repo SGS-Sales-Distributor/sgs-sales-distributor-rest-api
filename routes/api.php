@@ -33,6 +33,9 @@ Route::group([
     Route::get('/profil_visit/user/{userId}',[ProfilVisitController::class, 'getVisitUser']);
     Route::get('/profil_visit/user/{userId}/filter',[ProfilVisitController::class, 'getVisitUserByTanggal']);
 
+    // Not visit's routes
+    Route::get('/profil_notvisitOne/{id}', [ProfilNotvisit::class, 'getOneData']);
+
     //kodelokasi route
     // Route::get('/area', [KodeLokasiController::class, 'getAll']);
 
@@ -275,5 +278,6 @@ Route::group([
 
         //plant's route
         Route::post('/plantsNotvisit', [ProfilNotvisit::class, 'saveOneData']);
+        // Route::get('/profil_notvisitOne/{id}', [ProfilNotvisit::class, 'getOneData']);
     });
 });
