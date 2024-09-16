@@ -6,7 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-interface kodeLokasiInterface
+interface KodeLokasiInterface
 {
     public function getAllData(Request $request): JsonResponse;
 
