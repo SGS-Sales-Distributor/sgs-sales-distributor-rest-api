@@ -4,76 +4,136 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProfilVisit;
+use App\Models\PublicModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
 class ProfilVisitController extends Controller
 {
-	public function getAll(Request $request) : JsonResponse
+	public function getAll(Request $request): JsonResponse
 	{
+		$URL = URL::current();
+
 		$searchByQuery = $request->query('q');
 
 		$offsetQuery = $request->query('offset');
 
 		$limitQuery = $request->query('limit');
 
-		// DB::enableQueryLog();
-		// $visits = ProfilVisit::with(['user', 'store', 'masterPlanDtl'])
-		$visits = DB::table('master_call_plan_detail')
-			->select([
-				'profil_visit.id as id',
-				'store_info_distri.store_id',
-				'store_info_distri.store_name as nama_toko',
-				'store_info_distri.store_alias as alias_toko',
-				'store_info_distri.store_address as alamat_toko',
-				'store_info_distri.store_phone as nomor_telepon_toko',
-				'store_info_distri.store_fax as nomor_fax_toko',
-				'store_info_distri.store_type_id',
-				'store_info_distri.subcabang_id',
-				'store_info_distri.active as status_toko',
-				'store_info_distri.store_code as kode_toko',
-				'profil_visit.id as visit_id',
-				'profil_visit.user as nama_salesman',
-				'profil_visit.tanggal_visit as tanggal_visit',
-				'profil_visit.time_in as waktu_masuk',
-				'profil_visit.time_out as waktu_keluar',
-				'profil_visit.photo_visit as photo_visit',
-				'profil_visit.photo_visit_out as photo_visit_out',
-				'profil_visit.ket as keterangan',
-				'profil_visit.approval as approval',
-				'profil_visit.ket as keterangan',
-				'master_call_plan_detail.date as tanggal_plan',
-				'user_info.fullname as userSalesman',
-				'profil_notvisit.id as idNotVisit',
-				'profil_notvisit.ket as ketNotVisit',
-			])
-			->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
-			->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
-			->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
-			->leftJoin('profil_visit', function ($leftJoin) {
-				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
-					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
-					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
-			})
-			->leftJoin('profil_notvisit', function ($leftJoin2) {
-				$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
-			})
-			->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-				$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
-			})->orderBy('master_call_plan_detail.date', 'asc')
-			->get();
-		// $log = DB::getQueryLog();
-		// dd($log);
+		if (!isset($request->search)) {
+			$count = (new ProfilVisit())->count();
+			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+			// DB::enableQueryLog();
+			// $visits = ProfilVisit::with(['user', 'store', 'masterPlanDtl'])
+			$visits = DB::table('master_call_plan_detail')
+				->select([
+					'profil_visit.id as id',
+					'store_info_distri.store_id',
+					'store_info_distri.store_name as nama_toko',
+					'store_info_distri.store_alias as alias_toko',
+					'store_info_distri.store_address as alamat_toko',
+					'store_info_distri.store_phone as nomor_telepon_toko',
+					'store_info_distri.store_fax as nomor_fax_toko',
+					'store_info_distri.store_type_id',
+					'store_info_distri.subcabang_id',
+					'store_info_distri.active as status_toko',
+					'store_info_distri.store_code as kode_toko',
+					'profil_visit.id as visit_id',
+					'profil_visit.user as nama_salesman',
+					'profil_visit.tanggal_visit as tanggal_visit',
+					'profil_visit.time_in as waktu_masuk',
+					'profil_visit.time_out as waktu_keluar',
+					'profil_visit.photo_visit as photo_visit',
+					'profil_visit.photo_visit_out as photo_visit_out',
+					'profil_visit.ket as keterangan',
+					'profil_visit.approval as approval',
+					'profil_visit.ket as keterangan',
+					'master_call_plan_detail.date as tanggal_plan',
+					'user_info.fullname as userSalesman',
+					'profil_notvisit.id as idNotVisit',
+					'profil_notvisit.ket as ketNotVisit',
+				])
+				->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+				->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+				->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+				->leftJoin('profil_visit', function ($leftJoin) {
+					$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
+						->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+						->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+				})
+				->leftJoin('profil_notvisit', function ($leftJoin2) {
+					$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
+				})
+				->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+					$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
+				})->orderBy('master_call_plan_detail.date', 'asc')
+				->get();
+			// $log = DB::getQueryLog();
+			// dd($log);
 
-		return $this->successResponse(
-			statusCode: 200,
-			success: true,
-			msg: "Successfully fetch visits data.",
-			resource: $visits,
+		} else {
+			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+			$visits = DB::table('master_call_plan_detail')
+				->select([
+					'profil_visit.id as id',
+					'store_info_distri.store_id',
+					'store_info_distri.store_name as nama_toko',
+					'store_info_distri.store_alias as alias_toko',
+					'store_info_distri.store_address as alamat_toko',
+					'store_info_distri.store_phone as nomor_telepon_toko',
+					'store_info_distri.store_fax as nomor_fax_toko',
+					'store_info_distri.store_type_id',
+					'store_info_distri.subcabang_id',
+					'store_info_distri.active as status_toko',
+					'store_info_distri.store_code as kode_toko',
+					'profil_visit.id as visit_id',
+					'profil_visit.user as nama_salesman',
+					'profil_visit.tanggal_visit as tanggal_visit',
+					'profil_visit.time_in as waktu_masuk',
+					'profil_visit.time_out as waktu_keluar',
+					'profil_visit.photo_visit as photo_visit',
+					'profil_visit.photo_visit_out as photo_visit_out',
+					'profil_visit.ket as keterangan',
+					'profil_visit.approval as approval',
+					'profil_visit.ket as keterangan',
+					'master_call_plan_detail.date as tanggal_plan',
+					'user_info.fullname as userSalesman',
+					'profil_notvisit.id as idNotVisit',
+					'profil_notvisit.ket as ketNotVisit',
+				])
+				->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+				->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+				->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+				->leftJoin('profil_visit', function ($leftJoin) {
+					$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
+						->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+						->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+				})
+				->leftJoin('profil_notvisit', function ($leftJoin2) {
+					$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
+				})
+				->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
+					$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
+				})->orderBy('master_call_plan_detail.date', 'asc')
+				->get();
+			$count = $visits->count();
+		}
+
+		// return $this->successResponse(
+		// 	statusCode: 200,
+		// 	success: true,
+		// 	msg: "Successfully fetch visits data.",
+		// 	resource: $visits,
+		// );
+		return response()->json(
+			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+			(new PublicModel())->array_respon_200_table_tr($visits, $count, $arr_pagination),
+			200
 		);
 	}
 
@@ -127,7 +187,7 @@ class ProfilVisitController extends Controller
 		);
 	}
 
-	public function getVisitUser(String $userId, Request $request): JsonResponse
+	public function getVisitUser(string $userId, Request $request): JsonResponse
 	{
 		// $searchByQuery = $request->query('q');
 		// DB::enableQueryLog();
@@ -169,7 +229,7 @@ class ProfilVisitController extends Controller
 			// $query	->where('nama_toko', 'LIKE', '%' . $searchByQuery . '%')
 			->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
 			->where('user_info.user_id', DB::raw("'" . $userId . "'"))
-			->whereBetween('master_call_plan_detail.date', ["2024-09-02",Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d')])
+			->whereBetween('master_call_plan_detail.date', ["2024-09-02", Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d')])
 			->orderBy('master_call_plan_detail.date', 'desc')
 			->get();
 
@@ -192,7 +252,7 @@ class ProfilVisitController extends Controller
 		);
 	}
 
-	public function getVisitUserByTanggal(int $userId, Request $request) : JsonResponse
+	public function getVisitUserByTanggal(int $userId, Request $request): JsonResponse
 	{
 		// $searchByQuery = $request->query('q');
 		// DB::enableQueryLog();
@@ -239,7 +299,7 @@ class ProfilVisitController extends Controller
 			// $query	->where('nama_toko', 'LIKE', '%' . $searchByQuery . '%')
 			->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
 			->where('user_info.user_id', DB::raw("'" . $userId . "'"))
-			->whereBetween('master_call_plan_detail.date', ["'".$request->dariTanggal."'","'".$request->sampaiTanggal."'"])
+			->whereBetween('master_call_plan_detail.date', ["'" . $request->dariTanggal . "'", "'" . $request->sampaiTanggal . "'"])
 			->orderBy('master_call_plan_detail.date', 'desc')
 			->get();
 

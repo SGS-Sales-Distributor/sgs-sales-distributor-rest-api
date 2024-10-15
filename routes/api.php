@@ -194,7 +194,7 @@ Route::group([
             Route::get('/me', [JwtAuthController::class, 'checkSelf']);
         });
     });
-    Route::get('/area', [KodeLokasiController::class,'getAll']);
+    Route::get('/area', action: [KodeLokasiController::class,'getAll']);
     
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
