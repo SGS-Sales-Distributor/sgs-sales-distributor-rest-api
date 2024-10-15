@@ -72,6 +72,8 @@ class ProfilVisitController extends Controller
 				->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
 					$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
 				})->orderBy('master_call_plan_detail.date', 'asc')
+				->limit($arr_pagination['limit'])
+				->offset($arr_pagination['offset'])
 				->get();
 			// $log = DB::getQueryLog();
 			// dd($log);
@@ -120,6 +122,8 @@ class ProfilVisitController extends Controller
 				->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
 					$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
 				})->orderBy('master_call_plan_detail.date', 'asc')
+				->limit($arr_pagination['limit'])
+				->offset($arr_pagination['offset'])
 				->get();
 			$count = $visits->count();
 		}
