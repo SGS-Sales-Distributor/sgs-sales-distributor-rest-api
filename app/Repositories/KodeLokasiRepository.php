@@ -27,11 +27,13 @@ class KodeLokasiRepository extends Repository implements KodeLokasiInterface
             ])
             ->get();
 
+
         return $this->successResponse(
             statusCode: 200,
             success: true,
-            msg: "Successfully fetch Area.",
+            msg: "Berhasil",
             resource: $kodeLokasis,
+            // resource: $sales,
         );
     }
 
