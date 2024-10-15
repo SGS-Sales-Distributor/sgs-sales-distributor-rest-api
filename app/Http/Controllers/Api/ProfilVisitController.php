@@ -33,7 +33,7 @@ class ProfilVisitController extends Controller
 			$visits = DB::table('master_call_plan_detail')
 				->select([
 					'profil_visit.id as id',
-					'store_info_distri.store_id',
+					'store_info_distri.store_id AS idToko',
 					'store_info_distri.store_name as nama_toko',
 					'store_info_distri.store_alias as alias_toko',
 					'store_info_distri.store_address as alamat_toko',
@@ -81,7 +81,7 @@ class ProfilVisitController extends Controller
 			$visits = DB::table('master_call_plan_detail')
 				->select([
 					'profil_visit.id as id',
-					'store_info_distri.store_id',
+					'store_info_distri.store_id as idToko',
 					'store_info_distri.store_name as nama_toko',
 					'store_info_distri.store_alias as alias_toko',
 					'store_info_distri.store_address as alamat_toko',
