@@ -121,8 +121,8 @@ class ProfilVisitController extends Controller
 				})
 				->where('user_info.fullname','LIKE','%'.$searchByQuery.'%')
 				->orderBy('master_call_plan_detail.date', 'asc')
-				->limit($arr_pagination['limit'])
-				->offset($arr_pagination['offset'])
+				// ->limit($arr_pagination['limit'])
+				// ->offset($arr_pagination['offset'])
 				->get();
 			$count = $visits->count();
 		}
