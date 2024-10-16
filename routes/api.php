@@ -58,7 +58,7 @@ Route::group([
     Route::get('/getTipeToko', [StoreTypeController::class, 'getTipeToko']);
     Route::get('/store_type', [StoreTypeController::class, 'paging']);
     Route::post('/store_type', [StoreTypeController::class, 'store']);
-    Route::get('/store_type/{store_type_id}', [StoreTypeController::class, 'show']);
+    Route::get('/store_type/{store_type_name}', [StoreTypeController::class, 'show']);
     Route::put('/store_type/{store_type_id}', [StoreTypeController::class, 'update']);
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
 

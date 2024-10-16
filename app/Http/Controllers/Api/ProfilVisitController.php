@@ -18,8 +18,8 @@ class ProfilVisitController extends Controller
 	public function getAll(Request $request): JsonResponse
 	{
 		$URL = URL::current();
-
-		$searchByQuery = $request->query('q');
+		
+		$searchByQuery = $request->query(key: 'search');
 
 		$offsetQuery = $request->query('offset');
 
@@ -119,9 +119,8 @@ class ProfilVisitController extends Controller
 				->leftJoin('profil_notvisit', function ($leftJoin2) {
 					$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
 				})
-				->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-					$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
-				})->orderBy('master_call_plan_detail.date', 'asc')
+				->where('user_info.fullname','LIKE','%'.$searchByQuery.'%')
+				->orderBy('master_call_plan_detail.date', 'asc')
 				->limit($arr_pagination['limit'])
 				->offset($arr_pagination['offset'])
 				->get();
