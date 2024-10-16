@@ -133,11 +133,11 @@ class StoreTypeController extends Controller
      * @param  \App\Models\store_type  $store_type
      * @return \Illuminate\Http\Response
      */
-    public function show(int $store_type_id)
+    public function show(String $store_type_name)
 	{
 		//$todo = $this->MUom->findOrFail($id);
         //die($store_type_id);
-		$todo = StoreType::find($store_type_id);
+		$todo = StoreType::find($store_type_name);
 		if ($todo) {
 			return response()->json(['data' => $todo], 200);
 		} else {
