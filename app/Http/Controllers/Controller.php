@@ -15,6 +15,7 @@ use App\Repositories\ProgramTypeInterface;
 use App\Repositories\SalesmanInterface;
 use App\Repositories\StoreInterface;
 use App\Repositories\ProfilNotvisitInterface;
+use App\Repositories\StoreCabangInterface;
 use App\Traits\ApiResponse;
 
 abstract class Controller
@@ -34,6 +35,7 @@ abstract class Controller
     protected BrandInterface $brandInterface;
     protected KodeLokasiInterface $kodeLokasiInterface;
     protected profilNotvisitInterface $profilNotvisitInterface;
+    protected StoreCabangInterface $StoreCabangInterface;
     
 
     public function __construct(
@@ -50,6 +52,7 @@ abstract class Controller
         BrandInterface $brandInterface,
         KodeLokasiInterface $kodeLokasiInterface,
         profilNotvisitInterface $profilNotvisitInterface,
+        StoreCabangInterface $StoreCabangInterface
     )
     {
         $this->jwtAuthInterface = $jwtAuthInterface;
@@ -65,5 +68,6 @@ abstract class Controller
         $this->brandInterface = $brandInterface;
         $this->kodeLokasiInterface = $kodeLokasiInterface;
         $this->profilNotvisitInterface = $profilNotvisitInterface;
+        $this->StoreCabangInterface = $StoreCabangInterface;
     }
 }

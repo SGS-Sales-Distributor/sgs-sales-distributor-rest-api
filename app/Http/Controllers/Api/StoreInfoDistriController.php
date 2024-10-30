@@ -117,5 +117,10 @@ class StoreInfoDistriController extends Controller
     {
         return $this->storeInterface->showDataStoreInfoDist($request,$id);
     }
+
+    public function getStoreByCbg(Request $request, int $idCab): JsonResponse 
+    {
+        return $this->storeInterface->getStoreByCbg($request, $idCab);
+    }
     
 }

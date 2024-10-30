@@ -16,6 +16,8 @@ class StoreCabang extends Model
     
     protected $table = 'store_cabang';
 
+    protected $primaryKey = "id";
+
     protected $fillable = [
         'province_id',
         'kode_cabang',
@@ -58,5 +60,18 @@ class StoreCabang extends Model
     public function recentStores(): HasMany
     {
         return $this->hasMany(StoreInfoDistri::class, 'subcabang_idnew');
+    }
+
+    public function get_data_($search, $arr_pagination)
+    {
+        $arr_pagination['limit'] = 10;
+        if (!empty($search)) $arr_pagination['offset'] = 0 ;
+        $search = strtolower($search);
+        $data = StoreCabang::whereRaw("( lower(kode_cabang) like '%$search%' OR lower (nama_cabang) like '%$search%') AND deleted_at is NULL")
+            ->select('id','province_id', 'kode_cabang', 'nama_cabang')
+            ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
+            ->orderBy('id', 'ASC')->get();
+        return $data;
+        // OR lower (obj_type) like '%$search%')
     }
 }
