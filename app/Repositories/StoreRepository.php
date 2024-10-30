@@ -67,9 +67,9 @@ class StoreRepository extends Repository implements StoreInterface
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
                     ->leftJoin('profil_visit', function ($leftJoin) use ($userId) {
                     $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                             ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
-                             ->on('profil_visit.user', '=',DB::raw("'".$userId."'"));
-                    })
+                        ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                        ->on('profil_visit.user', '=', DB::raw("'" . $userId . "'"));
+                })
                     // ->on('profil_visit .user','=', $userId)
                     ->leftJoin('master_call_plan', function ($leftJoin2) {
                     $leftJoin2->on('master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id');
@@ -284,7 +284,7 @@ class StoreRepository extends Repository implements StoreInterface
         );
     }
 
-    public function getOneData(Request $request,int $id): JsonResponse
+    public function getOneData(Request $request, int $id): JsonResponse
     {
         $userId = $request->userId;
         //  DB::enableQueryLog();
@@ -317,11 +317,11 @@ class StoreRepository extends Repository implements StoreInterface
             ->leftJoin('profil_visit', function ($leftJoin) {
                 $leftJoin->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
                     ->on('profil_visit.user', '=', 'master_call_plan.user_id')
-                    ->on('profil_visit.store_id','=','master_call_plan_detail.store_id');
+                    ->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
             })
             ->where('master_call_plan_detail.store_id', $id)
             ->where('master_call_plan_detail.date', Carbon::now()->format('Y-m-d'))
-            ->where('master_call_plan.user_id', '=',DB::raw("'".$userId."'"))
+            ->where('master_call_plan.user_id', '=', DB::raw("'" . $userId . "'"))
             ->first();
         //  $log = DB::getQueryLog();
         //  dd($log);
@@ -1084,5 +1084,55 @@ class StoreRepository extends Repository implements StoreInterface
                 msg: $e->getMessage(),
             );
         }
+    }
+
+    public function getStoreByCbg(Request $request, int $idCab): JsonResponse
+    {
+        // DB::enableQueryLog();
+        $store_info_distri = StoreInfoDistri::select([
+            'store_id',
+            'store_name',
+            'store_alias',
+            'store_address',
+            'store_phone',
+            'store_fax',
+            'store_type_id',
+            'subcabang_id',
+            'store_code',
+            'active',
+            'subcabang_idnew',
+            'province_id',
+            'kode_cabang',
+            'nama_cabang',
+            'master_province.province'
+
+            // 'created_by',
+            // 'updated_by',
+            // 'created_at',
+            // 'updated_at',
+            // 'deleted_at'
+        ])
+            ->join('store_cabang', 'store_cabang.id', '=', 'store_info_distri.subcabang_id')
+            ->join('master_province', 'master_province.id_province', '=', 'store_cabang.province_id')
+            ->where('store_info_distri.subcabang_id', '=', $idCab)
+            ->get();
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+        if (count($store_info_distri) == 0) {
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: 'Data Kosong',
+            );
+        }
+
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Berhasil by cabang yey",
+            resource: $store_info_distri,
+        );
     }
 }

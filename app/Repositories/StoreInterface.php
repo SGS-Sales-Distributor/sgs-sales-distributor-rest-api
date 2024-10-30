@@ -50,5 +50,7 @@ interface StoreInterface
     public function confirmOtp(Request $request): JsonResponse;
 
     public function showDataStoreInfoDist(Request $request, int $id): JsonResponse;
+
+    public function getStoreByCbg(Request $request, int $idCab) : JsonResponse ;
     
 }
