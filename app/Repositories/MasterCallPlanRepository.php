@@ -216,6 +216,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                     'call_plan_id' => $setLastId,
                     'store_id' => $value['toko'],
                     'date' => $value['tanggal'],
+                    'created_by' => $request->created_by,
                 ];
             }
 

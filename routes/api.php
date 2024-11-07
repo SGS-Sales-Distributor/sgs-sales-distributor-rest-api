@@ -288,6 +288,7 @@ Route::group([
         //Store Cabang
         Route::get('/cabangs', [StoreCabangController::class, 'paging']); //INI UNTUK PAGING 
         Route::get('/cabangsAll', [StoreCabangController::class, 'getAll']);
+        Route::get('/cabangsByUser/{userId}', [StoreCabangController::class, 'getCabangByUser']);
 
         Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
     });
