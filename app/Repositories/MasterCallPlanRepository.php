@@ -153,12 +153,12 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $validator = Validator::make(
             $request->all(),
             [
-                'call_plan_id' => ['required', 'integer'],
+                // 'call_plan_id' => ['required', 'integer'],
                 'month_plan' => ['required', 'integer'],
                 'year_plan' => ['required', 'integer'],
                 'user_id' => ['required', 'integer'],
-                'store_id' => ['required', 'integer'],
-                'date' => ['required', 'date'],
+                // 'store_id' => ['required', 'integer'],
+                // 'date' => ['required', 'date'],
             ],
             [
                 'required' => ':attribute is required!',
@@ -178,28 +178,80 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         }
 
         try {
+            // master call header
             DB::beginTransaction();
 
-            $masterCallPlan = MasterCallPlan::create([
-                'month_plan' => $request->month_plan,
-                'year_plan' => $request->year_plan,
-                'user_id' => $request->user_id,
-            ]);
+            // mengambil id header user, bulan, & tahun
+            $IdHeader = MasterCallPlan::where('user_id', '=', $request->user_id)
+                ->where('month_plan', '=', $request->month_plan)
+                ->where('year_plan', '=', $request->year_plan)
+                ->first();
 
-            MasterCallPlanDetail::create([
-                'call_plan_id' => $request->call_plan_id,
-                'store_id' => $request->store_id,
-                'date' => $request->date,
-            ]);
 
             DB::commit();
 
+            if (!empty($IdHeader)) {
+                $setLastId = $IdHeader->id;
+            } else {
+                $masterCallPlan = MasterCallPlan::create([
+                    'month_plan' => $request->month_plan,
+                    'year_plan' => $request->year_plan,
+                    'user_id' => $request->user_id,
+                    'created_by' => $request->created_by,
+                ]);
+                $setLastId = $masterCallPlan->id;
+            }
+
+            // master call plan detail
+            DB::beginTransaction();
+
+
+            foreach ($request->daily_plan as $key => $value) {
+                $detailPlanStore = MasterCallPlanDetail::where('store_id', '=', $value['toko'])
+                    ->where('date', '=', $value['tanggal'])
+                    ->where('call_plan_id', '=', $setLastId)
+                    ->first();
+
+                $data[] = [
+                    'call_plan_id' => $setLastId,
+                    'store_id' => $value['toko'],
+                    'date' => $value['tanggal'],
+                ];
+            }
+
+            if (!empty($detailPlanStore)) {
+                return $this->clientErrorResponse(
+                    statusCode: 422,
+                    success: false,
+                    msg: "Plan Visit Toko Ini Sudah Dibuat Sebelumnya.",
+                );
+            } else {
+                MasterCallPlanDetail::insert($data);
+            }
+
+            DB::commit();
             return $this->successResponse(
                 statusCode: 201,
                 success: true,
                 msg: "Successfully create new master call plan data",
-                resource: $masterCallPlan
+                resource: $data
             );
+
+            // DB::beginTransaction();
+            // MasterCallPlanDetail::create([
+            //     'call_plan_id' => $masterCallPlan->id,
+            //     'store_id' => $request->toko,
+            //     'date' => $request->date,
+            // ]);
+            // DB::commit();
+
+
+            // return $this->successResponse(
+            //     statusCode: 201,
+            //     success: true,
+            //     msg: "Successfully create new master call plan data",
+            //     resource: $masterCallPlan
+            // );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
 
@@ -343,16 +395,16 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 'profil_visit.id as realisasi_visit',
                 'profil_notvisit.id as idKetVisit',
             ])
-            ->join('master_call_plan','master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
-            ->join('store_info_distri','store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
+            ->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
+            ->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
             ->leftJoin('profil_visit', function ($leftJoin) {
-				$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
-					->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
-					->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
-			})
+                $leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
+                    ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                    ->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
+            })
             ->leftJoin('profil_notvisit', function ($leftJoin2) {
-				$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
-			})
+                $leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
+            })
             ->where('master_call_plan.user_id', DB::raw("'" . $userId . "'"))
             // ->where('master_call_plan_detail.date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
             ->where('master_call_plan_detail.date', "$request->tomorrow")
