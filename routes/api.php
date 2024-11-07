@@ -218,6 +218,8 @@ Route::group([
         Route::get('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
         Route::get('/salesmen/{number}/call-plans', [SalesmanController::class, 'getCallPlans']);
         Route::get('/salesmen/{number}/call-plans/{callPlanId}', [SalesmanController::class, 'getOneCallPlan']);
+        Route::get('/salesmen/{user_id}', [SalesmanController::class, 'getUserOne']);
+
 
         // brand's routes.
         Route::get('/brands', [BrandController::class, 'getAll']);
@@ -286,5 +288,7 @@ Route::group([
         //Store Cabang
         Route::get('/cabangs', [StoreCabangController::class, 'paging']); //INI UNTUK PAGING 
         Route::get('/cabangsAll', [StoreCabangController::class, 'getAll']);
+
+        Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
     });
 });

@@ -79,4 +79,8 @@ class SalesmanController extends Controller
 		$userType = UserType::with('users')->orderBy('user_type_id')
         ->paginate(50);
 	}
+
+    public function getUserOne(int $user_id):JsonResponse{
+        return $this->salesmanInterface->getUserOne($user_id);
+    }
 }

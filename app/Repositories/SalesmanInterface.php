@@ -32,4 +32,6 @@ interface SalesmanInterface
     public function getCallPlansData(Request $request, string $userNumber): JsonResponse;
 
     public function getOneCallPlanData(string $userNumber, int $callPlanId): JsonResponse;
+
+    public function getUserOne(int $user_id):JsonResponse;
 }
