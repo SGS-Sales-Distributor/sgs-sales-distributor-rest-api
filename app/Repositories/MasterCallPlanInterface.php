@@ -20,4 +20,7 @@ interface MasterCallPlanInterface
     public function removeOneData(int $id): JsonResponse;
 
     public function notVisitedUsers(Request $request, int $userId): JsonResponse;
+    
+    public function getCoverage_plan(Request $request): JsonResponse;
+
 }

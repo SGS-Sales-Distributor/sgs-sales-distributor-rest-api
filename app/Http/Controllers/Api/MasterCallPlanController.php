@@ -45,6 +45,11 @@ class MasterCallPlanController extends Controller
         return $this->masterCallPlanInterface->removeOneData($id);
     }
 
+    public function getCoverage_plan(Request $request): JsonResponse
+    {
+        return $this->masterCallPlanInterface->getCoverage_plan($request);
+    }
+
     public function getOneDetail($id)
     {
         $data = MasterCallPlanDetail::find($id);
