@@ -291,5 +291,6 @@ Route::group([
         Route::get('/cabangsByUser/{userId}', [StoreCabangController::class, 'getCabangByUser']);
 
         Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
+        Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
     });
 });
