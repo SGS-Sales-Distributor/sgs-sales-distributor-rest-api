@@ -218,7 +218,7 @@ Route::group([
         Route::get('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'getOneVisit']);
         Route::get('/salesmen/{number}/call-plans', [SalesmanController::class, 'getCallPlans']);
         Route::get('/salesmen/{number}/call-plans/{callPlanId}', [SalesmanController::class, 'getOneCallPlan']);
-        Route::get('/salesmen/{user_id}', [SalesmanController::class, 'getUserOne']);
+        Route::get('/salesmenById/{user_id}', [SalesmanController::class, 'getUserOne']);
 
 
         // brand's routes.

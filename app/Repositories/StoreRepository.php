@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Validator;
 use SebastianBergmann\Environment\Console;
 use App\Models\User;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\URL;
+use App\Models\PublicModel;
 
 class StoreRepository extends Repository implements StoreInterface
 {
@@ -161,29 +163,37 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getAllDataWithoutCallPlans(Request $request): JsonResponse
     {
-        $searchByQuery = $request->query('q');
+        $URL = URL::current();
+        $searchByQuery = $request->query('search');
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 
         // DB::enableQueryLog();
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
                 $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery) {
-                return StoreInfoDistri::with('owners')
-                    ->select(
-                        'store_id',
-                        'store_name as nama_toko',
-                        'store_alias as alias_toko',
-                        'store_address as alamat_toko',
-                        'store_phone as nomor_telepon_toko',
-                        'store_fax as nomor_fax_toko',
-                        'store_type_id',
-                        'subcabang_id',
-                        'store_code as kode_toko',
-                        'active as status_toko',
-                    )->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+            function () use ($searchByQuery,$arr_pagination) {
+                return StoreInfoDistri::with('owners','cabang')
+                    // ->select(
+                    //     'store_id',
+                    //     'store_name as nama_toko',
+                    //     'store_alias as alias_toko',
+                    //     'store_address as alamat_toko',
+                    //     'store_phone as nomor_telepon_toko',
+                    //     'store_fax as nomor_fax_toko',
+                    //     'store_type_id',
+                    //     'subcabang_id',
+                    //     'store_code as kode_toko',
+                    //     'active as status_toko',
+                    // )
+                    ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
                         $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-                    })->whereHas('owners')
+                            // ->orWhere('kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
+                            // ->orWhere('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
+                    })
+                    // ->whereHas('owners')
                     ->orderBy('store_name', 'asc')
+                    ->limit($arr_pagination['limit'])
+                    ->offset($arr_pagination['offset'])
                     ->paginate($this::DEFAULT_PAGINATE);
                 // $log = DB::getQueryLog();
                 // dd($log);
@@ -228,7 +238,9 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getAllDataByOrderDateFilter(Request $request): JsonResponse
     {
-        $searchByOrderDateQuery = $request->query('q');
+        // $URL = URL::current();
+        $searchByOrderDateQuery = $request->query('search');
+        // $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 
         $filterByDateRange = $this->dateRangeFilter->parseDateRange($searchByOrderDateQuery);
 
