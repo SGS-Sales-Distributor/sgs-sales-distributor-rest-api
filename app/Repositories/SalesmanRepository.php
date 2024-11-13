@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\URL;
+use App\Models\PublicModel;
 
 class SalesmanRepository extends Repository implements SalesmanInterface
 {
@@ -29,12 +31,14 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
     public function getAllData(Request $request): JsonResponse
     {
-        $searchByQuery = $request->query('q');
+        $URL = URL::current();
+        $searchByQuery = $request->query('search');
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 
         $salesmenCache = Cache::remember(
             "salesmenCache",
                 $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery) {
+            function () use ($searchByQuery, $arr_pagination) {
                 return User::with([
                     'status',
                     'type',
@@ -46,7 +50,9 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                         $query->where('fullname', 'LIKE', '%' . $searchByQuery . '%')
                             ->orWhere('email', 'LIKE', '%' . $searchByQuery . '%');
                     })
-                    ->orderBy('number', 'asc')
+                    ->orderBy('fullname', 'asc')
+                    ->limit($arr_pagination['limit'])
+                    ->offset($arr_pagination['offset'])
                     ->paginate($this::DEFAULT_PAGINATE);
             }
         );
@@ -628,7 +634,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
     public function getUserOne(int $user_id): JsonResponse
     {
-        // $salesmanUserOne = User::select(
+        // $salesmanUserOne = return User::select(
         //     [
         //         'user_id',
         //         'number',
@@ -644,8 +650,11 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         //     ->where('user_id', '=', $user_id)
         //     ->first();
 
-        $users = User::findOrFail($user_id);
-        $salesmanUserOne = \DB::table('user_info')->Where('user_id', $user_id);
+        $uerOne = DB::findOrFail($user_id);
+        // DB::enableQueryLog();
+        $salesmanUserOne = DB::table('user_info')->Where('user_id', $user_id)->first();
+        // $log = DB::getQueryLog();
+        // dd($log);
 
 
         if (count($salesmanUserOne) == 0) {
