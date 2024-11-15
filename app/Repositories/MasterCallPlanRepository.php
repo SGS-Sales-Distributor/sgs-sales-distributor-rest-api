@@ -19,7 +19,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 {
     public function getAllData(Request $request): JsonResponse
     {
-        $searchByQuery = $request->query('q');
+        $searchByQuery = $request->query(key: 'search');
 
         $masterCallPlanCache = Cache::remember(
             'masterCallPlan',
@@ -440,12 +440,12 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $URL = URL::current();
 
         $searchByQuery = $request->query(key: 'search');
+        $tanggal = $request->query(key: 'tanggal');
 
-        if (!isset($request->search)) {
+        if (!isset($searchByQuery) & !isset($tanggal)) {
             $count = (new ProfilVisit())->count();
             $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
             // DB::enableQueryLog();
-            $chooseTgl = $request->tanggal;
             $data = DB::table('master_call_plan')
                 ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
             (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
@@ -476,7 +476,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
             (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
                 ->join('master_call_plan_detail', 'master_call_plan_detail.call_plan_id', '=', 'master_call_plan.id')
-                ->where('master_call_plan_detail.date', '=', $searchByQuery)
+                ->where('master_call_plan_detail.date', '=', $tanggal)
                 ->groupBy('master_call_plan.user_id')
                 ->groupBy('master_call_plan_detail.date');
 
@@ -486,6 +486,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->join('user_info', 'user_info.user_id', '=', 'a.user_id')
                 ->join('store_cabang', 'store_cabang.id', 'user_info.cabang_id')
                 ->join('store_info_distri', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
+                ->where('user_info.fullname', 'LIKE', '%' . $searchByQuery . '%')
+                ->orWhere('store_cabang.kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
                 ->groupBy('a.user_id')
                 ->groupBy('user_info.fullname')
                 ->groupBy('a.tanggal')
