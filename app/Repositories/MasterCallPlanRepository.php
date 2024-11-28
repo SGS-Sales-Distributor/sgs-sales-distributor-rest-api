@@ -440,9 +440,10 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $URL = URL::current();
 
         $searchByQuery = $request->query(key: 'search');
-        $tanggal = $request->query(key: 'tanggal');
+        $tanggalfr = $request->query(key: 'tanggalfr');
+        $tanggalto = $request->query(key: 'tanggalto');
 
-        if (!isset($searchByQuery) & !isset($tanggal)) {
+        if (!isset($searchByQuery) & !isset($tanggalfr) & !isset($tanggalto)) {
             $count = (new ProfilVisit())->count();
             $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
             // DB::enableQueryLog();
@@ -454,7 +455,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->groupBy('master_call_plan.user_id')
                 ->groupBy('master_call_plan_detail.date');
 
-            $dataA = DB::query()
+                $dataA = DB::query()
                 ->selectRaw('store_cabang.kode_cabang,user_info.fullname,count(store_info_distri.store_id) as jml_coverage,a.user_id,a.tanggal,a.plan_day_in,a.day_in_terpenuhi,a.day_in_tidak_terpenuhi')
                 ->fromSub($data, 'a')
                 ->join('user_info', 'user_info.user_id', '=', 'a.user_id')
@@ -467,6 +468,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->groupBy('a.day_in_terpenuhi')
                 ->groupBy('store_cabang.kode_cabang')
                 ->groupBy('a.day_in_tidak_terpenuhi')
+                ->orderBy('a.tanggal','asc')
                 ->limit($arr_pagination['limit'])
 				->offset($arr_pagination['offset'])
                 ->get();
@@ -474,9 +476,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
             $data = DB::table('master_call_plan')
                 ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
-            (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
+                (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
                 ->join('master_call_plan_detail', 'master_call_plan_detail.call_plan_id', '=', 'master_call_plan.id')
-                ->where('master_call_plan_detail.date', '=', $tanggal)
+                ->whereBetween('master_call_plan_detail.date',[$tanggalfr,$tanggalto]  )
                 ->groupBy('master_call_plan.user_id')
                 ->groupBy('master_call_plan_detail.date');
 
@@ -495,6 +497,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->groupBy('a.day_in_terpenuhi')
                 ->groupBy('store_cabang.kode_cabang')
                 ->groupBy('a.day_in_tidak_terpenuhi')
+                ->orderBy('a.tanggal','asc')
+                // ->limit($arr_pagination['limit'])
+				// ->offset($arr_pagination['offset'])
                 ->get();
 
             $count = $dataA->count();
@@ -510,12 +515,6 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             );
         }
 
-        // return $this->successResponse(
-        //     statusCode: 200,
-        //     success: true,
-        //     msg: "Successfully Fetch Coverage Plan",
-        //     resource: $dataA,
-        // );
 
         return response()->json(
 			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),

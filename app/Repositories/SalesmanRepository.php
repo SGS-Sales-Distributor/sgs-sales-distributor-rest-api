@@ -650,9 +650,10 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         //     ->where('user_id', '=', $user_id)
         //     ->first();
 
-        $uerOne = DB::findOrFail($user_id);
+        $uerOne = User::findOrFail($user_id);
+        // return $uerOne;
         // DB::enableQueryLog();
-        $salesmanUserOne = DB::table('user_info')->Where('user_id', $user_id)->first();
+        $salesmanUserOne = DB::table('user_info')->where('user_id', $user_id)->get();
         // $log = DB::getQueryLog();
         // dd($log);
 

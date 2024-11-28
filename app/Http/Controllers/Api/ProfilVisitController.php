@@ -18,14 +18,13 @@ class ProfilVisitController extends Controller
 	public function getAll(Request $request): JsonResponse
 	{
 		$URL = URL::current();
-		
+
 		$searchByQuery = $request->query(key: 'search');
+		$tanggalfr = $request->query(key: 'tanggalfr');
+		$tanggalto = $request->query(key: 'tanggalto');
 
-		$offsetQuery = $request->query('offset');
 
-		$limitQuery = $request->query('limit');
-
-		if (!isset($request->search)) {
+		if (!isset($request->search) & !isset($tanggalfr) & !isset($tanggalto)) {
 			$count = (new ProfilVisit())->count();
 			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 			// DB::enableQueryLog();
@@ -79,6 +78,8 @@ class ProfilVisitController extends Controller
 			// dd($log);
 
 		} else {
+			// DB::enableQueryLog();
+			// $count = (new ProfilVisit())->count();
 			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 			$visits = DB::table('master_call_plan_detail')
 				->select([
@@ -119,14 +120,24 @@ class ProfilVisitController extends Controller
 				->leftJoin('profil_notvisit', function ($leftJoin2) {
 					$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
 				})
-				->where('user_info.fullname','LIKE','%'.$searchByQuery.'%')
+				->whereBetween('master_call_plan_detail.date', [$tanggalfr, $tanggalto])
+				->where('user_info.fullname', 'LIKE', '%' . $searchByQuery . '%')
 				->orderBy('master_call_plan_detail.date', 'asc')
 				// ->limit($arr_pagination['limit'])
 				// ->offset($arr_pagination['offset'])
 				->get();
+			// $log = DB::getQueryLog();
+			// dd($log);
 			$count = $visits->count();
 		}
 
+		if (count($visits) == 0) {
+			return $this->errorResponse(
+				statusCode: 500,
+				success: false,
+				msg: 'Data Kosong',
+			);
+		}
 		// return $this->successResponse(
 		// 	statusCode: 200,
 		// 	success: true,
