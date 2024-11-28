@@ -123,8 +123,8 @@ class ProfilVisitController extends Controller
 				->whereBetween('master_call_plan_detail.date', [$tanggalfr, $tanggalto])
 				->where('user_info.fullname', 'LIKE', '%' . $searchByQuery . '%')
 				->orderBy('master_call_plan_detail.date', 'asc')
-				->limit($arr_pagination['limit'])
-				->offset($arr_pagination['offset'])
+				// ->limit($arr_pagination['limit'])
+				// ->offset($arr_pagination['offset'])
 				->get();
 			// $log = DB::getQueryLog();
 			// dd($log);
