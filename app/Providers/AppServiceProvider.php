@@ -30,6 +30,8 @@ use App\Repositories\StoreInterface;
 use App\Repositories\StoreRepository;
 use App\Repositories\StoreCabangRepository;
 use App\Repositories\StoreCabangInterface;
+use App\Repositories\OrderCustomerSalesInterface;
+use App\Repositories\OrderCustomerSalesRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -53,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(KodeLokasiInterface::class, KodeLokasiRepository::class);
         $this->app->bind(ProfilNotvisitInterface::class,ProfilNotvisitRepository::class);
         $this->app->bind(StoreCabangInterface::class,StoreCabangRepository::class);
+        $this->app->bind(orderCustomerSalesInterface::class, OrderCustomerSalesRepository::class);
     }
 
     /**

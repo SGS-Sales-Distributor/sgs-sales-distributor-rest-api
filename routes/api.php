@@ -16,7 +16,11 @@ use App\Http\Controllers\Api\KodeLokasiController;
 use App\Http\Controllers\Api\ProfilNotvisit;
 use App\Http\Controllers\Api\StoreCabangController;
 use App\Http\Middleware\JwtAuthMiddleware;
+use App\Http\Controllers\Api\OrderCustomerSalesController;
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\Api\OrderCustomerSalesDetailController;
+
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -292,5 +296,7 @@ Route::group([
 
         Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
         Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
+
+        Route::get('/detailOrder/{id}', [OrderCustomerSalesController::class, 'showDetailOrder']);
     });
 });
