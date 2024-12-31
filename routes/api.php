@@ -283,20 +283,27 @@ Route::group([
         Route::get('/stores/countPObyStore', [StoreInfoDistriController::class, 'countPObyStore']);
         Route::get('/stores/storeNameGet', [StoreInfoDistriController::class, 'storeNameGet']);
 
+        
         Route::get('/distriByCbg/{idCab}', [StoreInfoDistriController::class, 'getStoreByCbg']);
-
+        
         //plant's route
         Route::post('/plantsNotvisit', [ProfilNotvisit::class, 'saveOneData']);
         // Route::get('/profil_notvisitOne/{id}', [ProfilNotvisit::class, 'getOneData']);
-
+        
         //Store Cabang
         Route::get('/cabangs', [StoreCabangController::class, 'paging']); //INI UNTUK PAGING 
         Route::get('/cabangsAll', [StoreCabangController::class, 'getAll']);
         Route::get('/cabangsByUser/{userId}', [StoreCabangController::class, 'getCabangByUser']);
-
+        
         Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
         Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
-
+        
         Route::get('/detailOrder/{id}', [OrderCustomerSalesController::class, 'showDetailOrder']);
+        // Route::post('/stores/kirimOTP', [StoreInfoDistriController::class, 'generateOTP']);
+        Route::get('/detail-order/{id}', [StoreInfoDistriController::class, 'getDetail']);
+        Route::post('/stores/save-draft', [StoreInfoDistriController::class, 'saveDraft']);
+        Route::post('/stores/change-draft-to-deliv', [StoreInfoDistriController::class, 'changeDraftToDeliv']);
+        Route::put('/updateDetail/{id}', [StoreInfoDistriController::class, 'updateDetail']);
+        Route::delete('/stores/delete-draft/{id}', [StoreInfoDistriController::class, 'deleteDraft']);
     });
 });

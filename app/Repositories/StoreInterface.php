@@ -52,5 +52,13 @@ interface StoreInterface
     public function showDataStoreInfoDist(Request $request, int $id): JsonResponse;
 
     public function getStoreByCbg(Request $request, int $idCab) : JsonResponse ;
+
+    public function saveDraft(Request $request) : JsonResponse ;
+
+    public function changeDraftToDeliv(Request $request) : JsonResponse ;
+
+    public function updateDetail(Request $request, int $id) : JsonResponse ;
+
+    public function deleteDraft(int $id): JsonResponse;
     
 }

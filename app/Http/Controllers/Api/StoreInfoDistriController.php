@@ -18,9 +18,9 @@ class StoreInfoDistriController extends Controller
         return $this->storeInterface->getAllDataWithoutCallPlans($request);
     }
 
-    public function getOne(Request $request,int $id): JsonResponse
+    public function getOne(Request $request, int $id): JsonResponse
     {
-        return $this->storeInterface->getOneData($request,$id);
+        return $this->storeInterface->getOneData($request, $id);
     }
 
     public function storeOne(Request $request): JsonResponse
@@ -81,7 +81,7 @@ class StoreInfoDistriController extends Controller
     public function getAllOrders(Request $request, int $id): JsonResponse
     {
         return $this->storeInterface->getAllOrdersData($request, $id);
-    }   
+    }
 
     public function getOneOrder(int $id, int $orderId): JsonResponse
     {
@@ -113,14 +113,45 @@ class StoreInfoDistriController extends Controller
         return $this->storeInterface->confirmOtp($request);
     }
 
-    public function showDataStoreInfoDist(Request $request,int $id): JsonResponse
+    public function showDataStoreInfoDist(Request $request, int $id): JsonResponse
     {
-        return $this->storeInterface->showDataStoreInfoDist($request,$id);
+        return $this->storeInterface->showDataStoreInfoDist($request, $id);
     }
 
-    public function getStoreByCbg(Request $request, int $idCab): JsonResponse 
+    public function getStoreByCbg(Request $request, int $idCab): JsonResponse
     {
         return $this->storeInterface->getStoreByCbg($request, $idCab);
     }
-    
+
+    public function getDetail($id)
+    {
+        $data = OrderCustomerSalesDetail::where('id', $id)->first();
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch detail",
+            resource: $data,
+        );
+    }
+
+    public function saveDraft(Request $request): JsonResponse
+    {
+        return $this->storeInterface->saveDraft($request);
+    }
+
+    public function changeDraftToDeliv(Request $request): JsonResponse
+    {
+        return $this->storeInterface->changeDraftToDeliv($request);
+    }
+
+    public function updateDetail(Request $request, int $int): JsonResponse
+    {
+        return $this->storeInterface->updateDetail($request, $int);
+    }
+
+
+    public function deleteDraft($id): JsonResponse
+    {
+        return $this->storeInterface->deleteDraft($id);
+    }
 }

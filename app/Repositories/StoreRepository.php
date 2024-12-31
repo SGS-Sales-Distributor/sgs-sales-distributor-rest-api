@@ -171,8 +171,8 @@ class StoreRepository extends Repository implements StoreInterface
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
                 $this::DEFAULT_CACHE_TTL,
-            function () use ($searchByQuery,$arr_pagination) {
-                return StoreInfoDistri::with('owners','cabang')
+            function () use ($searchByQuery, $arr_pagination) {
+                return StoreInfoDistri::with('owners', 'cabang')
                     // ->select(
                     //     'store_id',
                     //     'store_name as nama_toko',
@@ -187,8 +187,8 @@ class StoreRepository extends Repository implements StoreInterface
                     // )
                     ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
                         $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-                            // ->orWhere('kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
-                            // ->orWhere('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
+                        // ->orWhere('kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
+                        // ->orWhere('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
                     })
                     // ->whereHas('owners')
                     ->orderBy('store_name', 'asc')
@@ -1146,5 +1146,255 @@ class StoreRepository extends Repository implements StoreInterface
             msg: "Berhasil by cabang yey",
             resource: $store_info_distri,
         );
+    }
+
+    public function saveDraft(Request $request): JsonResponse
+    {
+        $store = StoreInfoDistri::where('store_id', $request->idToko)
+            ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $countPo = $this->countPObyStore($request->idToko);
+            $storeName = $this->storeNameGet($request->idToko);
+
+            $objectOrder = $request->objOrder;
+
+            $initialNum = 0;
+
+            foreach ($objectOrder as $key => $value) {
+                $initialNum += $objectOrder[$key]['qty'];
+            }
+
+            //generate NO PO
+            $dayPo = date('d');
+            $monthPo = date('m');
+            $yearP0 = date('Y');
+            $generTeNomerPo = $countPo . $dayPo . $monthPo . $yearP0 . $request->idToko;
+            $nomor_po = $generTeNomerPo;
+
+            $id_table = OrderCustomerSales::create([
+                'no_order' => $nomor_po,
+                'tgl_order' => date('Y-m-d'),
+                'tipe' => 'SO',
+                'company' => 1,
+                'top' => 30,
+                'cust_code' => str_replace('-', '', $store->store_code),
+                'ship_code' => '000',
+                'whs_code' => '016',
+                'whs_code_to' => 0,
+                'order_sts' => 'Draft',
+                'status_id' => 0,
+                'totOrderQty' => $initialNum,
+                'totReleaseQty' => 0,
+                'keterangan' => $request->metodePembayaran,
+                'llb_gabungan_reff' => null,
+                'llb_gabungan_sts' => "Open",
+                'uploaded_at' => date('Y-m-d H:i:s'),
+                'uploaded_by' => $storeName,
+                'store_id' => $request->idToko,
+                'created_by' => $request->userNumber,
+                'updated_by' => $request->userNumber,
+            ])->id;
+            $n = 0;
+
+            foreach ($objectOrder as $key => $value) {
+                $n++;
+                OrderCustomerSalesDetail::create([
+                    'orderId' => $id_table,
+                    'lineNo' => $n,
+                    'itemCodeCust' => $objectOrder[$key]['prodNumber'],
+                    'itemCode' => $objectOrder[$key]['prodNumber'],
+                    'qtyOrder' => $objectOrder[$key]['qty'],
+                    'releaseOrder' => 0,
+                    'add_disc_1' => 0,
+                    'add_disc_2' => $objectOrder[$key]['statusBonus'],
+                    'created_by' => $request->userNumber,
+                    'updated_by' => $request->userNumber,
+                ]);
+
+                // // get item by item code
+                // $item = DB::table('product_info_do AS pid')
+                // ->join('stock AS s', 's.prod_number', '=', 'pid.prod_number')
+                // ->where('s.prod_number', $objectOrder[$key]['prodNumber'])
+                // ->first();
+
+                // // potong stocknya
+                // Stock::where('prod_number', $objectOrder[$key]['prodNumber'])
+                // ->update(['qty_stock' => ($item->qty_stock - $objectOrder[$key]['qty'])]);
+            }
+
+            // $kode_otp = $this->generateOTP($id_table, $nomor_po);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201,
+                success: true,
+                msg: "Pembuatan draft PO berhasil!",
+                resource: [
+                    'nomor_po' => $nomor_po,
+                    //plan detail order ini diremark
+                    // 'otp' => $kode_otp,
+                ],
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function changeDraftToDeliv(Request $request): JsonResponse
+    {
+        $store = StoreInfoDistri::where('store_id', $request->idToko)
+            ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $objectOrder = $request->objOrder;
+
+            $initialNum = 0;
+
+            foreach ($objectOrder as $key => $value) {
+                $initialNum += $objectOrder[$key]['qtyOrder'];
+            }
+
+            $id_table = DB::table('order_customer_sales')->where('id', $request->id)->first();
+            $nomor_po = $id_table->no_order;
+
+            foreach ($objectOrder as $key => $value) {
+                // get item by item code
+                $item = DB::table('product_info_do AS pid')
+                    ->join('stock AS s', 's.prod_number', '=', 'pid.prod_number')
+                    ->where('s.prod_number', $objectOrder[$key]['itemCode'])
+                    ->first();
+
+                // potong stocknya
+                Stock::where('prod_number', $objectOrder[$key]['itemCode'])
+                    ->update(['qty_stock' => ($item->qty_stock - $objectOrder[$key]['qtyOrder'])]);
+            }
+
+            $kode_otp = $this->generateOTP($id_table->id, $nomor_po);
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201,
+                success: true,
+                msg: "Pembuatan draft PO berhasil!",
+                resource: [
+                    'nomor_po' => $nomor_po,
+                    //plan detail order ini diremark
+                    'otp' => $kode_otp,
+                ],
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: $e->getStatusCode(),
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Error $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function updateDetail(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'prod_name' => 'required|string|max:255',
+            'qtyOrder' => 'required|integer|min:1',
+            'prod_unit_price' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $detail = OrderCustomerSalesDetail::findOrFail($id);
+            $detail->update([
+                'prod_name' => $request->prod_name,
+                'qtyOrder' => $request->qtyOrder,
+                'prod_unit_price' => $request->prod_unit_price,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Detail ID {$id} berhasil diupdate.",
+                'resource' => $detail,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteDraft($id): JsonResponse
+    {
+        Log::info("ID diterima dengan tipe: " . gettype($id));
+
+        try {
+            $id = (int) $id;
+
+            $order = OrderCustomerSalesDetail::findOrFail($id);
+            $order->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Draft ID {$id} berhasil dihapus.",
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error saat menghapus draft: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
