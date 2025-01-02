@@ -1417,12 +1417,16 @@ class StoreRepository extends Repository implements StoreInterface
                 'user_info.name',
                 'master_province.province',
                 'store_cabang.kode_cabang',
+                'store_info_distri_person.owner',
+                'store_info_distri_person.nik_owner',
+                'store_info_distri_person.email_owner',
                 'store_cabang.created_by as created_by',
                 'store_cabang.updated_by as updated_by',
                 'store_cabang.created_at as created_at',
                 'store_cabang.updated_at as updated_at',
                 'store_cabang.deleted_at as deleted_at',
             ])
+            ->join('store_info_distri_person','store_info_distri_person.store_id','=','store_info_distri.store_id')
             ->join('store_cabang', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
             ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
             ->join('master_province', 'master_province.id_province', '=', 'store_cabang.province_id')
