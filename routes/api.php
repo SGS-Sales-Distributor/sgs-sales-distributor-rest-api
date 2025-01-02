@@ -265,6 +265,7 @@ Route::group([
         Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
         Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'removeOne']);
         Route::get('/storesInfo/{id}', [StoreInfoDistriController::class, 'showDataStoreInfoDist']);
+        Route::get('/storesByUser/{userId}', [StoreInfoDistriController::class, 'getStoresByUser']);
 
         Route::get('/stores/{id}/owners', [StoreInfoDistriController::class, 'getAllOwners']);
         Route::get('/stores/{id}/owners/{ownerId}', [StoreInfoDistriController::class, 'getOneOwner']);

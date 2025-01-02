@@ -1397,4 +1397,46 @@ class StoreRepository extends Repository implements StoreInterface
             ], 500);
         }
     }
+
+
+    public function getStoresByUsers(Request $request, $userId): JsonResponse
+    {
+        //  DB::enableQueryLog();
+        $storeByUser = DB::table('store_info_distri')
+            ->select([
+                'store_info_distri.store_id',
+                'store_name',
+                'store_address',
+                'store_fax',
+                'store_phone',
+                'subcabang_id',
+                'store_code',
+                'user_info.fullname',
+                'user_info.phone',
+                'user_info.email',
+                'user_info.name',
+                'master_province.province',
+                'store_cabang.kode_cabang',
+                'store_cabang.created_by as created_by',
+                'store_cabang.updated_by as updated_by',
+                'store_cabang.created_at as created_at',
+                'store_cabang.updated_at as updated_at',
+                'store_cabang.deleted_at as deleted_at',
+            ])
+            ->join('store_cabang', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
+            ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
+            ->join('master_province', 'master_province.id_province', '=', 'store_cabang.province_id')
+            ->where('user_info.user_id', '=', $userId)
+            ->get();
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store By User",
+            resource: $storeByUser,
+        );
+    }
 }

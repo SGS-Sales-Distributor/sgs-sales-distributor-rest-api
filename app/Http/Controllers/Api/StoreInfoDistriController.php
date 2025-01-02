@@ -154,4 +154,9 @@ class StoreInfoDistriController extends Controller
     {
         return $this->storeInterface->deleteDraft($id);
     }
+
+    public function getStoresByUser(Request $request, int $userId): JsonResponse
+    {
+        return $this->storeInterface->getStoresByUsers($request, $userId);
+    }
 }
