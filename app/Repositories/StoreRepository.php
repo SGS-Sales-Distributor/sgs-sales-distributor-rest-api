@@ -466,14 +466,31 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getStoreCabangs(Request $request): JsonResponse
     {
-        $searchByQuery = $request->query('q');
+        // $searchByQuery = $request->query('q');
 
-        $storeCabangsCache = Cache::remember('storeCabangs', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
-            return StoreCabang::with(['province', 'stores'])
-                ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                    $query->where('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
-                })->orderBy('nama_cabang')->paginate($this::DEFAULT_PAGINATE);
-        });
+        // $storeCabangsCache = Cache::remember('storeCabangs', $this::DEFAULT_CACHE_TTL, function () use ($searchByQuery) {
+        //     return StoreCabang::with(['province', 'stores'])
+        //         ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+        //             $query->where('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
+        //         })->orderBy('nama_cabang')->paginate($this::DEFAULT_PAGINATE);
+        // });
+
+        $storeCabangsCache  = DB::table('store_cabang')
+            ->select([
+                'id',
+                'province_id',
+                'kode_cabang',
+                'nama_cabang',
+                'store_cabang.created_by as created_by',
+                'store_cabang.updated_by as updated_by',
+                'store_cabang.created_at as created_at',
+                'store_cabang.updated_at as updated_at',
+                'store_cabang.deleted_at as deleted_at',
+            ])
+            // ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
+            // ->where('user_info.user_id', '=', $userId)
+            ->orderBy('nama_cabang','ASC')
+            ->get();
 
         return $this->successResponse(
             statusCode: 200,
