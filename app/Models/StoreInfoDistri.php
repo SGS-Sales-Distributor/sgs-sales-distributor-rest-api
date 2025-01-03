@@ -109,4 +109,5 @@ class StoreInfoDistri extends Model
     {
         return $this->hasMany(MasterCallPlanDetail::class, 'store_id');
     }
+
 }

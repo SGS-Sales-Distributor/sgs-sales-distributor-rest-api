@@ -61,4 +61,5 @@ interface StoreInterface
 
     public function deleteDraft(int $id): JsonResponse;
     
+    public function getStoresByUsers(Request $request, int $userId) : JsonResponse ;
 }

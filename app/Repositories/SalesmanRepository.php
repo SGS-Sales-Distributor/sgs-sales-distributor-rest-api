@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\MasterCallPlan;
 use App\Models\ProfilVisit;
+use App\Models\UserInfoCabang;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
@@ -277,6 +278,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         try {
             DB::beginTransaction();
 
+            //user_info
             $salesman = User::create([
                 'number' => $this->randomDigitNumber->generateRandomNumber(),
                 'nik' => $request->nik,
@@ -285,7 +287,35 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 'email' => $request->email,
                 'name' => $request->name,
                 'password' => $request->password,
+
             ]);
+            $setLastUserId = $salesman->user_id;
+
+            DB::beginTransaction();
+
+            //user_info_cabang
+            // foreach ($request->chooseCabang as $key => $value) {
+            //     $detailCbang = UserInfoCabang::where('user_id', '=', $value['user_id'])
+            //         ->where('cabang_id', '=', $value['cabang_id'])
+            //         ->where('user_id', '=', $setLastUserId)
+            //         ->first();
+
+            //     $data[] = [
+            //         'user_id' => $setLastUserId,
+            //         'cabang_id' => $value['cabang_id'],
+            //         'created_by' => $request->created_by,
+            //     ];
+            // }
+
+            // if (!empty($detailCbang)) {
+            //     return $this->clientErrorResponse(
+            //         statusCode: 422,
+            //         success: false,
+            //         msg: "Cabang Sudah Ada Untuk User Ini.",
+            //     );
+            // } else {
+            //     UserInfoCabang::insert($data);
+            // }
 
             DB::commit();
 
