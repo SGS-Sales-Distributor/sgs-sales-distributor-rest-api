@@ -475,7 +475,7 @@ class StoreRepository extends Repository implements StoreInterface
         //         })->orderBy('nama_cabang')->paginate($this::DEFAULT_PAGINATE);
         // });
 
-        $storeCabangsCache  = DB::table('store_cabang')
+        $storeCabangsCache = DB::table('store_cabang')
             ->select([
                 'id',
                 'province_id',
@@ -489,7 +489,7 @@ class StoreRepository extends Repository implements StoreInterface
             ])
             // ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
             // ->where('user_info.user_id', '=', $userId)
-            ->orderBy('nama_cabang','ASC')
+            ->orderBy('nama_cabang', 'ASC')
             ->get();
 
         return $this->successResponse(
@@ -539,8 +539,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'subcabang_idnew' => $request->subcabang_id,
                 'store_code' => 'OS' . implode(',', str_split(sprintf('%03d', $request->subcabang_id), 3)) . "-" . sprintf('%04d', $setLastId),
                 'active' => 1,
-                'created_by' => $request->userNumber,
-                'updated_by' => $request->userNumber,
+                'created_by' => $request->userFullname,
+                'updated_by' => $request->userFullname,
             ]);
 
             DB::commit();
@@ -580,43 +580,65 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function updateOneData(Request $request, int $id): JsonResponse
     {
+        // Validasi input dengan pengecualian unik untuk `store_phone` dan `store_fax`
         $validator = Validator::make($request->all(), [
-            'store_name' => ['required', 'string', 'max:100'],
-            'store_alias' => ['required', 'string', 'max:200'],
-            'store_address' => ['required', 'string'],
-            'store_phone' => ['required', 'string', 'max:20', 'unique:store_info_distri,store_phone'],
-            'store_fax' => ['required', 'string', 'max:20', 'unique:store_info_distri,store_fax'],
-            'store_type_id' => ['required', 'integer'],
-            'subcabang_id' => ['required', 'integer'],
-            'subcabang_idnew' => ['nullable', 'integer'],
-            'store_code' => ['nullable', 'string', 'max:20'],
-            'active' => ['nullable', 'integer'],
+            'store_name' => 'required|string|max:100',
+            'store_alias' => 'required|string|max:200',
+            'store_address' => 'required|string',
+            'store_phone' => "required|string|max:20|unique:store_info_distri,store_phone,{$id},store_id",
+            // 'store_fax' => "required|string|max:20|unique:store_info_distri,store_fax,{$id},store_id",
+            // 'store_type_id' => 'required|integer',
+            // 'subcabang_id' => 'required|integer',
+            'owner' => 'required|string',
+            'nik_owner' => 'required|string', // Ubah dari integer ke string
+            'email_owner' => 'required|string|email',
+            // 'user_id' => ['required', 'integer'],
         ]);
 
+        // Cek jika validasi gagal
         if ($validator->fails()) {
-            return $this->clientErrorResponse(
-                statusCode: 422,
-                success: false,
-                msg: $validator->errors()->first(),
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors(),
+            ], 422);
         }
-
-        $store = StoreInfoDistri::where('store_id', $id)->firstOrFail();
 
         try {
             DB::beginTransaction();
 
+            // Ambil data store
+            $store = StoreInfoDistri::where('store_id', $id)->firstOrFail();
             $store->update([
                 'store_name' => $request->store_name,
                 'store_alias' => $request->store_alias,
                 'store_address' => $request->store_address,
                 'store_phone' => $request->store_phone,
-                'store_fax' => $request->store_fax,
-                'store_type_id' => $request->store_type_id,
-                'subcabang_id' => $request->subcabang_id,
-                'store_code' => $store->store_code,
-                'active' => $request->active,
+                // 'store_fax' => $request->store_fax,
+                // 'store_type_id' => $request->store_type_id,
+                // 'subcabang_id' => $request->subcabang_id,
+                // 'store_code' => $store->store_code,
+                // 'active' => $request->active,
+                'updated_by'=>$request->updated_by
             ]);
+
+            // Update atau buat data owner di `store_info_distri_person`
+            StoreInfoDistriPerson::updateOrCreate(
+                ['store_id' => $id],
+                [
+                    'owner' => $request->owner,
+                    'nik_owner' => $request->nik_owner,
+                    'email_owner' => $request->email_owner,
+                    'updated_by'=>$request->updated_by
+                ]
+            );
+
+            // StoreCreditLimit::updateOrCreate(
+            //     ['store_id' => $id],
+            //     [
+            //         'credit_limit' => $request->credit_limit,
+            //     ]
+            // );
 
             DB::commit();
 
@@ -713,6 +735,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'email_owner' => $request->email_owner,
                 'ktp_owner' => $ktp_name ? $ktp_name : "",
                 'photo_other' => $photo_other_name ? $photo_other_name : "",
+                'created_by' => $request->userFullname,
+                'updated_by' => $request->userFullname,
             ]);
 
             DB::commit();
@@ -1443,7 +1467,7 @@ class StoreRepository extends Repository implements StoreInterface
                 'store_cabang.updated_at as updated_at',
                 'store_cabang.deleted_at as deleted_at',
             ])
-            ->join('store_info_distri_person','store_info_distri_person.store_id','=','store_info_distri.store_id')
+            ->join('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
             ->join('store_cabang', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
             ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
             ->join('master_province', 'master_province.id_province', '=', 'store_cabang.province_id')
