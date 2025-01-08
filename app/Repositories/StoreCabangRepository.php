@@ -45,9 +45,10 @@ class StoreCabangRepository extends Repository implements StoreCabangInterface
 
     public function getCabangByUser(Request $request, $userId): JsonResponse
     {
-        $storecabang = DB::table('store_cabang')
+        
+        $storecabang = DB::table('user_info_cabang')
             ->select([
-                'id',
+                'store_cabang.id',
                 'province_id',
                 'kode_cabang',
                 'nama_cabang',
@@ -57,7 +58,8 @@ class StoreCabangRepository extends Repository implements StoreCabangInterface
                 'store_cabang.updated_at as updated_at',
                 'store_cabang.deleted_at as deleted_at',
             ])
-            ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
+            ->join('user_info', 'user_info.user_id', '=', 'user_info_cabang.user_id')
+            ->join('store_cabang','store_cabang.id','=','user_info_cabang.cabang_id')
             ->where('user_info.user_id', '=', $userId)
             ->get();
 
