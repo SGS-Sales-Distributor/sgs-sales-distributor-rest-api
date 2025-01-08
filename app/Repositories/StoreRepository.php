@@ -1469,8 +1469,9 @@ class StoreRepository extends Repository implements StoreInterface
             ])
             ->join('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
             ->join('store_cabang', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
-            ->join('user_info', 'user_info.cabang_id', '=', 'store_cabang.id')
             ->join('master_province', 'master_province.id_province', '=', 'store_cabang.province_id')
+            ->join('user_info_cabang', 'user_info_cabang.cabang_id', '=', 'store_cabang.id')
+            ->join('user_info', 'user_info.user_id', '=', 'user_info_cabang.user_id')
             ->where('user_info.user_id', '=', $userId)
             ->get();
         // $log = DB::getQueryLog();
