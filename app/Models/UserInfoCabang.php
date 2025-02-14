@@ -11,6 +11,8 @@ class UserInfoCabang extends Model
     use HasFactory,SoftDeletes;
 
     public $timestamps = true;
+
+    protected $table = 'user_info_cabang';
     
     protected $primaryKey = 'id';
 

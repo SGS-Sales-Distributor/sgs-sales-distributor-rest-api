@@ -3,6 +3,7 @@
 namespace App\Repositories\JwtAuthentication;
 
 use App\Models\User;
+use App\Models\UserInfoCabang;
 use App\Repositories\Repository;
 use Carbon\Carbon;
 use DateTimeImmutable;
@@ -125,7 +126,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             //generate NIK
             $month = date('m');
             $year = date('y');
-            $generateNik = '06' . $request->kode_lokasi . $month . $year . sprintf('%05d', $setLastId);
+            $generateNik = '06' . $request->input('kode_lokasi.kode_lokasi') . $month . $year . sprintf('%05d', $setLastId);
 
             $user = User::create([
                 // 'number' => $request->number,
@@ -137,7 +138,19 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
                 'name' => $request->fullname,
                 'password' => $request->password,
                 'type_id' => 2,
-                'status' => 2,
+                'status' => 1,
+                'jabatan_id' =>$request->jobdesk,
+                'created_by' => $request->fullname
+            ]);
+
+            $LastIdUserNew = $user->user_id;
+
+            $userInfoCabang = UserInfoCabang::create([
+                // 'id',
+                'user_id' => $LastIdUserNew,
+                'cabang_id' => $request->input('kode_lokasi.cabangId') ,
+                'created_by' => $user->name,
+                'updated_by' => $user->name,
             ]);
 
             DB::commit();
@@ -145,7 +158,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             return $this->successResponse(
                 statusCode: 201,
                 success: true,
-                msg: "Successfully register new salesman account",
+                msg: "Berhasil Registrasi Akun",
                 resource: $user
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {

@@ -320,7 +320,7 @@ class ProfilVisitController extends Controller
 		// $log = DB::getQueryLog();
 		// dd($log);
 
-		if (!$visit) {
+		if (count($visit) == 0) {
 			return $this->clientErrorResponse(
 				statusCode: 404,
 				success: false,
