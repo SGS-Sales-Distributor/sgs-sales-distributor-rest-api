@@ -195,7 +195,7 @@ Route::group([
         Route::post('/login', [JwtAuthController::class, 'login']);
         Route::post('/refresh', [JwtAuthController::class, 'refreshToken']);
         Route::post('/register', [JwtAuthController::class, 'register']);
-
+        
         Route::group([
             'middleware' => JwtAuthMiddleware::class
         ], function () {
@@ -203,6 +203,9 @@ Route::group([
         });
     });
     Route::get('/area', action: [KodeLokasiController::class, 'getAll']);
+    
+    //Ambil Data Jabatan
+    Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
 
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
@@ -313,7 +316,6 @@ Route::group([
         Route::get('/getAbsen/{user_id}/',[AttendeeController::class,'getDataAbsen']);
         Route::post('/addIn/{number}', [AttendeeController::class,'addIn']);
         Route::post('/addOut/{number}/{attendId}', [AttendeeController::class,'addOut']);
-        Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
         Route::get('/jabatanbyOne/{id}', [sts_jabatan::class,'get_data_by_id']);
     });
 });

@@ -35,7 +35,8 @@ class User extends Authenticatable
         'store_id',
         'status_ba',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'jabatan_id'
     ];
 
     /**

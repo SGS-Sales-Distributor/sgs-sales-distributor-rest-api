@@ -31,4 +31,16 @@ class MasterFreqCallPlan extends Model
             'deleted_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
+
+    public function get_data()
+    {
+        $data = sts_jabatan::select('id', 'frekuensi', 'created_by')
+            ->orderBy('id', 'ASC')->get();
+        if (!$data) {
+            return json_encode('Data Kosong');
+        }
+
+        return $data;
+        // OR lower (obj_type) like '%$search%')
+    }
 }
