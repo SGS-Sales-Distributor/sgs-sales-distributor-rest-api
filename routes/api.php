@@ -15,9 +15,11 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\KodeLokasiController;
 use App\Http\Controllers\Api\ProfilNotvisit;
 use App\Http\Controllers\Api\StoreCabangController;
+use App\Http\Controllers\AttendeeController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use App\Http\Controllers\Api\OrderCustomerSalesController;
 use Illuminate\Support\Facades\Route;
+use App\Models\sts_jabatan;
 
 use App\Http\Controllers\Api\OrderCustomerSalesDetailController;
 
@@ -92,6 +94,7 @@ Route::group([
     // Router::get('/getCboUserType', 'UserInfoController@getCboUserType');
     // Router::get('/getCboStoreCabang', 'UserInfoController@getCboStoreCabang');
     Route::get('/getCboOutlet', 'UserInfoController@getCboOutlet');
+    
     // Router::get('/getCboPenempatan', 'UserInfoController@getCboPenempatan');
     // Router::get('/getKodeLokasi/{id}', 'UserInfoController@getKodeLokasi');
     // Router::post('/exportData', 'UserInfoController@xportData');
@@ -306,5 +309,11 @@ Route::group([
         Route::post('/stores/change-draft-to-deliv', [StoreInfoDistriController::class, 'changeDraftToDeliv']);
         Route::put('/updateDetail/{id}', [StoreInfoDistriController::class, 'updateDetail']);
         Route::delete('/stores/delete-draft/{id}', [StoreInfoDistriController::class, 'deleteDraft']);
+
+        Route::get('/getAbsen/{user_id}/',[AttendeeController::class,'getDataAbsen']);
+        Route::post('/addIn/{number}', [AttendeeController::class,'addIn']);
+        Route::post('/addOut/{number}/{attendId}', [AttendeeController::class,'addOut']);
+        Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
+        Route::get('/jabatanbyOne/{id}', [sts_jabatan::class,'get_data_by_id']);
     });
 });
