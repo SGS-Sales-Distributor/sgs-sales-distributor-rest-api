@@ -34,7 +34,8 @@ class JwtAuthToken
             "phone_number" => $user->phone,
             "email" => $user->email,
             "username" => $user->name,
-            "status" => $user->status?->status ?? 'inactive',
+            "status" => $user->status,
+            "jabatan_id" => $user->jabatan_id,
         ];
 
         $payload = [
