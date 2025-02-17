@@ -20,6 +20,7 @@ use App\Http\Middleware\JwtAuthMiddleware;
 use App\Http\Controllers\Api\OrderCustomerSalesController;
 use Illuminate\Support\Facades\Route;
 use App\Models\sts_jabatan;
+use App\Models\Attendee;
 
 use App\Http\Controllers\Api\OrderCustomerSalesDetailController;
 
@@ -317,5 +318,6 @@ Route::group([
         Route::post('/addIn/{number}', [AttendeeController::class,'addIn']);
         Route::post('/addOut/{number}/{attendId}', [AttendeeController::class,'addOut']);
         Route::get('/jabatanbyOne/{id}', [sts_jabatan::class,'get_data_by_id']);
+        Route::get('/getData', [AttendeeController::class,'getAllAbsen']);
     });
 });

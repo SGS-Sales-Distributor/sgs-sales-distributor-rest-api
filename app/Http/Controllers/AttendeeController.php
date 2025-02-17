@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
+use App\Models\PublicModel;
 
 class AttendeeController extends Controller
 {
@@ -115,6 +117,73 @@ class AttendeeController extends Controller
                 msg: $e->getMessage(),
             );
         }
+    }
+
+    public function getAllAbsen(Request $request):JsonResponse
+    {
+        $URL = URL::current();
+
+        $search =  $request->query(key: 'search');
+        $depcode = $request->query(key: 'depcode');
+        $date_start = $request->query(key: 'date_start');
+        $date_end = $request->query(key: 'date_end');
+        $users_id = $request->query(key: 'users_id');
+
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+        $count = (new Attendee())->count();
+        // DB::enableQueryLog();
+        $data = Attendee::select(["attendance.id as id",
+        "attendee_date",
+        "attendance.users_id", 
+        "attendee_time_in", 
+        "attendee_latitude_in", 
+        "attendee_longitude_in", 
+        "images_in AS img_in", 
+        "attendee_time_out", 
+        "attendee_latitude_out", 
+        "attendee_longitude_out", 
+        "images_out AS img_out", 
+        // "null as shedule_name", 
+        // "null as schedule_in", 
+        // "null as schedule_out",  
+        "user_info.fullname AS profile_name", 
+        "user_info.nik AS nik", 
+        // "null as late_duration",
+        // "null as remarks",
+        // "'attendee' as type"
+        ])
+            ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->whereRaw(" user_info.fullname like '%$search%' ")
+            ->where('attendance.deleted_at', null)
+            ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
+            ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
+            ->where('attendance.users_id', 'like', '%'.$users_id.'%')
+            ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
+            ->orderBy('attendee_date', 'desc')
+            ->orderBy('attendee_time_in', 'asc')
+            ->orderBy('user_info.fullname', 'asc')
+            ->groupBy('attendance.id','user_info.fullname','user_info.nik')
+            ->get();
+            
+        $count = $data->count();
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+        // return $data;
+        if (count($data) == 0) {
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: 'Data Kosong',
+            );
+        }
+
+
+        return response()->json(
+			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+			(new PublicModel())->array_respon_200_table_tr($data, $count, $arr_pagination),
+			200
+		);
     }
 
 
