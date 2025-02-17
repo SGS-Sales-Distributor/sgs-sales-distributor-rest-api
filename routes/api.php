@@ -207,6 +207,9 @@ Route::group([
     
     //Ambil Data Jabatan
     Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
+    
+    //Ambil Data Asben
+    Route::get('trx/attendee/getData', [AttendeeController::class,'getAllAbsen']);
 
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
@@ -318,6 +321,5 @@ Route::group([
         Route::post('/addIn/{number}', [AttendeeController::class,'addIn']);
         Route::post('/addOut/{number}/{attendId}', [AttendeeController::class,'addOut']);
         Route::get('/jabatanbyOne/{id}', [sts_jabatan::class,'get_data_by_id']);
-        Route::get('/getData', [AttendeeController::class,'getAllAbsen']);
     });
 });
