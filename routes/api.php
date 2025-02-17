@@ -209,7 +209,7 @@ Route::group([
     Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
     
     //Ambil Data Asben
-    Route::get('trx/attendee/getData', [AttendeeController::class,'getAllAbsen']);
+    Route::get('/trx/attendee/getData', [AttendeeController::class,'getAllAbsen']);
 
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
