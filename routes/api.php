@@ -210,7 +210,7 @@ Route::group([
     
     //Ambil Data Asben
     Route::get('/getData', [AttendeeController::class,'getAllAbsen']);
-    Route::get('/getById/{user_id}/',[AttendeeController::class,'getDataAbsen']);
+    Route::get('/getById/{id}/',[AttendeeController::class,'getDataAbsenById']);
 
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);

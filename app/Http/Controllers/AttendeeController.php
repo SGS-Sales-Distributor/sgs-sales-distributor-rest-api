@@ -44,6 +44,35 @@ class AttendeeController extends Controller
         );
     }
 
+    public function getDataAbsenById(int $id, Request $request): JsonResponse
+    {
+        // DB::enableQueryLog();
+        $ateende = DB::table('attendance')
+            ->select('attendance.*')
+            ->where('id', $id)
+            // ->where('attendee_date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
+            ->first();
+        // $count = $visit->count();
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+
+        if (!$ateende) {
+            return $this->clientErrorResponse(
+                statusCode: 404,
+                success: false,
+                msg: "Unsuccessful Absen UserId : {$user_id} not found.",
+            );
+        }
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully Fetch Data.",
+            resource: $visit,
+        );
+    }
+
     public static function str_random($length = 16)
     {
         $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
