@@ -48,8 +48,9 @@ class AttendeeController extends Controller
     {
         // DB::enableQueryLog();
         $ateende = DB::table('attendance')
-            ->select('attendance.*')
-            ->where('id', $id)
+            ->select('attendance.*,user_info.fullname AS profile_name,user_info.nik AS nik,"attendee" as type')
+            ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->where('attendance.id', $id)
             // ->where('attendee_date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
             ->first();
         // $count = $visit->count();
