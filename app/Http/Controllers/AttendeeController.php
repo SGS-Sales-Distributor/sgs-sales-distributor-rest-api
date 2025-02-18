@@ -125,8 +125,8 @@ class AttendeeController extends Controller
 
         $search =  $request->query(key: 'search');
         $depcode = $request->query(key: 'depcode');
-        $date_start = $request->query(key: 'date_start');
-        $date_end = $request->query(key: 'date_end');
+        $date_start = $request->query(key: 'start');
+        $date_end = $request->query(key: 'end');
         $users_id = $request->query(key: 'users_id');
 
         $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
