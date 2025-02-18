@@ -69,7 +69,7 @@ class AttendeeController extends Controller
             statusCode: 200,
             success: true,
             msg: "Successfully Fetch Data.",
-            resource: $visit,
+            resource: $ateende,
         );
     }
 
