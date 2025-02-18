@@ -48,7 +48,26 @@ class AttendeeController extends Controller
     {
         // DB::enableQueryLog();
         $ateende = DB::table('attendance')
-            ->select('attendance.*,user_info.fullname AS profile_name,user_info.nik AS nik,"attendee" as type')
+            ->select(["attendance.id as id",
+        "attendee_date",
+        "attendance.users_id", 
+        "attendee_time_in", 
+        "attendee_latitude_in", 
+        "attendee_longitude_in", 
+        "images_in AS img_in", 
+        "attendee_time_out", 
+        "attendee_latitude_out", 
+        "attendee_longitude_out", 
+        "images_out AS img_out", 
+        // "null as shedule_name", 
+        // "null as schedule_in", 
+        // "null as schedule_out",  
+        "user_info.fullname AS profile_name", 
+        "user_info.nik AS nik", 
+        // "null as late_duration",
+        // "null as remarks",
+        // "/ as type"
+        ])
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
             ->where('attendance.id', $id)
             // ->where('attendee_date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
