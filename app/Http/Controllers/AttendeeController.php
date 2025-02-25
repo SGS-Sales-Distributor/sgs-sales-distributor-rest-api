@@ -47,8 +47,7 @@ class AttendeeController extends Controller
     public function getDataAbsenById(int $id, Request $request): JsonResponse
     {
         // DB::enableQueryLog();
-        $ateende = DB::table('attendance')
-            ->select(["attendance.id as id",
+        $ateende = Attendee::select("attendance.id as id",
         "attendee_date",
         "attendance.users_id", 
         "attendee_time_in", 
@@ -67,7 +66,7 @@ class AttendeeController extends Controller
         // "null as late_duration",
         // "null as remarks",
         // "/ as type"
-        ])
+        )
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
             ->where('attendance.id', $id)
             // ->where('attendee_date', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
