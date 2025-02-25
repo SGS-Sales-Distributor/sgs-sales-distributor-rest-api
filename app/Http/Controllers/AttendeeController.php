@@ -75,6 +75,14 @@ class AttendeeController extends Controller
         // $count = $visit->count();
         // $log = DB::getQueryLog();
         // dd($log);
+        $ateende['attendee_date'] = date('d/m/Y', strtotime($ateende['attendee_date']));
+        if ($ateende['images_in'] != null) {
+            $ateende['images_in'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_in'];
+        }
+
+        if ($ateende['images_out'] != null) {
+            $ateende['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_out'];
+        }
 
 
         if (!$ateende) {
