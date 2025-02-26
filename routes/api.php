@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\OrderCustomerSalesController;
 use Illuminate\Support\Facades\Route;
 use App\Models\sts_jabatan;
 use App\Models\Attendee;
+use App\Models\StoreType;
 
 use App\Http\Controllers\Api\OrderCustomerSalesDetailController;
 
@@ -203,6 +204,10 @@ Route::group([
             Route::get('/me', [JwtAuthController::class, 'checkSelf']);
         });
     });
+    //store tipe
+    Route::get('/getStype',[StoreType::class,'getcboIDStore']);
+
+    //cabang
     Route::get('/area', action: [KodeLokasiController::class, 'getAll']);
     
     //Ambil Data Jabatan
