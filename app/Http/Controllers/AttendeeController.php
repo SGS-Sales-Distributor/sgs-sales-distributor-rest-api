@@ -345,7 +345,7 @@ class AttendeeController extends Controller
     }
 
 
-    public function getExport(Request $request): StreamedResponse{
+    public function getExport(Request $request):StreamedResponse {
         $search =  $request->query(key: 'search');
         $date_start = $request->query(key: 'start');
         $date_end = $request->query(key: 'end');
@@ -417,8 +417,10 @@ class AttendeeController extends Controller
             return response()->streamDownload(function () use ($spreadsheet) {
                 $writer = new Xlsx($spreadsheet);
                 $writer->save('php://output');
-            }, $filename);
-
+            }, $filename,[
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'no-cache, must-revalidate'
+            ]);
 
     }
 
