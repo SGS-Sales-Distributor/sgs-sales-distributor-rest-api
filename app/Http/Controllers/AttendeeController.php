@@ -225,7 +225,7 @@ class AttendeeController extends Controller
             ->orderBy('attendee_date', 'desc')
             ->orderBy('attendee_time_in', 'asc')
             ->orderBy('user_info.fullname', 'asc')
-            ->groupBy('attendance.id','user_info.fullname','user_info.nik')
+            ->groupBy('attendance.id','user_info.fullname','user_info.nik','sts_jabatan.jabatan','sts_jabatan.level_atas','sts_jabatan.level_atas_1','sts_jabatan.level_atas_2')
             ->get();
             
         $count = $data->count();
