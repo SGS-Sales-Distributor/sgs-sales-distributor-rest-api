@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Models\PublicModel;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\Response;
 
 class AttendeeController extends Controller
 {
@@ -88,7 +93,7 @@ class AttendeeController extends Controller
             return $this->clientErrorResponse(
                 statusCode: 404,
                 success: false,
-                msg: "Unsuccessful Absen UserId : {$user_id} not found.",
+                msg: "Unsuccessful Absen not found.",
             );
         }
 
@@ -204,11 +209,13 @@ class AttendeeController extends Controller
         // "null as schedule_out",  
         "user_info.fullname AS profile_name", 
         "user_info.nik AS nik", 
-        // "null as late_duration",
-        // "null as remarks",
-        // "'attendee' as type"
+        "sts_jabatan.jabatan as jabatan",
+        "sts_jabatan.level_atas as atasan1",
+        "sts_jabatan.level_atas_1 as atasan2",
+        "sts_jabatan.level_atas_2 as atasan3"
         ])
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->leftJoin('sts_jabatan','sts_jabatan.id','=','user_info.jabatan_id')
             ->whereRaw(" user_info.fullname like '%$search%' ")
             ->where('attendance.deleted_at', null)
             ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
@@ -224,7 +231,7 @@ class AttendeeController extends Controller
         $count = $data->count();
         // $log = DB::getQueryLog();
         // dd($log);
-
+        
         // return $data;
         if (count($data) == 0) {
             return $this->errorResponse(
@@ -240,6 +247,179 @@ class AttendeeController extends Controller
 			(new PublicModel())->array_respon_200_table_tr($data, $count, $arr_pagination),
 			200
 		);
+    }
+
+    public function ExportExcel($customer_data, $request)
+    {
+        ini_set('max_execution_time', 0);
+        ini_set('memory_limit', '4000M');
+        try {
+            $spreadSheet = new Spreadsheet();
+           
+            $spreadSheet->getActiveSheet()->getDefaultColumnDimension()->setWidth(20);
+            $spreadSheet->getActiveSheet()->setCellValue('A1', 'Data Absensi Karyawan');
+            // $spreadSheet->getActiveSheet()->setCellValue('A2', 'Perusahaan ');
+            // $spreadSheet->getActiveSheet()->setCellValue('B2', ': ' . $user->customer_name);
+            $spreadSheet->getActiveSheet()->setCellValue('A3', 'Periode ');
+            $spreadSheet->getActiveSheet()->setCellValue('B3', ': ' . date('d F Y', strtotime($request->start)) . ' s/d ' . date('d F Y', strtotime($request->end)));
+
+            $spreadSheet->getActiveSheet()->setCellValue('A5', 'NIP');
+            $spreadSheet->getActiveSheet()->setCellValue('B5', 'Nama');
+            $spreadSheet->getActiveSheet()->setCellValue('C5', 'Hari');
+            $spreadSheet->getActiveSheet()->setCellValue('D5', 'Tanggal');
+            $spreadSheet->getActiveSheet()->setCellValue('E5', 'Jadwal Masuk');
+            $spreadSheet->getActiveSheet()->setCellValue('F5', 'Absensi Masuk');
+            $spreadSheet->getActiveSheet()->setCellValue('G5', 'Absensi Pulang');
+            $spreadSheet->getActiveSheet()->setCellValue('H5', 'Terlambat');
+            $spreadSheet->getActiveSheet()->setCellValue('I5', 'Pulang Cepat');
+            $spreadSheet->getActiveSheet()->setCellValue('J5', 'Lembur');
+            $spreadSheet->getActiveSheet()->setCellValue('K5', 'Multiplikasi');
+            $spreadSheet->getActiveSheet()->setCellValue('L5', 'Jam Efektif');
+            $spreadSheet->getActiveSheet()->setCellValue('M5', 'Keterangan');
+            $spreadSheet->getActiveSheet()->setCellValue('N5', 'Alasan');
+            $spreadSheet->getActiveSheet()->setCellValue('O5', 'Status');
+
+            $count = 6;
+            foreach ($customer_data as $data) {
+                $hari = '';
+                if ($data->day == 'Monday') {
+                    $hari = 'Senin';
+                } else if ($data->day == 'Tuesday') {
+                    $hari = 'Selasa';
+                } else if ($data->day == 'Wednesday') {
+                    $hari = 'Rabu';
+                } else if ($data->day == 'Thursday') {
+                    $hari = 'Kamis';
+                } else if ($data->day == 'Friday') {
+                    $hari = 'Jumat';
+                } else if ($data->day == 'Saturday') {
+                    $hari = 'Sabtu';
+                } else if ($data->day == 'Sunday') {
+                    $hari = 'Minggu';
+                }
+
+                $spreadSheet->getActiveSheet()->setCellValue('A' . $count, $data->nik);
+                $spreadSheet->getActiveSheet()->setCellValue('B' . $count, $data->profile_name);
+                $spreadSheet->getActiveSheet()->setCellValue('C' . $count, $hari);
+                $spreadSheet->getActiveSheet()->setCellValue('D' . $count, $data->attendee_date);
+                $spreadSheet->getActiveSheet()->setCellValue('E' . $count, ($data->keterangan != 'OFF' ? $data->schedule_in . ' - ' . $data->schedule_out : 'OFF'));
+                $spreadSheet->getActiveSheet()->setCellValue('F' . $count, $data->attendee_time_in);
+                $spreadSheet->getActiveSheet()->setCellValue('G' . $count, $data->attendee_time_out);
+                $spreadSheet->getActiveSheet()->setCellValue('H' . $count, $data->late_duration);
+                $spreadSheet->getActiveSheet()->setCellValue('I' . $count, $data->pulang_cepat);
+                $spreadSheet->getActiveSheet()->setCellValue('J' . $count, $data->lembur);
+                $spreadSheet->getActiveSheet()->setCellValue('K' . $count, $data->multiplikasi);
+                $spreadSheet->getActiveSheet()->setCellValue('L' . $count, $data->jam_efektif);
+                $spreadSheet->getActiveSheet()->setCellValue('M' . $count, $data->keterangan);
+                $spreadSheet->getActiveSheet()->setCellValue('N' . $count, $data->alasan);
+                $spreadSheet->getActiveSheet()->setCellValue('O' . $count, ($data->status == "0" ? "Menunggu Approval Atasan" : ($data->status == "1" ? "Diapprove Atasan" : ($data->status == "2" ? "Ditolak Atasan" : ($data->status == "3" ? "Dibatalkan" : "")))));
+
+                if ($data->status == "3") {
+                    $spreadSheet->getActiveSheet()->getStyle('O' . $count)->getFont()->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+                } else if ($data->status == "2") {
+                    $spreadSheet->getActiveSheet()->getStyle('O' . $count)->getFont()->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+                }
+
+                $count = $count + 1;
+            }
+            // }
+
+
+            // check folder is exists
+            if (!File::isDirectory(base_path('public/excel'))) {
+                // if not exists then create folder
+                File::makeDirectory(base_path('public/excel'));
+            }
+
+            if (!File::isDirectory(base_path('public/excel/kehadiran'))) {
+                File::makeDirectory(base_path('public/excel/kehadiran'));
+            }
+
+            $Excel_writer = new Xls($spreadSheet);
+            $path = base_path('public/excel/kehadiran/KEHADIRAN_' . $request->start . '_sd_' . $request->end . '.xls');
+            $Excel_writer->save($path);
+            // exit();
+        } catch (Exception $e) {
+            return;
+        }
+    }
+
+
+    public function getExport(Request $request): StreamedResponse{
+        $search =  $request->query(key: 'search');
+        $date_start = $request->query(key: 'start');
+        $date_end = $request->query(key: 'end');
+        $users_id = $request->query(key: 'users_id');
+        
+    
+        $data = Attendee::select(["attendance.id as id",
+        "attendee_date",
+        "attendance.users_id", 
+        "attendee_time_in", 
+        "attendee_latitude_in", 
+        "attendee_longitude_in", 
+        "images_in AS img_in", 
+        "attendee_time_out", 
+        "attendee_latitude_out", 
+        "attendee_longitude_out", 
+        "images_out AS img_out", 
+        // "null as shedule_name", 
+        // "null as schedule_in", 
+        // "null as schedule_out",  
+        "user_info.fullname AS profile_name", 
+        "user_info.nik AS nik", 
+        // "null as late_duration",
+        // "null as remarks",
+        // "'attendee' as type"
+        ])
+            ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->whereRaw(" user_info.fullname like '%$search%' ")
+            ->where('attendance.deleted_at', null)
+            ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
+            ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
+            ->where('attendance.users_id', 'like', '%'.$users_id.'%')
+            ->orderBy('attendee_date', 'desc')
+            ->orderBy('attendee_time_in', 'asc')
+            ->orderBy('user_info.fullname', 'asc')
+            ->groupBy('attendance.id','user_info.fullname','user_info.nik')
+            ->get();
+
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Header kolom
+            $sheet->setCellValue('A1', 'ID');
+            $sheet->setCellValue('B1', 'Nama');
+            $sheet->setCellValue('C1', 'Tanggal');
+            $sheet->setCellValue('D1', 'Jam Masuk');
+            $sheet->setCellValue('E1', 'Jam Pulang');
+        
+            // Isi data
+            $rowIndex = 2;
+            foreach ($data as $row) {
+                $sheet->setCellValue("A$rowIndex", $row->id);
+                $sheet->setCellValue("B$rowIndex", $row->profile_name);
+                $sheet->setCellValue("C$rowIndex", $row->attendee_date);
+                $sheet->setCellValue("D$rowIndex", $row->attendee_time_in);
+                $sheet->setCellValue("E$rowIndex", $row->attendee_time_out);
+                $rowIndex++;
+            }
+        
+            $filename = "rekap_absensi_{$date_start}_to_{$date_end}.xlsx";
+        
+            // return new StreamedResponse(function () use ($spreadsheet, $filename) {
+            //     $writer = new Xlsx($spreadsheet);
+            //     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            //     header("Content-Disposition: attachment; filename=\"$filename\"");
+            //     $writer->save('php://output');
+            // });
+
+            return response()->streamDownload(function () use ($spreadsheet) {
+                $writer = new Xlsx($spreadsheet);
+                $writer->save('php://output');
+            }, $filename);
+
+
     }
 
 
