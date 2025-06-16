@@ -178,8 +178,8 @@ class AttendeeController extends Controller
         }
     }
 
-    public function count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end){
-        DB::enableQueryLog();
+    public function count_getAllAbsen($search,$users_id,$date_start,$date_end){
+        // DB::enableQueryLog();
         $data =(new Attendee)->selectRaw("attendance.id as id,
         attendance.attendee_date,
         attendance.users_id, 
@@ -208,7 +208,7 @@ class AttendeeController extends Controller
             ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
             ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
             ->where('attendance.users_id', 'like', '%'.$users_id.'%')
-            ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
+            // ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
             ->orderBy('attendee_date', 'desc')
             ->orderBy('attendee_time_in', 'asc')
             ->orderBy('user_info.fullname', 'asc')
@@ -268,7 +268,7 @@ class AttendeeController extends Controller
             ->groupBy('attendance.id','user_info.fullname','user_info.nik','sts_jabatan.jabatan','sts_jabatan.level_atas','sts_jabatan.level_atas_1','sts_jabatan.level_atas_2')
             ->get();
             
-        $count = count($this->count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end));
+        $count = count($this->count_getAllAbsen($search,$users_id,$date_start,$date_end));
         // $log = DB::getQueryLog();
         // dd($log);
         
