@@ -11,11 +11,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Models\PublicModel;
-use Symfony\Component\HttpFoundation\StreamedJsonResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Storage;
 
 class AttendeeController extends Controller
 {
@@ -180,6 +178,48 @@ class AttendeeController extends Controller
         }
     }
 
+    public function count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end){
+        DB::enableQueryLog();
+        $data =(new Attendee)->selectRaw("attendance.id as id,
+        attendance.attendee_date,
+        attendance.users_id, 
+        attendance.attendee_time_in, 
+        attendee_latitude_in, 
+        attendee_longitude_in, 
+        images_in AS img_in, 
+        attendee_time_out, 
+        attendee_latitude_out, 
+        attendee_longitude_out, 
+        images_out AS img_out, 
+        null as shedule_name, 
+        null as schedule_in, 
+        null as schedule_out,  
+        user_info.fullname AS profile_name, 
+        user_info.nik AS nik, 
+        sts_jabatan.jabatan as jabatan,
+        sts_jabatan.level_atas as atasan1,
+        sts_jabatan.level_atas_1 as atasan2,
+        sts_jabatan.level_atas_2 as atasan3"
+    )
+            ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->leftJoin('sts_jabatan','sts_jabatan.id','=','user_info.jabatan_id')
+            ->whereRaw(" user_info.fullname like '%$search%' ")
+            ->where('attendance.deleted_at', null)
+            ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
+            ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
+            ->where('attendance.users_id', 'like', '%'.$users_id.'%')
+            ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
+            ->orderBy('attendee_date', 'desc')
+            ->orderBy('attendee_time_in', 'asc')
+            ->orderBy('user_info.fullname', 'asc')
+            ->groupBy('attendance.id','user_info.fullname','user_info.nik','sts_jabatan.jabatan','sts_jabatan.level_atas','sts_jabatan.level_atas_1','sts_jabatan.level_atas_2')
+            ->get();
+        return $data;
+        // $log = DB::getQueryLog();
+        // dd($log);
+
+    }
+
     public function getAllAbsen(Request $request):JsonResponse
     {
         $URL = URL::current();
@@ -191,7 +231,7 @@ class AttendeeController extends Controller
         $users_id = $request->query(key: 'users_id');
 
         $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
-        $count = (new Attendee())->count();
+        // $count = Attendee::$this->count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end);
         // DB::enableQueryLog();
         $data = Attendee::select(["attendance.id as id",
         "attendee_date",
@@ -228,7 +268,7 @@ class AttendeeController extends Controller
             ->groupBy('attendance.id','user_info.fullname','user_info.nik','sts_jabatan.jabatan','sts_jabatan.level_atas','sts_jabatan.level_atas_1','sts_jabatan.level_atas_2')
             ->get();
             
-        $count = $data->count();
+        $count = count($this->count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end));
         // $log = DB::getQueryLog();
         // dd($log);
         
@@ -345,11 +385,15 @@ class AttendeeController extends Controller
     }
 
 
-    public function getExport(Request $request):StreamedResponse {
+    public function getExport(Request $request)  {
+        
+    try{
+
         $search =  $request->query(key: 'search');
         $date_start = $request->query(key: 'start');
         $date_end = $request->query(key: 'end');
         $users_id = $request->query(key: 'users_id');
+        
         
     
         $data = Attendee::select(["attendance.id as id",
@@ -383,45 +427,41 @@ class AttendeeController extends Controller
             ->orderBy('user_info.fullname', 'asc')
             ->groupBy('attendance.id','user_info.fullname','user_info.nik')
             ->get();
+            return $data;
 
             $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
+            // $spreadsheet->getActiveSheet();
             
             // Header kolom
-            $sheet->setCellValue('A1', 'ID');
-            $sheet->setCellValue('B1', 'Nama');
-            $sheet->setCellValue('C1', 'Tanggal');
-            $sheet->setCellValue('D1', 'Jam Masuk');
-            $sheet->setCellValue('E1', 'Jam Pulang');
+            $spreadsheet->getActiveSheet()->setCellValue('A1', 'ID');
+            $spreadsheet->getActiveSheet()->setCellValue('B1', 'Nama');
+            $spreadsheet->getActiveSheet()->setCellValue('C1', 'Tanggal');
+            $spreadsheet->getActiveSheet()->setCellValue('D1', 'Jam Masuk');
+            $spreadsheet->getActiveSheet()->setCellValue('E1', 'Jam Pulang');
         
             // Isi data
             $rowIndex = 2;
             foreach ($data as $row) {
-                $sheet->setCellValue("A$rowIndex", $row->id);
-                $sheet->setCellValue("B$rowIndex", $row->profile_name);
-                $sheet->setCellValue("C$rowIndex", $row->attendee_date);
-                $sheet->setCellValue("D$rowIndex", $row->attendee_time_in);
-                $sheet->setCellValue("E$rowIndex", $row->attendee_time_out);
-                $rowIndex++;
+                $spreadsheet->getActiveSheet()->setCellValue('A'. $rowIndex, $row->id);
+                $spreadsheet->getActiveSheet()->setCellValue('B'. $rowIndex, $row->profile_name);
+                $spreadsheet->getActiveSheet()->setCellValue('C'. $rowIndex, $row->attendee_date);
+                $spreadsheet->getActiveSheet()->setCellValue('D'. $rowIndex, $row->attendee_time_in);
+                $spreadsheet->getActiveSheet()->setCellValue('E'. $rowIndex, $row->attendee_time_out);
+                $rowIndex =  $rowIndex +1;
             }
         
             $filename = "rekap_absensi_{$date_start}_to_{$date_end}.xlsx";
-        
-            // return new StreamedResponse(function () use ($spreadsheet, $filename) {
-            //     $writer = new Xlsx($spreadsheet);
-            //     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            //     header("Content-Disposition: attachment; filename=\"$filename\"");
-            //     $writer->save('php://output');
-            // });
 
-            return response()->streamDownload(function () use ($spreadsheet) {
-                $writer = new Xlsx($spreadsheet);
-                $writer->save('php://output');
-            }, $filename,[
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Cache-Control' => 'no-cache, must-revalidate'
-            ]);
+            $path = base_path("public/excel/" . $filename);
+            Storage::makeDirectory('public/excel'); 
+            $writer = new Xlsx($spreadsheet);
+            $writer->save($path);
 
+            // return response()->download(storage_path('app/public/excel/' . $path))->deleteFileAfterSend(true);
+
+        } catch (Exception $e) {
+            return;
+        }
     }
 
 
