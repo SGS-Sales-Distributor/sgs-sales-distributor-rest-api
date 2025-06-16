@@ -230,7 +230,7 @@ class AttendeeController extends Controller
         $date_end = $request->query(key: 'end');
         $users_id = $request->query(key: 'users_id');
 
-        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset,$depcode,$date_start,$date_end);
         // $count = Attendee::$this->count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end);
         // DB::enableQueryLog();
         $data = Attendee::select(["attendance.id as id",
