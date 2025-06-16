@@ -50,7 +50,7 @@ class PublicModel extends Model
         ], 200);
     }
 
-    public function paginateDataWithoutSearchQuery($URL, $limit, $offset)
+    public function paginateDataWithoutSearchQuery($URL, $limit, $offset,$depcode, $start, $end)
     {
         $limit = (empty($limit) ? 0 : $limit);
         $offset = (empty($offset) ? 0 : $offset);
@@ -60,12 +60,12 @@ class PublicModel extends Model
 
         $nomorBaris = $offset;
 
-        $next = $URL . "?offset=$offset_next&limit=$limit";
+        $next = $URL . "?offset=$offset_next&limit=$limit&depcode=$depcode&start=$start&end=$end";
 
         if ($offset == 0) {
             $previous = null;
         } else {
-            $previous = $URL . "?offset=$offset_previous&limit=$limit";
+            $previous = $URL . "?offset=$offset_previous&limit=$limit&depcode=$depcode&start=$start&end=$end";
         }
 
         return ['nomorBaris' => (int)$nomorBaris, 'next' => $next, 'previous' => $previous, 'limit' => $limit, 'offset' => $offset];
