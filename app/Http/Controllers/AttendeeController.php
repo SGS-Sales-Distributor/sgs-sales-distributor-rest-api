@@ -391,8 +391,9 @@ class AttendeeController extends Controller
     try{
 
         $search =  $request->search;
-        $date_start = $request->start;
-        $date_end = $request->end;
+        $depcode = $request->customer;
+        $date_start = $request->from;
+        $date_end = $request->to;
         $users_id = $request->users_id;
         
         // DB::enableQueryLog();
