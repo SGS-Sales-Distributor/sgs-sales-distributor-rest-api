@@ -468,7 +468,7 @@ class AttendeeController extends Controller
             $writer = new Xlsx($spreadsheet);
             $writer->save($path);
 
-            return response()->download(storage_path( $path))->deleteFileAfterSend(true);
+            return response()->download($path)->deleteFileAfterSend(true);
 
         } catch (Exception $e) {
             return;
