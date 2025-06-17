@@ -31,6 +31,7 @@ class AttendeeController extends Controller
         // dd($log);
 
 
+
         if (!$visit) {
             return $this->clientErrorResponse(
                 statusCode: 404,
@@ -389,68 +390,77 @@ class AttendeeController extends Controller
         
     try{
 
-        $search =  $request->query(key: 'search');
-        $date_start = $request->query(key: 'start');
-        $date_end = $request->query(key: 'end');
-        $users_id = $request->query(key: 'users_id');
+        $search =  $request->search;
+        $date_start = $request->start;
+        $date_end = $request->end;
+        $users_id = $request->users_id;
         
-        
-    
-        $data = Attendee::select(["attendance.id as id",
-        "attendee_date",
-        "attendance.users_id", 
-        "attendee_time_in", 
-        "attendee_latitude_in", 
-        "attendee_longitude_in", 
-        "images_in AS img_in", 
-        "attendee_time_out", 
-        "attendee_latitude_out", 
-        "attendee_longitude_out", 
-        "images_out AS img_out", 
-        // "null as shedule_name", 
-        // "null as schedule_in", 
-        // "null as schedule_out",  
-        "user_info.fullname AS profile_name", 
-        "user_info.nik AS nik", 
-        // "null as late_duration",
-        // "null as remarks",
-        // "'attendee' as type"
-        ])
+        // DB::enableQueryLog();
+        // $data = Attendee::select([ "ROW_NUMBER() OVER (ORDER BY attendee_date desc,attendee_time_in asc,profile_name asc,sts_jabatan.jabatan desc) AS No",
+        $data = Attendee::selectRaw('
+            ROW_NUMBER() OVER (
+                ORDER BY attendee_date DESC, 
+                        attendee_time_in ASC, 
+                        user_info.fullname ASC, 
+                        jabatan DESC
+            ) AS "No",
+            attendee_date,
+            attendance.users_id,
+            attendee_time_in,
+            attendee_latitude_in,
+            attendee_longitude_in,
+            images_in as img_in,
+            attendee_time_out,
+            attendee_latitude_out,
+            attendee_longitude_out,
+            images_out as img_out,
+            user_info.fullname as profile_name,
+            user_info.nik as nik,
+            sts_jabatan.jabatan')
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->join('sts_jabatan','sts_jabatan.id', '=', 'user_info.jabatan_id')
             ->whereRaw(" user_info.fullname like '%$search%' ")
             ->where('attendance.deleted_at', null)
             ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
             ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
             ->where('attendance.users_id', 'like', '%'.$users_id.'%')
-            ->orderBy('attendee_date', 'desc')
-            ->orderBy('attendee_time_in', 'asc')
-            ->orderBy('user_info.fullname', 'asc')
-            ->groupBy('attendance.id','user_info.fullname','user_info.nik')
+            // ->orderBy('attendee_date', 'desc')
+            // ->orderBy('attendee_time_in', 'asc')
+            // ->orderBy('user_info.fullname', 'asc')
+            ->groupBy('attendance.id','user_info.fullname','user_info.nik','jabatan')
             ->get();
-            return $data;
+            // $log = DB::getQueryLog();
+            // dd($log);
+
+            // return $data;
 
             $spreadsheet = new Spreadsheet();
             // $spreadsheet->getActiveSheet();
             
             // Header kolom
-            $spreadsheet->getActiveSheet()->setCellValue('A1', 'ID');
-            $spreadsheet->getActiveSheet()->setCellValue('B1', 'Nama');
-            $spreadsheet->getActiveSheet()->setCellValue('C1', 'Tanggal');
-            $spreadsheet->getActiveSheet()->setCellValue('D1', 'Jam Masuk');
-            $spreadsheet->getActiveSheet()->setCellValue('E1', 'Jam Pulang');
+            $spreadsheet->getActiveSheet()->setCellValue('A1', 'No');
+            $spreadsheet->getActiveSheet()->setCellValue('B1', 'NIK');
+            $spreadsheet->getActiveSheet()->setCellValue('C1', 'Nama');
+            $spreadsheet->getActiveSheet()->setCellValue('D1', 'Type');
+            $spreadsheet->getActiveSheet()->setCellValue('E1', 'Tanggal');
+            $spreadsheet->getActiveSheet()->setCellValue('F1', 'Jam Masuk');
+            $spreadsheet->getActiveSheet()->setCellValue('G1', 'Jam Pulang');
         
             // Isi data
             $rowIndex = 2;
             foreach ($data as $row) {
                 $spreadsheet->getActiveSheet()->setCellValue('A'. $rowIndex, $row->id);
-                $spreadsheet->getActiveSheet()->setCellValue('B'. $rowIndex, $row->profile_name);
-                $spreadsheet->getActiveSheet()->setCellValue('C'. $rowIndex, $row->attendee_date);
-                $spreadsheet->getActiveSheet()->setCellValue('D'. $rowIndex, $row->attendee_time_in);
-                $spreadsheet->getActiveSheet()->setCellValue('E'. $rowIndex, $row->attendee_time_out);
+                $spreadsheet->getActiveSheet()->setCellValue('B'. $rowIndex, $row->nik);
+                $spreadsheet->getActiveSheet()->setCellValue('C'. $rowIndex, $row->profil_name);
+                $spreadsheet->getActiveSheet()->setCellValue('D'. $rowIndex, $row->jabatan);
+                $spreadsheet->getActiveSheet()->setCellValue('E'. $rowIndex, $row->attendee_date);
+                $spreadsheet->getActiveSheet()->setCellValue('F'. $rowIndex, $row->attendee_time_in);
+                $spreadsheet->getActiveSheet()->setCellValue('G'. $rowIndex, $row->attendee_time_out);
                 $rowIndex =  $rowIndex +1;
             }
+
         
-            $filename = "rekap_absensi_{$date_start}_to_{$date_end}.xlsx";
+            $filename = "Rekap_Absensi_Client_{$date_start}-{$date_end}.xlsx";
 
             $path = base_path("public/excel/" . $filename);
             Storage::makeDirectory('public/excel'); 
