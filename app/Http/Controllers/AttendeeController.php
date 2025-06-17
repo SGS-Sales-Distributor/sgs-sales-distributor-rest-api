@@ -463,15 +463,30 @@ class AttendeeController extends Controller
         
             $filename = "Rekap_Absensi_Client_{$date_start}-{$date_end}.xlsx";
 
-            $path = base_path("public/excel/" . $filename);
-            Storage::makeDirectory('public/excel'); 
+            $path = "public/excel/" . $filename;
+
+            $fullPath = storage_path('app/' . $path);
+            Storage::makeDirectory('excel'); 
+
             $writer = new Xlsx($spreadsheet);
-            $writer->save($path);
+            $writer->save($fullPath);
 
-            return response()->download($path)->deleteFileAfterSend(true);
+            if (!file_exists($fullPath)) {
+                return response()->json(['error' => 'File tidak ditemukan.'], 404);
+            }
 
-        } catch (Exception $e) {
-            return;
+            // return response()->download($fullPath), $filename, [
+            //     'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            // ]);
+
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'success' => false,
+                'message' => 'Internal Server Error.',
+                'error' => $e->getMessage(),
+            ]);;
         }
     }
 
