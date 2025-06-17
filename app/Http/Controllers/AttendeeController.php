@@ -450,9 +450,9 @@ class AttendeeController extends Controller
             // Isi data
             $rowIndex = 2;
             foreach ($data as $row) {
-                $spreadsheet->getActiveSheet()->setCellValue('A'. $rowIndex, $row->id);
+                $spreadsheet->getActiveSheet()->setCellValue('A'. $rowIndex, $row->No);
                 $spreadsheet->getActiveSheet()->setCellValue('B'. $rowIndex, $row->nik);
-                $spreadsheet->getActiveSheet()->setCellValue('C'. $rowIndex, $row->profil_name);
+                $spreadsheet->getActiveSheet()->setCellValue('C'. $rowIndex, $row->profile_name);
                 $spreadsheet->getActiveSheet()->setCellValue('D'. $rowIndex, $row->jabatan);
                 $spreadsheet->getActiveSheet()->setCellValue('E'. $rowIndex, $row->attendee_date);
                 $spreadsheet->getActiveSheet()->setCellValue('F'. $rowIndex, $row->attendee_time_in);
