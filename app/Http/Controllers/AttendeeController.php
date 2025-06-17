@@ -475,6 +475,12 @@ class AttendeeController extends Controller
                 return response()->json(['error' => 'File tidak ditemukan.'], 404);
             }
 
+            return response()->json([
+                'status'  => 200,
+                'success' => true,
+                'exportlink' => asset('storage/excel/' . $filename),
+                'message' => "Success Download",
+            ]);
             // return response()->download($fullPath), $filename, [
             //     'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             // ]);
