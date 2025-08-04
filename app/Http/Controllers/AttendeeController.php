@@ -737,31 +737,33 @@ class AttendeeController extends Controller
             "attendee_latitude_out",
             "attendee_longitude_out",
             "images_out AS images_out",
-            // "null as shedule_name", 
-            // "null as schedule_in", 
-            // "null as schedule_out",  
             "user_info.fullname AS profile_name",
             "user_info.nik AS nik",
-            // "null as late_duration",
-            // "null as remarks",
-            // "/ as type"
+
         )
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
             ->where('user_info.user_id', $user_id)
             ->whereBetween('attendee_date', ["'$start'", "'$end'"])
-            // ->first();
             ->get();
-        // $count = $visit->count();
-        // $log = DB::getQueryLog();
-        // dd($log);
-        $ateende['attendee_date'] = date('d/m/Y', strtotime($ateende['attendee_date']));
-        if ($ateende['images_in'] != null) {
-            $ateende['images_in'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_in'];
-        }
 
-        if ($ateende['images_out'] != null) {
-            $ateende['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_out'];
+        foreach ($ateende as &$row) {
+            $row['attendee_date'] = date('d/m/Y', strtotime($row['attendee_date']));
+            if (!empty($row['images_in'])) {
+                $row['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $row['images_out'];
+            }
+
+            if (!empty($row['images_out'])) {
+                $row['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $row['images_out'];
+            }
         }
+        // $ateende['attendee_date'] = date('d/m/Y', strtotime($ateende['attendee_date']));
+        // if ($ateende['images_in'] != null) {
+        //     $ateende['images_in'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_in'];
+        // }
+
+        // if ($ateende['images_out'] != null) {
+        //     $ateende['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_out'];
+        // }
 
 
         if (!$ateende) {
