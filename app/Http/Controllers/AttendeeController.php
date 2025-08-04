@@ -51,25 +51,26 @@ class AttendeeController extends Controller
     public function getDataAbsenById(int $id, Request $request): JsonResponse
     {
         // DB::enableQueryLog();
-        $ateende = Attendee::select("attendance.id as id",
-        "attendee_date",
-        "attendance.users_id", 
-        "attendee_time_in", 
-        "attendee_latitude_in", 
-        "attendee_longitude_in", 
-        "images_in AS images_in", 
-        "attendee_time_out", 
-        "attendee_latitude_out", 
-        "attendee_longitude_out", 
-        "images_out AS images_out", 
-        // "null as shedule_name", 
-        // "null as schedule_in", 
-        // "null as schedule_out",  
-        "user_info.fullname AS profile_name", 
-        "user_info.nik AS nik", 
-        // "null as late_duration",
-        // "null as remarks",
-        // "/ as type"
+        $ateende = Attendee::select(
+            "attendance.id as id",
+            "attendee_date",
+            "attendance.users_id",
+            "attendee_time_in",
+            "attendee_latitude_in",
+            "attendee_longitude_in",
+            "images_in AS images_in",
+            "attendee_time_out",
+            "attendee_latitude_out",
+            "attendee_longitude_out",
+            "images_out AS images_out",
+            // "null as shedule_name", 
+            // "null as schedule_in", 
+            // "null as schedule_out",  
+            "user_info.fullname AS profile_name",
+            "user_info.nik AS nik",
+            // "null as late_duration",
+            // "null as remarks",
+            // "/ as type"
         )
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
             ->where('attendance.id', $id)
@@ -179,9 +180,10 @@ class AttendeeController extends Controller
         }
     }
 
-    public function count_getAllAbsen($search,$users_id,$date_start,$date_end){
+    public function count_getAllAbsen($search, $users_id, $date_start, $date_end)
+    {
         // DB::enableQueryLog();
-        $data =(new Attendee)->selectRaw("attendance.id as id,
+        $data = (new Attendee)->selectRaw("attendance.id as id,
         attendance.attendee_date,
         attendance.users_id, 
         attendance.attendee_time_in, 
@@ -201,19 +203,19 @@ class AttendeeController extends Controller
         sts_jabatan.level_atas as atasan1,
         sts_jabatan.level_atas_1 as atasan2,
         sts_jabatan.level_atas_2 as atasan3"
-    )
+        )
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
-            ->leftJoin('sts_jabatan','sts_jabatan.id','=','user_info.jabatan_id')
+            ->leftJoin('sts_jabatan', 'sts_jabatan.id', '=', 'user_info.jabatan_id')
             ->whereRaw(" user_info.fullname like '%$search%' ")
             ->where('attendance.deleted_at', null)
             ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
             ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
-            ->where('attendance.users_id', 'like', '%'.$users_id.'%')
+            ->where('attendance.users_id', 'like', '%' . $users_id . '%')
             // ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
             ->orderBy('attendee_date', 'desc')
             ->orderBy('attendee_time_in', 'asc')
             ->orderBy('user_info.fullname', 'asc')
-            ->groupBy('attendance.id','user_info.fullname','user_info.nik','sts_jabatan.jabatan','sts_jabatan.level_atas','sts_jabatan.level_atas_1','sts_jabatan.level_atas_2')
+            ->groupBy('attendance.id', 'user_info.fullname', 'user_info.nik', 'sts_jabatan.jabatan', 'sts_jabatan.level_atas', 'sts_jabatan.level_atas_1', 'sts_jabatan.level_atas_2')
             ->get();
         return $data;
         // $log = DB::getQueryLog();
@@ -221,58 +223,59 @@ class AttendeeController extends Controller
 
     }
 
-    public function getAllAbsen(Request $request):JsonResponse
+    public function getAllAbsen(Request $request): JsonResponse
     {
         $URL = URL::current();
 
-        $search =  $request->query(key: 'search');
+        $search = $request->query(key: 'search');
         $depcode = $request->query(key: 'depcode');
         $date_start = $request->query(key: 'start');
         $date_end = $request->query(key: 'end');
         $users_id = $request->query(key: 'users_id');
 
-        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset,$depcode,$date_start,$date_end);
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset, $depcode, $date_start, $date_end);
         // $count = Attendee::$this->count_getAllAbsen($search,$arr_pagination,$users_id,$date_start,$date_end);
         // DB::enableQueryLog();
-        $data = Attendee::select(["attendance.id as id",
-        "attendee_date",
-        "attendance.users_id", 
-        "attendee_time_in", 
-        "attendee_latitude_in", 
-        "attendee_longitude_in", 
-        "images_in AS img_in", 
-        "attendee_time_out", 
-        "attendee_latitude_out", 
-        "attendee_longitude_out", 
-        "images_out AS img_out", 
-        // "null as shedule_name", 
-        // "null as schedule_in", 
-        // "null as schedule_out",  
-        "user_info.fullname AS profile_name", 
-        "user_info.nik AS nik", 
-        "sts_jabatan.jabatan as jabatan",
-        "sts_jabatan.level_atas as atasan1",
-        "sts_jabatan.level_atas_1 as atasan2",
-        "sts_jabatan.level_atas_2 as atasan3"
+        $data = Attendee::select([
+            "attendance.id as id",
+            "attendee_date",
+            "attendance.users_id",
+            "attendee_time_in",
+            "attendee_latitude_in",
+            "attendee_longitude_in",
+            "images_in AS img_in",
+            "attendee_time_out",
+            "attendee_latitude_out",
+            "attendee_longitude_out",
+            "images_out AS img_out",
+            // "null as shedule_name", 
+            // "null as schedule_in", 
+            // "null as schedule_out",  
+            "user_info.fullname AS profile_name",
+            "user_info.nik AS nik",
+            "sts_jabatan.jabatan as jabatan",
+            "sts_jabatan.level_atas as atasan1",
+            "sts_jabatan.level_atas_1 as atasan2",
+            "sts_jabatan.level_atas_2 as atasan3"
         ])
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
-            ->leftJoin('sts_jabatan','sts_jabatan.id','=','user_info.jabatan_id')
+            ->leftJoin('sts_jabatan', 'sts_jabatan.id', '=', 'user_info.jabatan_id')
             ->whereRaw(" user_info.fullname like '%$search%' ")
             ->where('attendance.deleted_at', null)
             ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
             ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
-            ->where('attendance.users_id', 'like', '%'.$users_id.'%')
+            ->where('attendance.users_id', 'like', '%' . $users_id . '%')
             ->offset($arr_pagination['offset'])->limit($arr_pagination['limit'])
             ->orderBy('attendee_date', 'desc')
             ->orderBy('attendee_time_in', 'asc')
             ->orderBy('user_info.fullname', 'asc')
-            ->groupBy('attendance.id','user_info.fullname','user_info.nik','sts_jabatan.jabatan','sts_jabatan.level_atas','sts_jabatan.level_atas_1','sts_jabatan.level_atas_2')
+            ->groupBy('attendance.id', 'user_info.fullname', 'user_info.nik', 'sts_jabatan.jabatan', 'sts_jabatan.level_atas', 'sts_jabatan.level_atas_1', 'sts_jabatan.level_atas_2')
             ->get();
-            
-        $count = count($this->count_getAllAbsen($search,$users_id,$date_start,$date_end));
+
+        $count = count($this->count_getAllAbsen($search, $users_id, $date_start, $date_end));
         // $log = DB::getQueryLog();
         // dd($log);
-        
+
         // return $data;
         if (count($data) == 0) {
             return $this->errorResponse(
@@ -284,10 +287,10 @@ class AttendeeController extends Controller
 
 
         return response()->json(
-			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
-			(new PublicModel())->array_respon_200_table_tr($data, $count, $arr_pagination),
-			200
-		);
+            // (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+            (new PublicModel())->array_respon_200_table_tr($data, $count, $arr_pagination),
+            200
+        );
     }
 
     public function ExportExcel($customer_data, $request)
@@ -296,7 +299,7 @@ class AttendeeController extends Controller
         ini_set('memory_limit', '4000M');
         try {
             $spreadSheet = new Spreadsheet();
-           
+
             $spreadSheet->getActiveSheet()->getDefaultColumnDimension()->setWidth(20);
             $spreadSheet->getActiveSheet()->setCellValue('A1', 'Data Absensi Karyawan');
             // $spreadSheet->getActiveSheet()->setCellValue('A2', 'Perusahaan ');
@@ -386,19 +389,20 @@ class AttendeeController extends Controller
     }
 
 
-    public function getExport(Request $request)  {
-        
-    try{
+    public function getExport(Request $request)
+    {
 
-        $search =  $request->search;
-        $depcode = $request->customer;
-        $date_start = $request->from;
-        $date_end = $request->to;
-        $users_id = $request->users_id;
-        
-        // DB::enableQueryLog();
-        // $data = Attendee::select([ "ROW_NUMBER() OVER (ORDER BY attendee_date desc,attendee_time_in asc,profile_name asc,sts_jabatan.jabatan desc) AS No",
-        $data = Attendee::selectRaw('
+        try {
+
+            $search = $request->search;
+            $depcode = $request->customer;
+            $date_start = $request->from;
+            $date_end = $request->to;
+            $users_id = $request->users_id;
+
+            // DB::enableQueryLog();
+            // $data = Attendee::select([ "ROW_NUMBER() OVER (ORDER BY attendee_date desc,attendee_time_in asc,profile_name asc,sts_jabatan.jabatan desc) AS No",
+            $data = Attendee::selectRaw('
             ROW_NUMBER() OVER (
                 ORDER BY attendee_date DESC, 
                         attendee_time_in ASC, 
@@ -418,18 +422,18 @@ class AttendeeController extends Controller
             user_info.fullname as profile_name,
             user_info.nik as nik,
             sts_jabatan.jabatan')
-            ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
-            ->join('sts_jabatan','sts_jabatan.id', '=', 'user_info.jabatan_id')
-            ->whereRaw(" user_info.fullname like '%$search%' ")
-            ->where('attendance.deleted_at', null)
-            ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
-            ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
-            ->where('attendance.users_id', 'like', '%'.$users_id.'%')
-            // ->orderBy('attendee_date', 'desc')
-            // ->orderBy('attendee_time_in', 'asc')
-            // ->orderBy('user_info.fullname', 'asc')
-            ->groupBy('attendance.id','user_info.fullname','user_info.nik','jabatan')
-            ->get();
+                ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+                ->join('sts_jabatan', 'sts_jabatan.id', '=', 'user_info.jabatan_id')
+                ->whereRaw(" user_info.fullname like '%$search%' ")
+                ->where('attendance.deleted_at', null)
+                ->where('attendance.attendee_date', '>=', date('Y-m-d', strtotime($date_start)))
+                ->where('attendance.attendee_date', '<=', date('Y-m-d', strtotime($date_end)))
+                ->where('attendance.users_id', 'like', '%' . $users_id . '%')
+                // ->orderBy('attendee_date', 'desc')
+                // ->orderBy('attendee_time_in', 'asc')
+                // ->orderBy('user_info.fullname', 'asc')
+                ->groupBy('attendance.id', 'user_info.fullname', 'user_info.nik', 'jabatan')
+                ->get();
             // $log = DB::getQueryLog();
             // dd($log);
 
@@ -437,7 +441,7 @@ class AttendeeController extends Controller
 
             $spreadsheet = new Spreadsheet();
             // $spreadsheet->getActiveSheet();
-            
+
             // Header kolom
             $spreadsheet->getActiveSheet()->setCellValue('A1', 'No');
             $spreadsheet->getActiveSheet()->setCellValue('B1', 'NIK');
@@ -446,27 +450,27 @@ class AttendeeController extends Controller
             $spreadsheet->getActiveSheet()->setCellValue('E1', 'Tanggal');
             $spreadsheet->getActiveSheet()->setCellValue('F1', 'Jam Masuk');
             $spreadsheet->getActiveSheet()->setCellValue('G1', 'Jam Pulang');
-        
+
             // Isi data
             $rowIndex = 2;
             foreach ($data as $row) {
-                $spreadsheet->getActiveSheet()->setCellValue('A'. $rowIndex, $row->No);
-                $spreadsheet->getActiveSheet()->setCellValue('B'. $rowIndex, $row->nik);
-                $spreadsheet->getActiveSheet()->setCellValue('C'. $rowIndex, $row->profile_name);
-                $spreadsheet->getActiveSheet()->setCellValue('D'. $rowIndex, $row->jabatan);
-                $spreadsheet->getActiveSheet()->setCellValue('E'. $rowIndex, $row->attendee_date);
-                $spreadsheet->getActiveSheet()->setCellValue('F'. $rowIndex, $row->attendee_time_in);
-                $spreadsheet->getActiveSheet()->setCellValue('G'. $rowIndex, $row->attendee_time_out);
-                $rowIndex =  $rowIndex +1;
+                $spreadsheet->getActiveSheet()->setCellValue('A' . $rowIndex, $row->No);
+                $spreadsheet->getActiveSheet()->setCellValue('B' . $rowIndex, $row->nik);
+                $spreadsheet->getActiveSheet()->setCellValue('C' . $rowIndex, $row->profile_name);
+                $spreadsheet->getActiveSheet()->setCellValue('D' . $rowIndex, $row->jabatan);
+                $spreadsheet->getActiveSheet()->setCellValue('E' . $rowIndex, $row->attendee_date);
+                $spreadsheet->getActiveSheet()->setCellValue('F' . $rowIndex, $row->attendee_time_in);
+                $spreadsheet->getActiveSheet()->setCellValue('G' . $rowIndex, $row->attendee_time_out);
+                $rowIndex = $rowIndex + 1;
             }
 
-        
+
             $filename = "Rekap_Absensi_Client_{$date_start}-{$date_end}.xlsx";
 
             $path = "public/excel/" . $filename;
 
             $fullPath = storage_path('app/' . $path);
-            Storage::makeDirectory('excel'); 
+            Storage::makeDirectory('excel');
 
             $writer = new Xlsx($spreadsheet);
             $writer->save($fullPath);
@@ -476,7 +480,7 @@ class AttendeeController extends Controller
             }
 
             return response()->json([
-                'status'  => 200,
+                'status' => 200,
                 'success' => true,
                 'exportlink' => asset('storage/excel/' . $filename),
                 'message' => "Success Download",
@@ -492,7 +496,8 @@ class AttendeeController extends Controller
                 'success' => false,
                 'message' => 'Internal Server Error.',
                 'error' => $e->getMessage(),
-            ]);;
+            ]);
+            ;
         }
     }
 
@@ -555,6 +560,8 @@ class AttendeeController extends Controller
             );
         }
     }
+
+
 
     public function add(Request $r)
     {
@@ -710,5 +717,65 @@ class AttendeeController extends Controller
         }
 
         return response()->json($this->return, $this->return['code']);
+    }
+
+    public function RekapAbsenUser(int $user_id, Request $request): JsonResponse
+    {
+        // DB::enableQueryLog();
+        $start = $request->date_start;
+        $end = $request->date_end;
+
+        $ateende = Attendee::select(
+            "attendance.id as id",
+            "attendee_date",
+            "attendance.users_id",
+            "attendee_time_in",
+            "attendee_latitude_in",
+            "attendee_longitude_in",
+            "images_in AS images_in",
+            "attendee_time_out",
+            "attendee_latitude_out",
+            "attendee_longitude_out",
+            "images_out AS images_out",
+            // "null as shedule_name", 
+            // "null as schedule_in", 
+            // "null as schedule_out",  
+            "user_info.fullname AS profile_name",
+            "user_info.nik AS nik",
+            // "null as late_duration",
+            // "null as remarks",
+            // "/ as type"
+        )
+            ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
+            ->where('user_info.user_id', $user_id)
+            ->whereBetween('attendee_date', [$start, $end])
+            ->get();
+        // $count = $visit->count();
+        // $log = DB::getQueryLog();
+        // dd($log);
+        $ateende['attendee_date'] = date('d/m/Y', strtotime($ateende['attendee_date']));
+        if ($ateende['images_in'] != null) {
+            $ateende['images_in'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_in'];
+        }
+
+        if ($ateende['images_out'] != null) {
+            $ateende['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_out'];
+        }
+
+
+        if (!$ateende) {
+            return $this->clientErrorResponse(
+                statusCode: 404,
+                success: false,
+                msg: "Unsuccessful Absen not found.",
+            );
+        }
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully Fetch Data.",
+            resource: $ateende,
+        );
     }
 }
