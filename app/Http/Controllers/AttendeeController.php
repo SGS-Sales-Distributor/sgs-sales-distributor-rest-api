@@ -749,7 +749,8 @@ class AttendeeController extends Controller
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
             ->where('user_info.user_id', $user_id)
             ->whereBetween('attendee_date', ["'$start'", "'$end'"])
-            ->first();
+            // ->first();
+            ->get();
         // $count = $visit->count();
         // $log = DB::getQueryLog();
         // dd($log);
