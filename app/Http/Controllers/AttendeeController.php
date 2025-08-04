@@ -749,7 +749,7 @@ class AttendeeController extends Controller
         foreach ($ateende as &$row) {
             $row['attendee_date'] = date('d/m/Y', strtotime($row['attendee_date']));
             if (!empty($row['images_in'])) {
-                $row['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $row['images_out'];
+                $row['images_in'] = 'https://absen.lspsgs.co.id:8087/images/' . $row['images_in'];
             }
 
             if (!empty($row['images_out'])) {
