@@ -765,6 +765,13 @@ class AttendeeController extends Controller
         //     $ateende['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_out'];
         // }
 
+        if(count($ateende) == 0){
+            return $this->errorResponse(
+				statusCode: 500,
+				success: false,
+				msg: 'Data Kosong',
+			);
+        }
 
         if (!$ateende) {
             return $this->clientErrorResponse(
