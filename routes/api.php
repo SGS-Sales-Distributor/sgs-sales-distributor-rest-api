@@ -325,6 +325,7 @@ Route::group([
         Route::delete('/stores/delete-draft/{id}', [StoreInfoDistriController::class, 'deleteDraft']);
 
         Route::get('/getAbsen/{user_id}/',[AttendeeController::class,'getDataAbsen']);
+        Route::get('/RekapAbsen/{user_id}/',[AttendeeController::class,'RekapAbsenUser']);
         Route::post('/addIn/{number}', [AttendeeController::class,'addIn']);
         Route::post('/addOut/{number}/{attendId}', [AttendeeController::class,'addOut']);
         Route::get('/jabatanbyOne/{id}', [sts_jabatan::class,'get_data_by_id']);
