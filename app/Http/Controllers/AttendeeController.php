@@ -721,7 +721,7 @@ class AttendeeController extends Controller
 
     public function RekapAbsenUser(int $user_id, Request $request): JsonResponse
     {
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
         $start = $request->date_start;
         $end = $request->date_end;
 
@@ -748,11 +748,11 @@ class AttendeeController extends Controller
         )
             ->join('user_info', 'user_info.user_id', '=', 'attendance.users_id')
             ->where('user_info.user_id', $user_id)
-            ->whereBetween('attendee_date', [$start, $end])
-            ->get();
+            ->whereBetween('attendee_date', ["'$start'", "'$end'"])
+            ->first();
         // $count = $visit->count();
-        $log = DB::getQueryLog();
-        dd($log);
+        // $log = DB::getQueryLog();
+        // dd($log);
         $ateende['attendee_date'] = date('d/m/Y', strtotime($ateende['attendee_date']));
         if ($ateende['images_in'] != null) {
             $ateende['images_in'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_in'];
