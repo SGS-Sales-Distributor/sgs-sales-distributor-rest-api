@@ -30,15 +30,14 @@ class AttendeeController extends Controller
         // $log = DB::getQueryLog();
         // dd($log);
 
-
-
-        if (!$visit) {
-            return $this->clientErrorResponse(
-                statusCode: 404,
+        if (count($visit) == 0) {
+            return $this->errorResponse(
+                statusCode: 500,
                 success: false,
-                msg: "Unsuccessful Absen UserId : {$user_id} not found.",
+                msg: 'Data Kosong',
             );
         }
+
 
         return $this->successResponse(
             statusCode: 200,
@@ -765,12 +764,12 @@ class AttendeeController extends Controller
         //     $ateende['images_out'] = 'https://absen.lspsgs.co.id:8087/images/' . $ateende['images_out'];
         // }
 
-        if(count($ateende) == 0){
+        if (count($ateende) == 0) {
             return $this->errorResponse(
-				statusCode: 500,
-				success: false,
-				msg: 'Data Kosong',
-			);
+                statusCode: 500,
+                success: false,
+                msg: 'Data Kosong',
+            );
         }
 
         if (!$ateende) {
