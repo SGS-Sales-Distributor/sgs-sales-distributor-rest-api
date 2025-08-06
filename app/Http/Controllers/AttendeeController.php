@@ -38,6 +38,13 @@ class AttendeeController extends Controller
             );
         }
 
+        if (!$visit) {
+            return $this->clientErrorResponse(
+                statusCode: 404,
+                success: false,
+                msg: "Unsuccessful Absen UserId : {$user_id} not found.",
+            );
+        }
 
         return $this->successResponse(
             statusCode: 200,
