@@ -30,14 +30,6 @@ class AttendeeController extends Controller
         // $log = DB::getQueryLog();
         // dd($log);
 
-        if (count($visit) == 0) {
-            return $this->errorResponse(
-                statusCode: 500,
-                success: false,
-                msg: 'Data Kosong',
-            );
-        }
-
         if (!$visit) {
             return $this->clientErrorResponse(
                 statusCode: 404,
