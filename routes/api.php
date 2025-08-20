@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\KodeLokasiController;
 use App\Http\Controllers\Api\ProfilNotvisit;
 use App\Http\Controllers\Api\StoreCabangController;
 use App\Http\Controllers\AttendeeController;
+use App\Http\Controllers\StsJabatanController;
 use App\Http\Middleware\JwtAuthMiddleware;
 use App\Http\Controllers\Api\OrderCustomerSalesController;
 use Illuminate\Support\Facades\Route;
@@ -212,6 +213,7 @@ Route::group([
     
     //Ambil Data Jabatan
     Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
+    Route::post('/addJabatan', [StsJabatanController::class, 'saveStsJabatan']);
     
     //Ambil Data Asben
     Route::get('/getData', [AttendeeController::class,'getAllAbsen']);

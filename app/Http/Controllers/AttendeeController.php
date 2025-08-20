@@ -113,20 +113,26 @@ class AttendeeController extends Controller
     public function addIn(Request $request, string $userNumber): JsonResponse
     {
         try {
-            DB::beginTransaction();
-
-            $image = $request->file('image');
-
-            $image_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
-
-            $destinationPath = public_path('/images');
-
-            $image->move($destinationPath, $image_name);
 
             $user = User::where('number', $userNumber)->firstOrFail();
+            $day_now = Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d');
+            $image = $request->file('image');
+            $image_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+            $destinationPath = public_path('/images');
+            $image->move($destinationPath, $image_name);
+
+            $existingAbsensi = Attendee::where('users_id', $user->user_id)
+                ->where('attendee_date', $day_now)
+                ->count();
+
+            if ($existingAbsensi > 0) {
+                return response()->json(['message' => 'Anda sudah melakukan absensi hari ini'], 400);
+            }
+
+            DB::beginTransaction();
 
             $checkInVisit = Attendee::create([
-                'attendee_date' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
+                'attendee_date' => $day_now,
                 'attendee_time_in' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
                 'attendee_longitude_in' => $request->lat_in,
                 'attendee_latitude_in' => $request->long_in,
@@ -503,35 +509,39 @@ class AttendeeController extends Controller
     public function addOut(Request $request, string $userNumber, int $attendId): JsonResponse
     {
         try {
-            DB::beginTransaction();
 
+            //out
             $image = $request->file('image');
-
             $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
-
             $destinationPath = base_path('public/images');
-
             $image->move($destinationPath, $name);
-
             $salesman = User::where('user_id', $userNumber)->firstOrFail();
-
             $latestVisit = Attendee::where('id', $attendId)->firstOrFail();
 
-            $latestVisit->update([
-                'attendee_time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
-                'attendee_longitude_out' => $request->lat_out,
-                'attendee_latitude_out' => $request->long_in,
-                'images_out' => $name,
-                'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
-            ]);
+            if ($latestVisit->attendee_time_out === null || $latestVisit->attendee_time_out === "") {
 
-            DB::commit();
+                DB::beginTransaction();
 
-            return $this->successResponse(
-                statusCode: 201,
-                success: true,
-                msg: "Successfully Attendee Out {$userNumber}.",
-            );
+                $latestVisit->update([
+                    'attendee_time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
+                    'attendee_longitude_out' => $request->lat_out,
+                    'attendee_latitude_out' => $request->long_out,
+                    'images_out' => $name,
+                    'updated_at' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d H:i:s'),
+                ]);
+
+                DB::commit();
+
+                return $this->successResponse(
+                    statusCode: 201,
+                    success: true,
+                    msg: "Successfully Attendee Out {$userNumber}.",
+                );
+            } else {
+
+                return response()->json(['message' => 'Anda sudah melakukan absensi Pulang hari ini'], 400);
+            }
+
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
 
