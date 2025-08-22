@@ -511,14 +511,20 @@ class AttendeeController extends Controller
         try {
 
             //out
+            $day_now = Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d');
             $image = $request->file('image');
             $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
             $destinationPath = base_path('public/images');
             $image->move($destinationPath, $name);
             $salesman = User::where('user_id', $userNumber)->firstOrFail();
             $latestVisit = Attendee::where('id', $attendId)->firstOrFail();
+            $existingAbsensi = Attendee::where('users_id', $userNumber)
+                ->where('attendee_date', $day_now)
+                ->count();
 
-            if ($latestVisit->attendee_time_out === null || $latestVisit->attendee_time_out === "") {
+            if ($existingAbsensi === 0) {
+                return response()->json(['message' => 'Anda belum Absen Masuk hari ini'], 400);
+            } else if ($latestVisit->attendee_time_out === null || $latestVisit->attendee_time_out === "") {
 
                 DB::beginTransaction();
 
@@ -538,7 +544,6 @@ class AttendeeController extends Controller
                     msg: "Successfully Attendee Out {$userNumber}.",
                 );
             } else {
-
                 return response()->json(['message' => 'Anda sudah melakukan absensi Pulang hari ini'], 400);
             }
 
