@@ -22,11 +22,12 @@ class ProfilVisitController extends Controller
 		$searchByQuery = $request->query(key: 'search');
 		$tanggalfr = $request->query(key: 'tanggalfr');
 		$tanggalto = $request->query(key: 'tanggalto');
+		$depcode = $request->query(key: 'depcode');
 
 
 		if (!isset($request->search) & !isset($tanggalfr) & !isset($tanggalto)) {
 			$count = (new ProfilVisit())->count();
-			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset,$depcode,$tanggalfr,$tanggalto,);
 			// DB::enableQueryLog();
 			// $visits = ProfilVisit::with(['user', 'store', 'masterPlanDtl'])
 			$visits = DB::table('master_call_plan_detail')
