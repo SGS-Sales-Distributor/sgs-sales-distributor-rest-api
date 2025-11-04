@@ -222,6 +222,7 @@ Route::group([
 
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
+    Route::get('/salesmen', [SalesmanController::class, 'getAll']);
 
     // for create new admin account.
     Route::post('/admins', [AdminController::class, 'storeOneData']);
@@ -230,7 +231,6 @@ Route::group([
         'middleware' => JwtAuthMiddleware::class,
     ], function () {
         // salesman's routes
-        Route::get('/salesmen', [SalesmanController::class, 'getAll']);
         Route::get('/salesmen/{number}', [SalesmanController::class, 'getOne']);
         Route::post('/salesmen/{number}/visits', [SalesmanController::class, 'checkInVisit']);
         Route::post('/salesmen/{number}/visits/{visitId}', [SalesmanController::class, 'checkOutVisit']);

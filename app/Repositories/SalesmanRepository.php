@@ -34,7 +34,12 @@ class SalesmanRepository extends Repository implements SalesmanInterface
     {
         $URL = URL::current();
         $searchByQuery = $request->query('search');
-        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+        $searchByQuery = $request->query('search');
+        $depcode = $request->query(key: 'depcode');
+        $start = $request->query(key: 'start');
+        $end = $request->query(key: 'end');
+        
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset,$depcode,$start,$end);
 
         $salesmenCache = Cache::remember(
             "salesmenCache",
