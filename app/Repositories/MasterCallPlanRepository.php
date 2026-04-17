@@ -443,7 +443,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $tanggalfr = $request->query(key: 'tanggalfr');
         $tanggalto = $request->query(key: 'tanggalto');
 
-        if (!isset($searchByQuery) & !isset($tanggalfr) & !isset($tanggalto)) {
+        if (!isset($searchByQuery) && !isset($tanggalfr) && !isset($tanggalto)) {
             $count = (new ProfilVisit())->count();
             $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
                 $URL,
@@ -522,18 +522,131 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         // dd($log);
 
         if (count($dataA) == 0) {
-            return $this->errorResponse(
-                statusCode: 500,
-                success: false,
-                msg: 'Data Kosong',
+            return response()->json(
+                (new PublicModel())->array_respon_200_table_tr([], 0, $arr_pagination),
+                200
             );
         }
 
 
-        return response()->json(
+		return response()->json(
 			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
 			(new PublicModel())->array_respon_200_table_tr($dataA, $count, $arr_pagination),
 			200
 		);
+    }
+
+    public function getCoverage_planWeeklySummary(Request $request): JsonResponse
+    {
+        $tanggalfr = $request->query(key: 'tanggalfr');
+        $tanggalto = $request->query(key: 'tanggalto');
+        $searchByQuery = $request->query(key: 'search');
+
+        if (empty($tanggalfr) || empty($tanggalto)) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: 'Tanggal awal dan tanggal akhir wajib diisi.',
+            );
+        }
+
+        $detailRows = DB::table('master_call_plan_detail as mcpd')
+            ->join('master_call_plan as mcp', 'mcp.id', '=', 'mcpd.call_plan_id')
+            ->join('user_info as ui', 'ui.user_id', '=', 'mcp.user_id')
+            ->join('store_info_distri as sid', 'sid.store_id', '=', 'mcpd.store_id')
+            ->leftJoin('profil_visit as pv', function ($join) {
+                $join->on('pv.user', '=', 'mcp.user_id')
+                    ->on('pv.tanggal_visit', '=', 'mcpd.date')
+                    ->on('pv.store_id', '=', 'mcpd.store_id');
+            })
+            ->whereBetween('mcpd.date', [$tanggalfr, $tanggalto])
+            ->when($searchByQuery, function ($query) use ($searchByQuery) {
+                $query->where(function ($subQuery) use ($searchByQuery) {
+                    $subQuery->where('ui.fullname', 'LIKE', '%' . $searchByQuery . '%')
+                        ->orWhere('sid.store_code', 'LIKE', '%' . $searchByQuery . '%')
+                        ->orWhere('sid.store_name', 'LIKE', '%' . $searchByQuery . '%');
+                });
+            })
+            ->selectRaw("
+                mcp.user_id as user_id,
+                ui.fullname as nama_sales,
+                sid.store_code as kode_toko,
+                sid.store_name as nama_toko,
+                mcpd.date as tanggal_plan,
+                CASE
+                    WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 1 AND 7 THEN 1
+                    WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 8 AND 14 THEN 2
+                    WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 15 AND 21 THEN 3
+                    ELSE 4
+                END as week_num,
+                pv.ket as ket_visit
+            ")
+            ->orderBy('ui.fullname', 'asc')
+            ->orderBy('sid.store_code', 'asc')
+            ->orderBy('mcpd.date', 'asc')
+            ->get();
+
+        $groupedStores = $detailRows->groupBy(function ($row) {
+            return $row->user_id . '|' . $row->kode_toko . '|' . $row->nama_toko;
+        });
+
+        $formatted = collect();
+
+        foreach ($groupedStores as $storeRows) {
+            $firstRow = $storeRows->first();
+            $weekGroups = $storeRows->groupBy('week_num');
+            $weekKet = [];
+
+            for ($week = 1; $week <= 4; $week++) {
+                $weekRows = $weekGroups->get($week, collect());
+                $weekCount = $weekRows->count();
+                $weekKetValues = $weekRows
+                    ->pluck('ket_visit')
+                    ->filter(function ($value) {
+                        return !empty(trim((string) $value));
+                    })
+                    ->map(function ($value) {
+                        return trim((string) $value);
+                    })
+                    ->unique()
+                    ->values();
+
+                $weekKet["week_{$week}"] = $weekKetValues->isNotEmpty()
+                    ? $weekKetValues->implode(' | ')
+                    : '-';
+                $weekKet["week_{$week}_count"] = $weekCount;
+            }
+
+            $formatted->push([
+                'nama_sales' => $firstRow->nama_sales,
+                'kode_toko' => $firstRow->kode_toko,
+                'nama_toko' => $firstRow->nama_toko,
+                'week_1' => $weekKet['week_1_count'],
+                'week_2' => $weekKet['week_2_count'],
+                'week_3' => $weekKet['week_3_count'],
+                'week_4' => $weekKet['week_4_count'],
+                'ket' => 'Week 1: ' . $weekKet['week_1'] . ' | Week 2: ' . $weekKet['week_2'] . ' | Week 3: ' . $weekKet['week_3'] . ' | Week 4: ' . $weekKet['week_4'],
+                'total' => $storeRows->count(),
+            ]);
+        }
+
+        $grandTotal = $detailRows->count();
+        $weekTotals = [
+            'week_1' => $detailRows->where('week_num', 1)->count(),
+            'week_2' => $detailRows->where('week_num', 2)->count(),
+            'week_3' => $detailRows->where('week_num', 3)->count(),
+            'week_4' => $detailRows->where('week_num', 4)->count(),
+        ];
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: 'Successfully fetch weekly summary visit report.',
+            resource: [
+                'rows' => $formatted->values(),
+                'grand_total' => $grandTotal,
+                'week_totals' => $weekTotals,
+            ],
+        );
     }
 }

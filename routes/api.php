@@ -86,6 +86,10 @@ Route::group([
     Route::put('/order_customer_sales/{id}', [PurchaseOrderController::class, 'updateOne']);
     Route::delete('/order_customer_sales/{id}', [PurchaseOrderController::class, 'removeOne']);
 
+
+    Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
+
+
     // CRUD untuk User Info 
     // Router::get('/getUserInfo', 'UserInfoController@getUserInfo');
     // Router::get('/getUserInfoX', 'UserInfoController@getUserInfoX');
@@ -317,6 +321,7 @@ Route::group([
 
         Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
         Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
+        Route::get('/getCovPlans/export', [MasterCallPlanController::class, 'getCoverage_planWeeklySummary']);
 
         Route::get('/detailOrder/{id}', [OrderCustomerSalesController::class, 'showDetailOrder']);
         // Route::post('/stores/kirimOTP', [StoreInfoDistriController::class, 'generateOTP']);

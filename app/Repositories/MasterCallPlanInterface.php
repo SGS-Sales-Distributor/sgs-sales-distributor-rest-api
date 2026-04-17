@@ -23,4 +23,6 @@ interface MasterCallPlanInterface
     
     public function getCoverage_plan(Request $request): JsonResponse;
 
+    public function getCoverage_planWeeklySummary(Request $request): JsonResponse;
+
 }
