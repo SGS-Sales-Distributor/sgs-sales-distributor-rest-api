@@ -445,7 +445,14 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
         if (!isset($searchByQuery) & !isset($tanggalfr) & !isset($tanggalto)) {
             $count = (new ProfilVisit())->count();
-            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
+                $URL,
+                $request->limit,
+                $request->offset,
+                $searchByQuery,
+                $tanggalfr,
+                $tanggalto
+            );
             // DB::enableQueryLog();
             $data = DB::table('master_call_plan')
                 ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
@@ -473,7 +480,14 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 				->offset($arr_pagination['offset'])
                 ->get();
         } else {
-            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
+            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
+                $URL,
+                $request->limit,
+                $request->offset,
+                $searchByQuery,
+                $tanggalfr,
+                $tanggalto
+            );
             $data = DB::table('master_call_plan')
                 ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
                 (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')

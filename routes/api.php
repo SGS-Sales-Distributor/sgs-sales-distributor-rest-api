@@ -97,7 +97,7 @@ Route::group([
     // Router::get('/getCboUserType', 'UserInfoController@getCboUserType');
     // Router::get('/getCboStoreCabang', 'UserInfoController@getCboStoreCabang');
     Route::get('/getCboOutlet', 'UserInfoController@getCboOutlet');
-    
+
     // Router::get('/getCboPenempatan', 'UserInfoController@getCboPenempatan');
     // Router::get('/getKodeLokasi/{id}', 'UserInfoController@getKodeLokasi');
     // Router::post('/exportData', 'UserInfoController@xportData');
@@ -198,7 +198,7 @@ Route::group([
         Route::post('/login', [JwtAuthController::class, 'login']);
         Route::post('/refresh', [JwtAuthController::class, 'refreshToken']);
         Route::post('/register', [JwtAuthController::class, 'register']);
-        
+
         Route::group([
             'middleware' => JwtAuthMiddleware::class
         ], function () {
@@ -206,19 +206,19 @@ Route::group([
         });
     });
     //store tipe
-    Route::get('/getStype',[StoreType::class,'getcboIDStore']);
+    Route::get('/getStype', [StoreType::class, 'getcboIDStore']);
 
     //cabang
     Route::get('/area', action: [KodeLokasiController::class, 'getAll']);
-    
+
     //Ambil Data Jabatan
-    Route::get('/jabatanAll', [sts_jabatan::class,'get_data']);
+    Route::get('/jabatanAll', [sts_jabatan::class, 'get_data']);
     Route::post('/addJabatan', [StsJabatanController::class, 'saveStsJabatan']);
-    
+
     //Ambil Data Asben
-    Route::get('/getData', [AttendeeController::class,'getAllAbsen']);
-    Route::get('/getById/{id}/',[AttendeeController::class,'getDataAbsenById']);
-    Route::post('/exportData',[AttendeeController::class,'getExport']);
+    Route::get('/getData', [AttendeeController::class, 'getAllAbsen']);
+    Route::get('/getById/{id}/', [AttendeeController::class, 'getDataAbsenById']);
+    Route::post('/exportData', [AttendeeController::class, 'getExport']);
 
     // for create new salesman account.
     Route::post('/salesmen', [SalesmanController::class, 'storeOneData']);
@@ -303,21 +303,21 @@ Route::group([
         Route::get('/stores/countPObyStore', [StoreInfoDistriController::class, 'countPObyStore']);
         Route::get('/stores/storeNameGet', [StoreInfoDistriController::class, 'storeNameGet']);
 
-        
+
         Route::get('/distriByCbg/{idCab}', [StoreInfoDistriController::class, 'getStoreByCbg']);
-        
+
         //plant's route
         Route::post('/plantsNotvisit', [ProfilNotvisit::class, 'saveOneData']);
         // Route::get('/profil_notvisitOne/{id}', [ProfilNotvisit::class, 'getOneData']);
-        
+
         //Store Cabang
         Route::get('/cabangs', [StoreCabangController::class, 'paging']); //INI UNTUK PAGING 
         Route::get('/cabangsAll', [StoreCabangController::class, 'getAll']);
         Route::get('/cabangsByUser/{userId}', [StoreCabangController::class, 'getCabangByUser']);
-        
+
         Route::post('/call-plans', [MasterCallPlanController::class, 'storeOne']);
         Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
-        
+
         Route::get('/detailOrder/{id}', [OrderCustomerSalesController::class, 'showDetailOrder']);
         // Route::post('/stores/kirimOTP', [StoreInfoDistriController::class, 'generateOTP']);
         Route::get('/detail-order/{id}', [StoreInfoDistriController::class, 'getDetail']);
@@ -326,10 +326,10 @@ Route::group([
         Route::put('/updateDetail/{id}', [StoreInfoDistriController::class, 'updateDetail']);
         Route::delete('/stores/delete-draft/{id}', [StoreInfoDistriController::class, 'deleteDraft']);
 
-        Route::get('/getAbsen/{user_id}/',[AttendeeController::class,'getDataAbsen']);
-        Route::get('/RekapAbsen/{user_id}/',[AttendeeController::class,'RekapAbsenUser']);
-        Route::post('/addIn/{number}', [AttendeeController::class,'addIn']);
-        Route::post('/addOut/{number}/{attendId}', [AttendeeController::class,'addOut']);
-        Route::get('/jabatanbyOne/{id}', [sts_jabatan::class,'get_data_by_id']);
+        Route::get('/getAbsen/{user_id}/', [AttendeeController::class, 'getDataAbsen']);
+        Route::get('/RekapAbsen/{user_id}/', [AttendeeController::class, 'RekapAbsenUser']);
+        Route::post('/addIn/{number}', [AttendeeController::class, 'addIn']);
+        Route::post('/addOut/{number}/{attendId}', [AttendeeController::class, 'addOut']);
+        Route::get('/jabatanbyOne/{id}', [sts_jabatan::class, 'get_data_by_id']);
     });
 });

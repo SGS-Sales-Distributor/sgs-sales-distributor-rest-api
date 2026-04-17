@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use Exception;
@@ -22,11 +23,14 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
 {
     public function login(Request $request): JsonResponse
     {
+        $normalizedEmail = Str::lower(trim((string) $request->input('email', '')));
+        $request->merge(['email' => $normalizedEmail]);
+
         # validate data.
         $validator = Validator::make(
             $request->all(),
             [
-                'email' => ['required', 'lowercase', 'string', 'email'],
+                'email' => ['required', 'string', 'email'],
                 'password' => ['required', 'string'],
             ],
             [
@@ -47,7 +51,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         }
 
         # search user.
-        $user = User::where('email', $request->email)
+        $user = User::whereRaw('LOWER(email) = ?', [$normalizedEmail])
         // ->firstOrFail();
         ->first();
 
@@ -62,7 +66,10 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         
         
         # credential for auth attempt.
-        $credentials = $request->only('email', 'password');
+        $credentials = [
+            'email' => $normalizedEmail,
+            'password' => (string) $request->input('password', ''),
+        ];
         $atuhAttm = Auth::attempt($credentials);
         if (!$atuhAttm) {
             return $this->clientErrorResponse(
