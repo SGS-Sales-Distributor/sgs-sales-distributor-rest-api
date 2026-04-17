@@ -88,6 +88,7 @@ Route::group([
 
 
     Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
+    Route::get('/getCovPlans/export', [MasterCallPlanController::class, 'getCoverage_planWeeklySummary']);
 
 
     // CRUD untuk User Info 
