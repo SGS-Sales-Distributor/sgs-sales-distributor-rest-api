@@ -50,7 +50,7 @@ class PublicModel extends Model
         ], 200);
     }
 
-    public function paginateDataWithoutSearchQuery($URL, $limit, $offset,$depcode, $start, $end)
+    public function paginateDataWithoutSearchQuery($URL, $limit, $offset, $depcode = null, $start = null, $end = null)
     {
         $limit = (empty($limit) ? 0 : $limit);
         $offset = (empty($offset) ? 0 : $offset);
