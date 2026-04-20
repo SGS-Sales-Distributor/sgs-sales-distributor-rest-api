@@ -644,7 +644,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                     'mcpd.date',
                     'mcpd.call_plan_id',
                     'mcpd.store_id',
-                    'sid.store_name'
+                    'sid.store_name',
+                    'sid.store_code',
                 );
 
             if ($request->month) {
