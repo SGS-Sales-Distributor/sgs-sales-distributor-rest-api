@@ -633,6 +633,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             $query = DB::table('master_call_plan as mcp')
                 ->join('master_call_plan_detail as mcpd', 'mcp.id', '=', 'mcpd.call_plan_id')
                 ->join('user_info as u', 'mcp.user_id', '=', 'u.user_id')
+                ->join('store_info_distri as sid', 'mcpd.store_id', '=', 'sid.store_id')
+                ->join('store_info_distri_person as sidp', 'sid.store_id', '=', 'sidp.store_id')
                 ->select(
                     'u.fullname',
                     'u.email',
@@ -641,7 +643,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                     'mcp.year_plan',
                     'mcpd.date',
                     'mcpd.call_plan_id',
-                    'mcpd.store_id'
+                    'mcpd.store_id',
+                    'sid.store_name'
                 );
 
             if ($request->month) {
