@@ -36,13 +36,14 @@ Route::group([
     'prefix' => 'sgs',
 ], function () {
     // visit's routes
+    Route::get('/profil-visit/export-weekly', [ProfilVisitController::class, 'exportWeekly']);
+
     Route::get('/profil_visit', [ProfilVisitController::class, 'getAll']);
     Route::get('/profil_visit/{id}', [ProfilVisitController::class, 'getOne']);
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
     Route::delete('/profil_visit/{id}', [ProfilVisitController::class, 'removeOne']);
     Route::get('/profil_visit/user/{userId}', [ProfilVisitController::class, 'getVisitUser']);
     Route::get('/profil_visit/user/{userId}/filter', [ProfilVisitController::class, 'getVisitUserByTanggal']);
-
     // Not visit's routes
     Route::get('/profil_notvisitOne/{id}', [ProfilNotvisit::class, 'getOneData']);
 
@@ -57,6 +58,7 @@ Route::group([
     Route::put('/call-plans/{id}', [MasterCallPlanController::class, 'updateOne']);
     Route::delete('/call-plans/{id}', [MasterCallPlanController::class, 'removeOne']);
     Route::get('/call-plans/notVisited/{UserId}', [MasterCallPlanController::class, 'notVisitedUser']);
+    Route::get('/call-plan-join', [MasterCallPlanController::class, 'getCallPlanJoin']);
 
     // type program's routes.
     Route::get('/master_type_program_x', [ProgramTypeController::class, 'getAll']);
@@ -90,6 +92,11 @@ Route::group([
     Route::get('/getCovPlans', [MasterCallPlanController::class, 'getCoverage_plan']);
     Route::get('/getCovPlans/export', [MasterCallPlanController::class, 'getCoverage_planWeeklySummary']);
 
+    Route::get('/getAbsen/{user_id}/', [AttendeeController::class, 'getDataAbsen']);
+    Route::get('/RekapAbsen/{user_id}/', [AttendeeController::class, 'RekapAbsenUser']);
+    Route::post('/addIn/{number}', [AttendeeController::class, 'addIn']);
+    Route::post('/addOut/{number}/{attendId}', [AttendeeController::class, 'addOut']);
+    Route::get('/jabatanbyOne/{id}', [sts_jabatan::class, 'get_data_by_id']);
 
     // CRUD untuk User Info 
     // Router::get('/getUserInfo', 'UserInfoController@getUserInfo');

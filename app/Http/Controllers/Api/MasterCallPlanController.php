@@ -54,6 +54,11 @@ class MasterCallPlanController extends Controller
     {
         return $this->masterCallPlanInterface->getCoverage_planWeeklySummary($request);
     }
+    
+    public function getCallPlanJoin(Request $request): JsonResponse
+    {
+        return $this->masterCallPlanInterface->getCallPlanJoin($request);
+    }
 
     public function getOneDetail($id)
     {
