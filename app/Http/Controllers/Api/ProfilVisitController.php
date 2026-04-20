@@ -27,7 +27,7 @@ class ProfilVisitController extends Controller
 
 		if (!isset($request->search) & !isset($tanggalfr) & !isset($tanggalto)) {
 			$count = (new ProfilVisit())->count();
-			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset,$depcode,$tanggalfr,$tanggalto,);
+			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset, $depcode, $tanggalfr, $tanggalto,);
 			// DB::enableQueryLog();
 			// $visits = ProfilVisit::with(['user', 'store', 'masterPlanDtl'])
 			$visits = DB::table('master_call_plan_detail')
@@ -421,6 +421,82 @@ class ProfilVisitController extends Controller
 			statusCode: 200,
 			success: true,
 			msg: "Successfully remove visit {$id} data.",
+		);
+	}
+
+
+	public function exportWeekly(Request $request): JsonResponse
+	{
+		$tanggalfr = $request->query('tanggalfr');
+		$tanggalto = $request->query('tanggalto');
+
+		if (empty($tanggalfr) || empty($tanggalto)) {
+			return $this->clientErrorResponse(
+				statusCode: 422,
+				success: false,
+				msg: 'Tanggal wajib diisi',
+			);
+		}
+
+		$data = DB::table('master_call_plan_detail as mcpd')
+			->join('master_call_plan as mcp', 'mcp.id', '=', 'mcpd.call_plan_id')
+			->join('user_info as ui', 'ui.user_id', '=', 'mcp.user_id')
+			->join('store_info_distri as sid', 'sid.store_id', '=', 'mcpd.store_id')
+			->selectRaw("
+            ui.fullname AS nama_sales,
+            sid.store_code AS kode_toko,
+            sid.store_name AS nama_toko,
+
+            COALESCE(
+                STRING_AGG(TO_CHAR(mcpd.date, 'YYYY-MM-DD'), ', ')
+                FILTER (WHERE EXTRACT(DAY FROM mcpd.date) BETWEEN 1 AND 7),
+            '-') AS week_1,
+
+            COALESCE(
+                STRING_AGG(TO_CHAR(mcpd.date, 'YYYY-MM-DD'), ', ')
+                FILTER (WHERE EXTRACT(DAY FROM mcpd.date) BETWEEN 8 AND 14),
+            '-') AS week_2,
+
+            COALESCE(
+                STRING_AGG(TO_CHAR(mcpd.date, 'YYYY-MM-DD'), ', ')
+                FILTER (WHERE EXTRACT(DAY FROM mcpd.date) BETWEEN 15 AND 21),
+            '-') AS week_3,
+
+            COALESCE(
+                STRING_AGG(TO_CHAR(mcpd.date, 'YYYY-MM-DD'), ', ')
+                FILTER (WHERE EXTRACT(DAY FROM mcpd.date) >= 22),
+            '-') AS week_4
+        ")
+			->whereBetween(DB::raw('DATE(mcpd.date)'), [$tanggalfr, $tanggalto])
+			->groupBy('ui.fullname', 'sid.store_code', 'sid.store_name')
+			->orderBy('ui.fullname')
+			->orderBy('sid.store_code')
+			->get();
+
+		$countWeek = function ($val) {
+			if (!$val || $val === '-') return 0;
+			return count(explode(', ', $val));
+		};
+
+		$totalW1 = $data->sum(fn($row) => $countWeek($row->week_1));
+		$totalW2 = $data->sum(fn($row) => $countWeek($row->week_2));
+		$totalW3 = $data->sum(fn($row) => $countWeek($row->week_3));
+		$totalW4 = $data->sum(fn($row) => $countWeek($row->week_4));
+
+		return $this->successResponse(
+			statusCode: 200,
+			success: true,
+			msg: 'Successfully fetch export weekly data.',
+			resource: [
+				'rows' => $data,
+				'totals' => [
+					'week_1' => $totalW1,
+					'week_2' => $totalW2,
+					'week_3' => $totalW3,
+					'week_4' => $totalW4,
+					'grand_total' => $totalW1 + $totalW2 + $totalW3 + $totalW4
+				]
+			]
 		);
 	}
 }

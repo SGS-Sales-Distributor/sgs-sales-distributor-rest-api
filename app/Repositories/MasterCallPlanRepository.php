@@ -23,7 +23,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
         $masterCallPlanCache = Cache::remember(
             'masterCallPlan',
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery) {
                 return MasterCallPlan::with([
                     'user.type',
@@ -54,79 +54,56 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $searchByDateQuery = $request->query('q');
 
         $filterByDateRange = $this->dateRangeFilter->parseDateRange($searchByDateQuery);
-
         $filterByDate = $this->dateRangeFilter->parseDate($searchByDateQuery);
-
         $filterByYearRange = $this->dateRangeFilter->parseYearRange($searchByDateQuery);
-
         $filterByYear = $this->dateRangeFilter->parseYear($searchByDateQuery);
 
         $masterCallPlanByDateFilterCache = Cache::remember(
-            'masterCallPlanByDateFilter',
-                $this::DEFAULT_CACHE_TTL,
-            function () use ($filterByDateRange, $filterByDate, $filterByYearRange, $filterByYear, ) {
+            'masterCallPlanByDateFilter_' . $searchByDateQuery, // ✅ FIX CACHE
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($filterByDateRange, $filterByDate, $filterByYearRange, $filterByYear) {
+
+                $query = MasterCallPlan::with(['user', 'details']);
+
+                // ✅ DATE RANGE
                 if ($filterByDateRange) {
-                    return MasterCallPlan::with([
-                        'user',
-                        'details'
-                    ])
-                        ->when($filterByDateRange, function (Builder $query) use ($filterByDateRange) {
-                            $query->whereHas('details', function (Builder $subQuery) use ($filterByDateRange) {
-                                $subQuery->whereBetween('date', $filterByDateRange);
-                            });
-                        })
-                        ->orderBy('id', 'asc')
-                        ->paginate($this::DEFAULT_PAGINATE);
+                    $query->whereHas('details', function ($q) use ($filterByDateRange) {
+                        $q->whereBetween('date', $filterByDateRange);
+                    });
                 }
 
-                if ($filterByDate) {
-                    return MasterCallPlan::with([
-                        'user',
-                        'details'
-                    ])
-                        ->when($filterByDate, function (Builder $query) use ($filterByDate) {
-                            $query->whereHas('details', function (Builder $subQuery) use ($filterByDate) {
-                                $subQuery->whereDate('date', '=', $filterByDate);
-                            });
-                        })
-                        ->orderBy('id', 'asc')
-                        ->paginate($this::DEFAULT_PAGINATE);
+                // ✅ SINGLE DATE
+                elseif ($filterByDate) {
+                    $query->whereHas('details', function ($q) use ($filterByDate) {
+                        $q->whereDate('date', $filterByDate);
+                    });
                 }
 
-                if ($filterByYearRange) {
-                    return MasterCallPlan::with([
-                        'user',
-                        'details'
-                    ])
-                        ->when($filterByYearRange, function (Builder $query) use ($filterByYearRange) {
-                            $query->whereHas('details', function (Builder $subQuery) use ($filterByYearRange) {
-                                $subQuery->whereBetween('date', $filterByYearRange);
-                            });
-                        })
-                        ->orderBy('id', 'asc')
-                        ->paginate($this::DEFAULT_PAGINATE);
+                // ✅ YEAR RANGE
+                elseif ($filterByYearRange) {
+                    $query->whereHas('details', function ($q) use ($filterByYearRange) {
+                        $q->whereBetween('date', $filterByYearRange);
+                    });
                 }
 
-                if ($filterByYear) {
-                    return MasterCallPlan::with([
-                        'user',
-                        'details'
-                    ])
-                        ->when($filterByYear, function (Builder $query) use ($filterByYear) {
-                            $query->whereHas('details', function (Builder $subQuery) use ($filterByYear) {
-                                $subQuery->whereYear('date', $filterByYear);
-                            });
-                        })
-                        ->orderBy('id', 'asc')
-                        ->paginate($this::DEFAULT_PAGINATE);
+                // ✅ SINGLE YEAR
+                elseif ($filterByYear) {
+                    $query->whereHas('details', function ($q) use ($filterByYear) {
+                        $q->whereYear('date', $filterByYear);
+                    });
                 }
+
+                // 🔥 DEFAULT (WAJIB ADA)
+                return $query
+                    ->orderBy('id', 'asc')
+                    ->paginate(10);
             }
         );
 
         return $this->successResponse(
             statusCode: 200,
             success: true,
-            msg: "Successfully fetch master call plan with date filter {$request->input('q')}",
+            msg: "Successfully fetch master call plan with date filter {$searchByDateQuery}",
             resource: $masterCallPlanByDateFilterCache,
         );
     }
@@ -135,7 +112,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
     {
         $masterCallPlanCache = Cache::remember(
             "masterCallPlan:{$id}",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($id) {
                 return MasterCallPlan::with(['user', 'details'])
                     ->where('id', $id)
@@ -462,7 +439,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->groupBy('master_call_plan.user_id')
                 ->groupBy('master_call_plan_detail.date');
 
-                $dataA = DB::query()
+            $dataA = DB::query()
                 ->selectRaw('store_cabang.kode_cabang,user_info.fullname,count(store_info_distri.store_id) as jml_coverage,a.user_id,a.tanggal,a.plan_day_in,a.day_in_terpenuhi,a.day_in_tidak_terpenuhi')
                 ->fromSub($data, 'a')
                 ->join('user_info', 'user_info.user_id', '=', 'a.user_id')
@@ -475,9 +452,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->groupBy('a.day_in_terpenuhi')
                 ->groupBy('store_cabang.kode_cabang')
                 ->groupBy('a.day_in_tidak_terpenuhi')
-                ->orderBy('a.tanggal','asc')
+                ->orderBy('a.tanggal', 'asc')
                 ->limit($arr_pagination['limit'])
-				->offset($arr_pagination['offset'])
+                ->offset($arr_pagination['offset'])
                 ->get();
         } else {
             $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
@@ -492,7 +469,7 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
                 (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
                 ->join('master_call_plan_detail', 'master_call_plan_detail.call_plan_id', '=', 'master_call_plan.id')
-                ->whereBetween('master_call_plan_detail.date',[$tanggalfr,$tanggalto]  )
+                ->whereBetween('master_call_plan_detail.date', [$tanggalfr, $tanggalto])
                 ->groupBy('master_call_plan.user_id')
                 ->groupBy('master_call_plan_detail.date');
 
@@ -511,9 +488,9 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->groupBy('a.day_in_terpenuhi')
                 ->groupBy('store_cabang.kode_cabang')
                 ->groupBy('a.day_in_tidak_terpenuhi')
-                ->orderBy('a.tanggal','asc')
+                ->orderBy('a.tanggal', 'asc')
                 // ->limit($arr_pagination['limit'])
-				// ->offset($arr_pagination['offset'])
+                // ->offset($arr_pagination['offset'])
                 ->get();
 
             $count = $dataA->count();
@@ -529,11 +506,11 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         }
 
 
-		return response()->json(
-			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
-			(new PublicModel())->array_respon_200_table_tr($dataA, $count, $arr_pagination),
-			200
-		);
+        return response()->json(
+            // (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+            (new PublicModel())->array_respon_200_table_tr($dataA, $count, $arr_pagination),
+            200
+        );
     }
 
     public function getCoverage_planWeeklySummary(Request $request): JsonResponse
@@ -648,5 +625,50 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 'week_totals' => $weekTotals,
             ],
         );
+    }
+
+    public function getCallPlanJoin(Request $request): JsonResponse
+    {
+        try {
+            $query = DB::table('master_call_plan as mcp')
+                ->join('master_call_plan_detail as mcpd', 'mcp.id', '=', 'mcpd.call_plan_id')
+                ->join('user_info as u', 'mcp.user_id', '=', 'u.user_id')
+                ->select(
+                    'u.fullname',
+                    'u.email',
+                    'mcp.user_id',
+                    'mcp.month_plan',
+                    'mcp.year_plan',
+                    'mcpd.date',
+                    'mcpd.call_plan_id',
+                    'mcpd.store_id'
+                );
+
+            if ($request->month) {
+                $query->where('mcp.month_plan', $request->month);
+            }
+
+            if ($request->year) {
+                $query->where('mcp.year_plan', $request->year);
+            }
+
+            $data = $query
+                ->orderBy('mcp.id', 'asc')
+                ->get();
+
+            return response()->json([
+                'status' => 200,
+                'success' => true,
+                'message' => 'Success get call plan with user',
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'success' => false,
+                'message' => 'Error get data',
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
