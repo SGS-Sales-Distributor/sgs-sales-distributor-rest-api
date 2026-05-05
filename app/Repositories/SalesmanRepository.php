@@ -204,12 +204,19 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             DB::beginTransaction();
 
             $image = $request->file('image');
+            $secondaryImage = $request->file('image_secondary');
 
             $image_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+            $secondary_image_name = null;
 
             $destinationPath = public_path('/images');
 
             $image->move($destinationPath, $image_name);
+
+            if ($secondaryImage) {
+                $secondary_image_name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+                $secondaryImage->move($destinationPath, $secondary_image_name);
+            }
 
             $user = User::where('number', $userNumber)->firstOrFail();
 
@@ -217,6 +224,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                 'store_id' => $request->store_id,
                 'user' => $user->user_id,
                 'photo_visit' => $image_name,
+                'photo_visit_in_second' => $secondary_image_name,
                 'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
                 'time_in' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
                 'ket' => $request->keterangan,
@@ -363,12 +371,19 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             DB::beginTransaction();
 
             $image = $request->file('image');
+            $secondaryImage = $request->file('image_secondary');
 
             $name = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+            $secondaryName = null;
 
             $destinationPath = base_path('public/images');
 
             $image->move($destinationPath, $name);
+
+            if ($secondaryImage) {
+                $secondaryName = date('YmdHis') . '_' . $this->str_random(10) . '.' . 'png';
+                $secondaryImage->move($destinationPath, $secondaryName);
+            }
 
             $salesman = User::where('number', $userNumber)->firstOrFail();
 
@@ -376,10 +391,11 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
             $latestVisit->update([
                 'photo_visit_out' => $name,
+                'photo_visit_out_second' => $secondaryName,
                 'user' => $salesman->user_id,
                 'tanggal_visit' => Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'),
                 'time_out' => Carbon::now(env('APP_TIMEZONE'))->format('H:i:s'),
-                'ket' => $request->keterangan,
+                'keterangan_out' => $request->keterangan_out,
                 'lat_out' => $request->lat_out,
                 'long_out' => $request->long_out,
                 'updated_by' => $salesman->fullname,
