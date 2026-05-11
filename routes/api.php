@@ -70,6 +70,9 @@ Route::group([
     Route::get('/getTipeToko', [StoreTypeController::class, 'getTipeToko']);
     Route::get('/store_type', [StoreTypeController::class, 'paging']);
     Route::post('/store_type', [StoreTypeController::class, 'store']);
+    Route::get('store/template/export', [StoreInfoDistriController::class, 'exportTemplateStore']);
+    Route::post('store/import', [StoreInfoDistriController::class, 'uploadStore']);
+    Route::get('/stores/all/paginate', [StoreInfoDistriController::class, 'getAllOutletPaginate']);
     Route::get('/store_type/{store_type_name}', [StoreTypeController::class, 'show']);
     Route::put('/store_type/{store_type_id}', [StoreTypeController::class, 'update']);
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
@@ -291,6 +294,12 @@ Route::group([
         // store's routes.
         Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']);
         Route::get('/stores/call-plans', [StoreInfoDistriController::class, 'getAll']);
+
+        Route::get('store/template/export', [StoreInfoDistriController::class, 'exportTemplateStore']);
+
+        Route::post('store/import', [StoreInfoDistriController::class, 'uploadStore']);
+        Route::get('/stores/all/paginate', [StoreInfoDistriController::class, 'getAllOutletPaginate']);
+
         Route::get('/stores/{id}/', [StoreInfoDistriController::class, 'getOne']);
         Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
         Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);

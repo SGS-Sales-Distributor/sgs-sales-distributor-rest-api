@@ -13,16 +13,16 @@ interface StoreInterface
 
     public function getAllDataByOrderDateFilter(Request $request): JsonResponse;
 
-    public function getOneData(Request $request,int $id): JsonResponse;
+    public function getOneData(Request $request, int $id): JsonResponse;
 
     public function storeOneData(Request $request): JsonResponse;
 
     public function updateOneData(Request $request, int $id): JsonResponse;
 
     public function removeOneData(int $id): JsonResponse;
-    
+
     public function getAllOwnersData(Request $request, int $id): JsonResponse;
-    
+
     public function getOneOwnerData(int $id, int $ownerId): JsonResponse;
 
     public function storeOwnersData(Request $request, int $id): JsonResponse;
@@ -32,7 +32,7 @@ interface StoreInterface
     public function removeOwnerData(int $id, int $ownerId): JsonResponse;
 
     public function getAllVisitsData(Request $request, int $id): JsonResponse;
-    
+
     public function getOneVisitData(int $id, int $visitId): JsonResponse;
 
     public function getAllOrdersData(Request $request, int $id): JsonResponse;
@@ -51,15 +51,21 @@ interface StoreInterface
 
     public function showDataStoreInfoDist(Request $request, int $id): JsonResponse;
 
-    public function getStoreByCbg(Request $request, int $idCab) : JsonResponse ;
+    public function getStoreByCbg(Request $request, int $idCab): JsonResponse;
 
-    public function saveDraft(Request $request) : JsonResponse ;
+    public function saveDraft(Request $request): JsonResponse;
 
-    public function changeDraftToDeliv(Request $request) : JsonResponse ;
+    public function changeDraftToDeliv(Request $request): JsonResponse;
 
-    public function updateDetail(Request $request, int $id) : JsonResponse ;
+    public function updateDetail(Request $request, int $id): JsonResponse;
 
     public function deleteDraft(int $id): JsonResponse;
-    
-    public function getStoresByUsers(Request $request, int $userId) : JsonResponse ;
+
+    public function getStoresByUsers(Request $request, int $userId): JsonResponse;
+
+    public function getAllOutletPaginate(Request $request): JsonResponse;
+
+    public function exportTemplateStore();
+
+    public function uploadStore(Request $request);
 }

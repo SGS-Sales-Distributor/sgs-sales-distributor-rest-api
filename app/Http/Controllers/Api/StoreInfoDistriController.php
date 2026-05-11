@@ -159,4 +159,17 @@ class StoreInfoDistriController extends Controller
     {
         return $this->storeInterface->getStoresByUsers($request, $userId);
     }
+    public function getAllOutletPaginate(Request $request): JsonResponse
+    {
+        return $this->storeInterface->getAllOutletPaginate($request);
+    }
+    public function exportTemplateStore()
+    {
+        return $this->storeInterface->exportTemplateStore();
+    }
+
+    public function uploadStore(Request $request)
+    {
+        return $this->storeInterface->uploadStore($request);
+    }
 }
