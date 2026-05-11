@@ -117,6 +117,26 @@ Route::group([
     // Router::get('/getKodeLokasi/{id}', 'UserInfoController@getKodeLokasi');
     // Router::post('/exportData', 'UserInfoController@xportData');
 
+
+
+    // GET semua store → export Excel
+    Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']);
+
+    // GET store-types → dropdown master store type
+    Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
+
+    // GET cabangs → dropdown master cabang
+    Route::get('/cabangs', [StoreCabangController::class, 'paging']);
+
+    // GET salesmenById → modal edit
+    Route::get('/salesmenById/{user_id}', [SalesmanController::class, 'getUserOne']);
+
+    // PUT user_info → update data
+    Route::put('/user_info/{user_id}', [SalesmanController::class, 'updateOne']);
+
+    // DELETE user_info → hapus data
+    Route::delete('/user_info/{user_id}', [SalesmanController::class, 'removeOne']);
+
     // CRUD untuk Master Type Program 
     // Router::get('/getTipeProgram', 'MasterTypeProgramController@getTipeProgram');
     // Router::get('/master_type_program_x', 'MasterTypeProgramController@paging');
