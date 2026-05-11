@@ -19,11 +19,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Exception;
 use SebastianBergmann\Environment\Console;
 use App\Models\User;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\URL;
 use App\Models\PublicModel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xls;
+use Illuminate\Support\Facades\File;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class StoreRepository extends Repository implements StoreInterface
 {
@@ -41,7 +47,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storesCache = Cache::remember(
             "storesCache",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $userId) {
                 //  DB::enableQueryLog();
                 return DB::table('store_info_distri')
@@ -68,18 +74,18 @@ class StoreRepository extends Repository implements StoreInterface
                     ->join('master_call_plan_detail', 'master_call_plan_detail.store_id', '=', 'store_info_distri.store_id')
                     ->where('master_call_plan_detail.date', '=', Carbon::now()->format('Y-m-d'))
                     ->leftJoin('profil_visit', function ($leftJoin) use ($userId) {
-                    $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
-                        ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
-                        ->on('profil_visit.user', '=', DB::raw("'" . $userId . "'"));
-                })
+                        $leftJoin->on('profil_visit.store_id', '=', 'store_info_distri.store_id')
+                            ->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
+                            ->on('profil_visit.user', '=', DB::raw("'" . $userId . "'"));
+                    })
                     // ->on('profil_visit .user','=', $userId)
                     ->leftJoin('master_call_plan', function ($leftJoin2) {
-                    $leftJoin2->on('master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id');
-                })
+                        $leftJoin2->on('master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id');
+                    })
                     ->where('master_call_plan.user_id', '=', $userId)
                     ->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-                    $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
-                })
+                        $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
+                    })
                     ->orderBy('store_info_distri.store_name', 'asc')
                     ->paginate($this::DEFAULT_PAGINATE);
                 // $log = DB::getQueryLog();
@@ -121,8 +127,8 @@ class StoreRepository extends Repository implements StoreInterface
             ->leftJoin('store_info_distri_person', 'store_info_distri_person.store_id', '=', 'store_info_distri.store_id')
             ->where('store_info_distri.store_id', $id)
             ->first();
-        // $log = DB::getQueryLog();
-        // dd($log);
+            // $log = DB::getQueryLog();
+            // dd($log);
         ;
 
         return $this->successResponse(
@@ -140,7 +146,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeOwnersCache = Cache::remember(
             "stores:{$id}:owners",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $id) {
                 return StoreInfoDistriPerson::with([
                     'store',
@@ -170,7 +176,7 @@ class StoreRepository extends Repository implements StoreInterface
         // DB::enableQueryLog();
         $storeCallPlansCache = Cache::remember(
             "storeCallPlansCache",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $arr_pagination) {
                 return StoreInfoDistri::with('owners', 'cabang')
                     // ->select(
@@ -214,7 +220,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeVisitsCache = Cache::remember(
             "stores:{$id}:visits",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $id) {
                 return ProfilVisit::with([
                     'store',
@@ -248,8 +254,8 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeInfoDistriByTypeFilterCache = Cache::remember(
             'storeInfoDistriByTypeFilter',
-                $this::DEFAULT_CACHE_TTL,
-            function () use ($filterByDateRange, $filterByDate, ) {
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($filterByDateRange, $filterByDate,) {
                 if ($filterByDateRange) {
                     return StoreInfoDistri::with([
                         'type',
@@ -351,7 +357,7 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $storeOwnerCache = Cache::remember(
             "stores:{$id}:owners:{$ownerId}",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($id, $ownerId) {
                 return StoreInfoDistriPerson::with([
                     'store'
@@ -374,7 +380,7 @@ class StoreRepository extends Repository implements StoreInterface
     {
         $storeVisitCache = Cache::remember(
             "stores:{$id}:visits:{$visitId}",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($id, $visitId) {
                 return ProfilVisit::with([
                     'store',
@@ -400,7 +406,7 @@ class StoreRepository extends Repository implements StoreInterface
 
         $storeOrdersCache = Cache::remember(
             "stores:{$id}:orders",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $id) {
                 return OrderCustomerSales::with([
                     'status',
@@ -619,7 +625,7 @@ class StoreRepository extends Repository implements StoreInterface
                 // 'subcabang_id' => $request->subcabang_id,
                 // 'store_code' => $store->store_code,
                 // 'active' => $request->active,
-                'updated_by'=>$request->updated_by
+                'updated_by' => $request->updated_by
             ]);
 
             // Update atau buat data owner di `store_info_distri_person`
@@ -629,7 +635,7 @@ class StoreRepository extends Repository implements StoreInterface
                     'owner' => $request->owner,
                     'nik_owner' => $request->nik_owner,
                     'email_owner' => $request->email_owner,
-                    'updated_by'=>$request->updated_by
+                    'updated_by' => $request->updated_by
                 ]
             );
 
@@ -861,16 +867,13 @@ class StoreRepository extends Repository implements StoreInterface
     public function countPObyStore(int $storeId)
     {
         // DB::enableQueryLog();
-        $count = DB::table('order_customer_sales')->
-            where('store_id', $storeId)->
-            selectRaw('count(id) as jmlPo')
+        $count = DB::table('order_customer_sales')->where('store_id', $storeId)->selectRaw('count(id) as jmlPo')
             ->pluck('jmlPo')
             ->first();
         // $log = DB::getQueryLog();
         // dd($log);
 
         return $count;
-
     }
 
     public function storeNameGet(int $storeId)
@@ -1483,6 +1486,385 @@ class StoreRepository extends Repository implements StoreInterface
             success: true,
             msg: "Successfully fetch store By User",
             resource: $storeByUser,
+        );
+    }
+
+    public function getAllOutletPaginate(Request $request): JsonResponse
+    {
+        try {
+            $search = trim((string) ($request->query('search') ?? $request->query('q') ?? ''));
+            $normalizedSearch = strtolower($search);
+            $perPage = (int) $request->query('per_page', 10);
+            $perPage = $perPage > 0 ? $perPage : 10;
+
+            $stores = StoreInfoDistri::with(['owners', 'cabang'])
+                ->when($normalizedSearch !== '', function ($query) use ($normalizedSearch) {
+                    $query->where(function ($q) use ($normalizedSearch) {
+                        $keyword = '%' . $normalizedSearch . '%';
+
+                        $q->whereRaw('LOWER(store_name) LIKE ?', [$keyword])
+                            ->orWhereRaw('LOWER(store_code) LIKE ?', [$keyword])
+                            ->orWhereRaw('LOWER(store_phone) LIKE ?', [$keyword])
+                            ->orWhereRaw('LOWER(store_alias) LIKE ?', [$keyword])
+                            ->orWhereRaw('LOWER(store_address) LIKE ?', [$keyword])
+                            ->orWhereHas('owners', function (EloquentBuilder $ownerQuery) use ($keyword) {
+                                $ownerQuery->whereRaw('LOWER(owner) LIKE ?', [$keyword])
+                                    ->orWhereRaw('LOWER(nik_owner) LIKE ?', [$keyword])
+                                    ->orWhereRaw('LOWER(email_owner) LIKE ?', [$keyword]);
+                            })
+                            ->orWhereHas('cabang', function (EloquentBuilder $cabangQuery) use ($keyword) {
+                                $cabangQuery->whereRaw('LOWER(kode_cabang) LIKE ?', [$keyword])
+                                    ->orWhereRaw('LOWER(nama_cabang) LIKE ?', [$keyword]);
+                            });
+                    });
+                })
+                ->orderBy('store_name', 'ASC')
+                ->paginate($perPage);
+
+            return $this->successResponse(
+                statusCode: 200,
+                success: true,
+                msg: "Successfully fetch all outlets.",
+                resource: $stores,
+            );
+        } catch (\Exception $e) {
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+    public function exportTemplateStore()
+    {
+        ini_set('max_execution_time', 0);
+        ini_set('memory_limit', '4000M');
+
+        try {
+
+            $spreadSheet = new Spreadsheet();
+
+            /*
+        |--------------------------------------------------------------------------
+        | SHEET 1 - WORKSHEET
+        |--------------------------------------------------------------------------
+        */
+
+            $sheet = $spreadSheet->getActiveSheet();
+            $sheet->setTitle('Worksheet');
+
+            $sheet->getDefaultColumnDimension()->setWidth(25);
+
+            $headers = [
+                'A1' => 'STORE_NAME',
+                'B1' => 'STORE_ALIAS',
+                'C1' => 'STORE_ADDRESS',
+                'D1' => 'STORE_PHONE',
+                'E1' => 'STORE_FAX',
+                'F1' => 'STORE_TYPE_ID',
+                'G1' => 'SUBCABANG_ID',
+                'H1' => 'OWNER',
+                'I1' => 'NIK_OWNER',
+                'J1' => 'EMAIL_OWNER',
+            ];
+
+            foreach ($headers as $cell => $text) {
+                $sheet->setCellValue($cell, $text);
+                $sheet->getStyle($cell)->getFont()->setBold(true);
+            }
+
+            // contoh data
+            $sheet->setCellValue('A2', 'TOKO MAJU JAYA');
+            $sheet->setCellValue('B2', 'MJ');
+            $sheet->setCellValue('C2', 'Jl Mawar No 1');
+
+            $sheet->setCellValueExplicit(
+                'D2',
+                '08123456789',
+                DataType::TYPE_STRING
+            );
+
+            $sheet->setCellValue('E2', '021999999');
+            $sheet->setCellValue('F2', '1');
+            $sheet->setCellValue('G2', '2');
+            $sheet->setCellValue('H2', 'BUDI');
+
+            $sheet->setCellValueExplicit(
+                'I2',
+                '3201123123123',
+                DataType::TYPE_STRING
+            );
+
+            $sheet->setCellValue('J2', 'budi@gmail.com');
+
+            /*
+        |--------------------------------------------------------------------------
+        | SHEET 2 - MASTER DATA
+        |--------------------------------------------------------------------------
+        */
+
+            $sheet2 = $spreadSheet->createSheet();
+            $sheet2->setTitle('Master Data');
+
+            /*
+        |--------------------------------------------------------------------------
+        | MASTER CABANG
+        |--------------------------------------------------------------------------
+        */
+
+            $sheet2->setCellValue('A1', 'MASTER CABANG');
+
+            $sheet2->setCellValue('A2', 'ID');
+            $sheet2->setCellValue('B2', 'KODE_CABANG');
+            $sheet2->setCellValue('C2', 'NAMA_CABANG');
+
+            $sheet2->getStyle('A1:C2')->getFont()->setBold(true);
+
+            $cabangs = StoreCabang::whereNull('deleted_at')
+                ->orderBy('nama_cabang')
+                ->get();
+
+            $rowCabang = 3;
+
+            foreach ($cabangs as $cabang) {
+
+                $sheet2->setCellValue('A' . $rowCabang, $cabang->id);
+                $sheet2->setCellValue('B' . $rowCabang, $cabang->kode_cabang);
+                $sheet2->setCellValue('C' . $rowCabang, $cabang->nama_cabang);
+
+                $rowCabang++;
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | MASTER STORE TYPE
+        |--------------------------------------------------------------------------
+        */
+
+            $startStoreType = $rowCabang + 2;
+
+            $sheet2->setCellValue('A' . $startStoreType, 'MASTER STORE TYPE');
+
+            $sheet2->setCellValue('A' . ($startStoreType + 1), 'ID');
+            $sheet2->setCellValue('B' . ($startStoreType + 1), 'STORE_TYPE_NAME');
+
+            $sheet2->getStyle(
+                'A' . $startStoreType .
+                    ':B' . ($startStoreType + 1)
+            )->getFont()->setBold(true);
+
+            $storeTypes = StoreType::whereNull('deleted_at')
+                ->orderBy('store_type_name')
+                ->get();
+
+            $rowStoreType = $startStoreType + 2;
+
+            foreach ($storeTypes as $type) {
+
+                $sheet2->setCellValue('A' . $rowStoreType, $type->store_type_id);
+
+                $sheet2->setCellValue(
+                    'B' . $rowStoreType,
+                    $type->store_type_name
+                );
+
+                $rowStoreType++;
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | SAVE FILE
+        |--------------------------------------------------------------------------
+        */
+
+            if (!File::isDirectory(public_path('excel'))) {
+                File::makeDirectory(public_path('excel'));
+            }
+
+            if (!File::isDirectory(public_path('excel/store'))) {
+                File::makeDirectory(public_path('excel/store'));
+            }
+
+            $writer = new Xls($spreadSheet);
+
+            $path = public_path('excel/store/template_store.xls');
+
+            $writer->save($path);
+
+            $this->return = [
+                'status' => true,
+                'data' => url('excel/store/template_store.xls'),
+                'code' => 200
+            ];
+        } catch (\Throwable $e) {
+
+            $this->return = [
+                'status' => false,
+                'message' => $e->getMessage(),
+                'code' => 500
+            ];
+        }
+
+        return response()->json(
+            $this->return,
+            $this->return['code']
+        );
+    }
+
+    public function uploadStore(Request $r)
+    {
+        ini_set('max_execution_time', 0);
+        ini_set('memory_limit', '4000M');
+
+        DB::beginTransaction();
+
+        try {
+            $createdBy = $r->input('created_by')
+                ?? $r->input('userid')
+                ?? optional(Auth::user())->fullname
+                ?? 'SYSTEM';
+
+            if (!$r->hasFile('file')) {
+                throw new Exception("File wajib diupload");
+            }
+
+            $file = $r->file('file');
+
+            $spreadsheet = IOFactory::load($file);
+
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $rows = $sheet->toArray(null, true, true, true);
+
+            unset($rows[1]);
+
+            $lastId = StoreInfoDistri::max('store_id') ?? 0;
+
+            $runningNumber = 1;
+
+            foreach ($rows as $row) {
+
+                if (empty($row['A'])) {
+                    continue;
+                }
+
+
+                $storeName = strtoupper(trim($row['A']));
+                $storeAlias = strtoupper(trim($row['B']));
+                $storeAddress = trim($row['C']);
+
+                $storePhone = preg_replace('/[^0-9]/', '', (string)$row['D']);
+                $storeFax = preg_replace('/[^0-9]/', '', (string)$row['E']);
+
+                $storeTypeId = trim($row['F']);
+                $subCabangId = trim($row['G']);
+
+                $owner = strtoupper(trim($row['H']));
+
+                $nikOwner = preg_replace('/[^0-9]/', '', (string)$row['I']);
+
+                $emailOwner = trim($row['J']);
+
+                if (
+                    empty($storeName) ||
+                    empty($storeAlias) ||
+                    empty($subCabangId)
+                ) {
+                    continue;
+                }
+
+                $exist = StoreInfoDistri::where('store_name', $storeName)
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if ($exist) {
+                    continue;
+                }
+
+                if (!empty($storePhone)) {
+
+                    $existPhone = StoreInfoDistri::where('store_phone', $storePhone)
+                        ->whereNull('deleted_at')
+                        ->first();
+
+                    if ($existPhone) {
+                        continue;
+                    }
+                }
+
+
+                if (!empty($storeFax)) {
+
+                    $existFax = StoreInfoDistri::where('store_fax', $storeFax)
+                        ->whereNull('deleted_at')
+                        ->first();
+
+                    if ($existFax) {
+                        continue;
+                    }
+                }
+
+
+                $newId = $lastId + $runningNumber;
+
+                $storeCode = 'OS'
+                    . sprintf('%03d', $subCabangId)
+                    . "-"
+                    . sprintf('%04d', $newId);
+
+
+                $store = StoreInfoDistri::create([
+                    'store_name' => $storeName,
+                    'store_alias' => $storeAlias,
+                    'store_address' => $storeAddress,
+                    'store_phone' => $storePhone ?: null,
+                    'store_fax' => $storeFax ?: null,
+                    'store_type_id' => $storeTypeId,
+                    'subcabang_id' => $subCabangId,
+                    'subcabang_idnew' => $subCabangId,
+                    'store_code' => $storeCode,
+                    'active' => 1,
+
+                    'created_by' => $createdBy,
+                    'updated_by' => $createdBy,
+                ]);
+
+
+                StoreInfoDistriPerson::create([
+                    'store_id' => $store->store_id,
+                    'owner' => $owner,
+                    'nik_owner' => $nikOwner,
+                    'email_owner' => $emailOwner,
+
+                    'created_by' => $createdBy,
+                    'updated_by' => $createdBy,
+                ]);
+
+                $runningNumber++;
+            }
+
+            DB::commit();
+
+            $this->return = [
+                'status' => true,
+                'message' => 'Import store berhasil',
+                'code' => 200
+            ];
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            $this->return = [
+                'status' => false,
+                'message' => $e->getMessage(),
+                'code' => 500
+            ];
+        }
+
+        return response()->json(
+            $this->return,
+            $this->return['code']
         );
     }
 }
