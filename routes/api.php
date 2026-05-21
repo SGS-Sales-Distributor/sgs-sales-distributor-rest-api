@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\JwtAuthentication\JwtAuthController;
 use App\Http\Controllers\Api\MasterCallPlanController;
+use App\Http\Controllers\Api\MasterCustomerController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfilVisitController;
 use App\Http\Controllers\Api\ProgramController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Api\StoreTypeController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\KodeLokasiController;
 use App\Http\Controllers\Api\ProfilNotvisit;
+use App\Http\Controllers\Api\OutletRequestController;
+use App\Http\Controllers\Api\CabangRequestController;
 use App\Http\Controllers\Api\StoreCabangController;
 use App\Http\Controllers\AttendeeController;
 use App\Http\Controllers\StsJabatanController;
@@ -32,12 +35,10 @@ use App\Http\Controllers\Api\OrderCustomerSalesDetailController;
 // })->middleware('auth:sanctum');
 
 // rest api version 1
-Route::group([
-    'prefix' => 'sgs',
-], function () {
+Route::group(['prefix' => 'sgs',], function () {
     // visit's routes
     Route::get('/profil-visit/export-weekly', [ProfilVisitController::class, 'exportWeekly']);
-
+    Route::get('profil_visit_customer_options', [ProfilVisitController::class, 'getCustomerOptions']);
     Route::get('/profil_visit', [ProfilVisitController::class, 'getAll']);
     Route::get('/profil_visit/{id}', [ProfilVisitController::class, 'getOne']);
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
@@ -50,6 +51,13 @@ Route::group([
     //kodelokasi route
     // Route::get('/area', [KodeLokasiController::class, 'getAll']);
 
+    // CRUD untuk Customer (mst_customer)
+    Route::get('/customers', [MasterCustomerController::class, 'getAll']);
+    Route::get('/customers/{id}', [MasterCustomerController::class, 'getOne']);
+    Route::post('/customers', [MasterCustomerController::class, 'store']);
+    Route::put('/customers/{id}', [MasterCustomerController::class, 'update']);
+    Route::delete('/customers/{id}', [MasterCustomerController::class, 'destroy']);
+
 
     // call plan's routes.
     Route::get('/call-plans', [MasterCallPlanController::class, 'getAll']);
@@ -59,6 +67,8 @@ Route::group([
     Route::delete('/call-plans/{id}', [MasterCallPlanController::class, 'removeOne']);
     Route::get('/call-plans/notVisited/{UserId}', [MasterCallPlanController::class, 'notVisitedUser']);
     Route::get('/call-plan-join', [MasterCallPlanController::class, 'getCallPlanJoin']);
+    Route::post('/call-plans/import', [MasterCallPlanController::class, 'importCallPlan']);
+    Route::get('/call-plans/template', [MasterCallPlanController::class, 'downloadTemplate']);
 
     // type program's routes.
     Route::get('/master_type_program_x', [ProgramTypeController::class, 'getAll']);
@@ -127,6 +137,9 @@ Route::group([
 
     // GET cabangs → dropdown master cabang
     Route::get('/cabangs', [StoreCabangController::class, 'paging']);
+
+    // GET users by customer_code → dropdown salesman filter
+    Route::get('/user_info', [SalesmanController::class, 'getUserByCustomerCode']);
 
     // GET salesmenById → modal edit
     Route::get('/salesmenById/{user_id}', [SalesmanController::class, 'getUserOne']);
@@ -224,9 +237,7 @@ Route::group([
 });
 
 // rest api version 2
-Route::group([
-    'prefix' => 'v2',
-], function () {
+Route::group(['prefix' => 'v2',], function () {
     Route::group([
         'prefix' => 'auth',
     ], function () {
@@ -246,6 +257,10 @@ Route::group([
     //cabang
     Route::get('/area', action: [KodeLokasiController::class, 'getAll']);
 
+    // Master Customer
+    Route::get('/customers', [MasterCustomerController::class, 'getAll']);
+
+
     //Ambil Data Jabatan
     Route::get('/jabatanAll', [sts_jabatan::class, 'get_data']);
     Route::post('/addJabatan', [StsJabatanController::class, 'saveStsJabatan']);
@@ -262,9 +277,14 @@ Route::group([
     // for create new admin account.
     Route::post('/admins', [AdminController::class, 'storeOneData']);
 
-    Route::group([
-        'middleware' => JwtAuthMiddleware::class,
-    ], function () {
+    Route::group(['middleware' => JwtAuthMiddleware::class,], function () {
+
+        // Master Customer
+        Route::get('/customers/{id}', [MasterCustomerController::class, 'getOne']);
+        Route::post('/customers', [MasterCustomerController::class, 'store']);
+        Route::put('/customers/{id}', [MasterCustomerController::class, 'update']);
+        Route::delete('/customers/{id}', [MasterCustomerController::class, 'destroy']);
+
         // salesman's routes
         Route::get('/salesmen/{number}', [SalesmanController::class, 'getOne']);
         Route::post('/salesmen/{number}/visits', [SalesmanController::class, 'checkInVisit']);
@@ -373,5 +393,23 @@ Route::group([
         Route::post('/addIn/{number}', [AttendeeController::class, 'addIn']);
         Route::post('/addOut/{number}/{attendId}', [AttendeeController::class, 'addOut']);
         Route::get('/jabatanbyOne/{id}', [sts_jabatan::class, 'get_data_by_id']);
+
+        // Outlet Request
+        Route::post('/outlet-request', [OutletRequestController::class, 'submitRequest']);
+        Route::get('/outlet-request/byAS/{userId}', [OutletRequestController::class, 'getRequestsByAS']);
+        Route::put('/outlet-request/{id}/approve', [OutletRequestController::class, 'approveRequest']);
+        Route::put('/outlet-request/{id}/reject', [OutletRequestController::class, 'rejectRequest']);
+        Route::get('/outlet-request/byMD/{userId}', [OutletRequestController::class, 'getRequestsByMD']);
+
+        Route::prefix('cabang-request')->group(function () {
+            Route::get('/',                   [CabangRequestController::class, 'index']);      // AS: semua request bawahan
+            Route::get('/my',                 [CabangRequestController::class, 'myRequests']); // Sales: riwayat milik sendiri
+            Route::post('/',                  [CabangRequestController::class, 'store']);       // Sales: kirim request
+            Route::patch('/{id}/approve',     [CabangRequestController::class, 'approve']);    // AS: approve
+            Route::patch('/{id}/reject',      [CabangRequestController::class, 'reject']);     // AS: reject
+        });
+
+        // User Cabang
+        Route::get('/user-cabang/my', [CabangRequestController::class, 'myCabangs']);
     });
 });

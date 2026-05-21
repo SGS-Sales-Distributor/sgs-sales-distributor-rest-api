@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Handlers\JwtAuthToken;
 use App\Models\OrderCustomerSales;
 use App\Models\OrderCustomerSalesDetail;
 use App\Models\ProfilVisit;
@@ -30,6 +29,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use Illuminate\Support\Facades\File;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class StoreRepository extends Repository implements StoreInterface
 {
@@ -38,73 +38,6 @@ class StoreRepository extends Repository implements StoreInterface
         $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
         return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
-    }
-
-    protected function getDecodedTokenUser(Request $request): array
-    {
-        $decodedToken = $request->input('decoded_token');
-
-        if (!is_array($decodedToken) || empty($decodedToken['user'])) {
-            return [];
-        }
-
-        try {
-            return app(JwtAuthToken::class)->decryptUserData($decodedToken['user']);
-        } catch (\Throwable $th) {
-            return [];
-        }
-    }
-
-    protected function resolveRequestUserId(Request $request): ?string
-    {
-        $decodedUser = $this->getDecodedTokenUser($request);
-
-        $userId = $request->input('userId')
-            ?? $request->input('userid')
-            ?? $request->query('userId')
-            ?? $request->query('userid')
-            ?? ($decodedUser['user_id'] ?? null);
-
-        if ($userId === null) {
-            return null;
-        }
-
-        $userId = trim((string) $userId);
-
-        return $userId !== '' ? $userId : null;
-    }
-
-    protected function resolveCustomerCode(Request $request): ?string
-    {
-        $customerCode = $request->input('customer_code') ?? $request->query('customer_code');
-
-        if ($customerCode !== null && trim((string) $customerCode) !== '') {
-            return trim((string) $customerCode);
-        }
-
-        $decodedUser = $this->getDecodedTokenUser($request);
-        if (!empty($decodedUser['customer_code'])) {
-            return (string) $decodedUser['customer_code'];
-        }
-
-        $userId = $this->resolveRequestUserId($request);
-        if (!$userId) {
-            return null;
-        }
-
-        return DB::table('user_info')
-            ->where('user_id', $userId)
-            ->value('customer_code');
-    }
-
-    protected function resolveCreatedBy(Request $request): string
-    {
-        $decodedUser = $this->getDecodedTokenUser($request);
-
-        return $request->input('created_by')
-            ?? $request->input('userFullname')
-            ?? ($decodedUser['fullname'] ?? null)
-            ?? 'SYSTEM';
     }
 
     // public function getAllData(Request $request): JsonResponse
@@ -171,7 +104,15 @@ class StoreRepository extends Repository implements StoreInterface
     //new
     public function getAllData(Request $request): JsonResponse
     {
-        $searchByQuery = trim((string) ($request->query('q') ?? ''));
+
+        \Log::info('=== getAllData called ===', [
+            'all_params' => $request->all(),
+            'query_q' => $request->query('q'),
+            'query_userId' => $request->query('userId'),
+            'request_userId' => $request->userId,
+            'full_url' => $request->fullUrl(),
+        ]);
+        $searchByQuery = $request->query('q') ?? '';
         $userId = $request->query('userId') ?? $request->userId;
 
         $stores = DB::table('store_info_distri')
@@ -207,7 +148,7 @@ class StoreRepository extends Repository implements StoreInterface
                     ->where('profil_visit.user', '=', $userId);
             })
             ->when($searchByQuery !== '', function (Builder $query) use ($searchByQuery) {
-                $query->where('store_info_distri.store_name', 'ILIKE', '%' . $searchByQuery . '%');
+                $query->where('store_info_distri.store_name', 'LIKE', '%' . $searchByQuery . '%');
             })
             ->groupBy([
                 'store_info_distri.store_id',
@@ -307,27 +248,48 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getAllDataWithoutCallPlans(Request $request): JsonResponse
     {
+        $URL = URL::current();
         $searchByQuery = $request->query('search');
-        $customerCode = $this->resolveCustomerCode($request);
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
 
-        $query = StoreInfoDistri::with('owners', 'cabang', 'type')
-            ->when($customerCode, function (EloquentBuilder $query) use ($customerCode) {
-                $query->where('customer_code', $customerCode);
-            })
-            ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
-                $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
-            })
-            ->orderBy('store_name', 'asc');
-
-        $resource = $request->filled('per_page')
-            ? $query->paginate((int) $request->query('per_page', $this::DEFAULT_PAGINATE))
-            : $query->get();
+        // DB::enableQueryLog();
+        $storeCallPlansCache = Cache::remember(
+            "storeCallPlansCache",
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery, $arr_pagination) {
+                return StoreInfoDistri::with('owners', 'cabang')
+                    // ->select(
+                    //     'store_id',
+                    //     'store_name as nama_toko',
+                    //     'store_alias as alias_toko',
+                    //     'store_address as alamat_toko',
+                    //     'store_phone as nomor_telepon_toko',
+                    //     'store_fax as nomor_fax_toko',
+                    //     'store_type_id',
+                    //     'subcabang_id',
+                    //     'store_code as kode_toko',
+                    //     'active as status_toko',
+                    // )
+                    ->when($searchByQuery, function (EloquentBuilder $query) use ($searchByQuery) {
+                        $query->where('store_name', 'LIKE', '%' . $searchByQuery . '%');
+                        // ->orWhere('kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
+                        // ->orWhere('nama_cabang', 'LIKE', '%' . $searchByQuery . '%');
+                    })
+                    // ->whereHas('owners')
+                    ->orderBy('store_name', 'asc')
+                    ->limit($arr_pagination['limit'])
+                    ->offset($arr_pagination['offset'])
+                    ->paginate($this::DEFAULT_PAGINATE);
+                // $log = DB::getQueryLog();
+                // dd($log);
+            }
+        );
 
         return $this->successResponse(
             statusCode: 200,
             success: true,
             msg: "Successfully fetch store based on call plans",
-            resource: $resource,
+            resource: $storeCallPlansCache,
         );
     }
 
@@ -653,17 +615,9 @@ class StoreRepository extends Repository implements StoreInterface
             DB::beginTransaction();
             $lastId = StoreInfoDistri::orderBy('store_id', 'desc')->first()->store_id;
             $setLastId = $lastId + 1;
-            $customerCode = $this->resolveCustomerCode($request);
-
-            if (empty($customerCode)) {
-                return $this->clientErrorResponse(
-                    statusCode: 422,
-                    success: false,
-                    msg: 'customer_code user tidak ditemukan',
-                );
-            }
-
-            $createdBy = $this->resolveCreatedBy($request);
+            $customerCode = DB::table('user_info')
+                ->where('user_id', $request->userId)
+                ->value('customer_code');
 
             $store = StoreInfoDistri::create([
                 'store_name'      => $request->store_name,
@@ -677,8 +631,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'subcabang_idnew' => $request->subcabang_id,
                 'store_code'      => 'OS' . implode(',', str_split(sprintf('%03d', $request->subcabang_id), 3)) . "-" . sprintf('%04d', $setLastId),
                 'active'          => 1,
-                'created_by'      => $createdBy,
-                'updated_by'      => $createdBy,
+                'created_by'      => $request->userFullname,
+                'updated_by'      => $request->userFullname,
             ]);
 
             StoreInfoDistriPerson::create([
@@ -688,8 +642,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'email_owner' => $request->filled('email_owner') ? $request->email_owner : null,
                 'ktp_owner'   => '',
                 'photo_other' => '',
-                'created_by'  => $createdBy,
-                'updated_by'  => $createdBy,
+                'created_by'  => $request->userFullname,
+                'updated_by'  => $request->userFullname,
             ]);
 
             DB::commit();
@@ -1285,8 +1239,7 @@ class StoreRepository extends Repository implements StoreInterface
 
     public function getStoreByCbg(Request $request, int $idCab): JsonResponse
     {
-        $customerCode = $this->resolveCustomerCode($request);
-
+        // DB::enableQueryLog();
         $store_info_distri = StoreInfoDistri::select([
             'store_id',
             'store_name',
@@ -1313,9 +1266,6 @@ class StoreRepository extends Repository implements StoreInterface
             ->join('store_cabang', 'store_cabang.id', '=', 'store_info_distri.subcabang_id')
             ->join('master_province', 'master_province.id_province', '=', 'store_cabang.province_id')
             ->where('store_info_distri.subcabang_id', '=', $idCab)
-            ->when($customerCode, function ($query) use ($customerCode) {
-                $query->where('store_info_distri.customer_code', $customerCode);
-            })
             ->get();
         // $log = DB::getQueryLog();
         // dd($log);
@@ -1688,12 +1638,8 @@ class StoreRepository extends Repository implements StoreInterface
             $normalizedSearch = strtolower($search);
             $perPage = (int) $request->query('per_page', 10);
             $perPage = $perPage > 0 ? $perPage : 10;
-            $customerCode = $this->resolveCustomerCode($request);
 
-            $stores = StoreInfoDistri::with(['owners', 'cabang', 'type'])
-                ->when($customerCode, function ($query) use ($customerCode) {
-                    $query->where('customer_code', $customerCode);
-                })
+            $stores = StoreInfoDistri::with(['owners', 'cabang'])
                 ->when($normalizedSearch !== '', function ($query) use ($normalizedSearch) {
                     $query->where(function ($q) use ($normalizedSearch) {
                         $keyword = '%' . $normalizedSearch . '%';
@@ -1732,7 +1678,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         }
     }
-    public function exportTemplateStore(Request $request = null)
+    public function exportTemplateStore()
     {
         ini_set('max_execution_time', 0);
         ini_set('memory_limit', '4000M');
@@ -1758,8 +1704,8 @@ class StoreRepository extends Repository implements StoreInterface
                 'C1' => 'STORE_ADDRESS',
                 'D1' => 'STORE_PHONE',
                 'E1' => 'STORE_FAX',
-                'F1' => 'STORE_TYPE_NAME',
-                'G1' => 'SUBCABANG_NAME',
+                'F1' => 'STORE_TYPE_ID',
+                'G1' => 'SUBCABANG_ID',
                 'H1' => 'OWNER',
                 'I1' => 'NIK_OWNER',
                 'J1' => 'EMAIL_OWNER',
@@ -1770,6 +1716,36 @@ class StoreRepository extends Repository implements StoreInterface
                 $sheet->getStyle($cell)->getFont()->setBold(true);
             }
 
+            // contoh data
+            $sheet->setCellValue('A2', 'TOKO MAJU JAYA');
+            $sheet->setCellValue('B2', 'MJ');
+            $sheet->setCellValue('C2', 'Jl Mawar No 1');
+
+            $sheet->setCellValueExplicit(
+                'D2',
+                '08123456789',
+                DataType::TYPE_STRING
+            );
+
+            $sheet->setCellValue('E2', '021999999');
+            $sheet->setCellValue('F2', '1');
+            $sheet->setCellValue('G2', '2');
+            $sheet->setCellValue('H2', 'BUDI');
+
+            $sheet->setCellValueExplicit(
+                'I2',
+                '3201123123123',
+                DataType::TYPE_STRING
+            );
+
+            $sheet->setCellValue('J2', 'budi@gmail.com');
+
+            /*
+        |--------------------------------------------------------------------------
+        | SHEET 2 - MASTER DATA
+        |--------------------------------------------------------------------------
+        */
+
             $sheet2 = $spreadSheet->createSheet();
             $sheet2->setTitle('Master Data');
 
@@ -1779,11 +1755,11 @@ class StoreRepository extends Repository implements StoreInterface
         |--------------------------------------------------------------------------
         */
 
-            $sheet2->setCellValue('A1', 'MASTER SUBCABANG');
+            $sheet2->setCellValue('A1', 'MASTER CABANG');
 
-            $sheet2->setCellValue('A2', 'SUBCABANG_NAME');
+            $sheet2->setCellValue('A2', 'ID');
             $sheet2->setCellValue('B2', 'KODE_CABANG');
-            $sheet2->setCellValue('C2', 'ID');
+            $sheet2->setCellValue('C2', 'NAMA_CABANG');
 
             $sheet2->getStyle('A1:C2')->getFont()->setBold(true);
 
@@ -1795,9 +1771,9 @@ class StoreRepository extends Repository implements StoreInterface
 
             foreach ($cabangs as $cabang) {
 
-                $sheet2->setCellValue('A' . $rowCabang, $cabang->nama_cabang);
+                $sheet2->setCellValue('A' . $rowCabang, $cabang->id);
                 $sheet2->setCellValue('B' . $rowCabang, $cabang->kode_cabang);
-                $sheet2->setCellValue('C' . $rowCabang, $cabang->id);
+                $sheet2->setCellValue('C' . $rowCabang, $cabang->nama_cabang);
 
                 $rowCabang++;
             }
@@ -1812,8 +1788,8 @@ class StoreRepository extends Repository implements StoreInterface
 
             $sheet2->setCellValue('A' . $startStoreType, 'MASTER STORE TYPE');
 
-            $sheet2->setCellValue('A' . ($startStoreType + 1), 'STORE_TYPE_NAME');
-            $sheet2->setCellValue('B' . ($startStoreType + 1), 'ID');
+            $sheet2->setCellValue('A' . ($startStoreType + 1), 'ID');
+            $sheet2->setCellValue('B' . ($startStoreType + 1), 'STORE_TYPE_NAME');
 
             $sheet2->getStyle(
                 'A' . $startStoreType .
@@ -1828,8 +1804,12 @@ class StoreRepository extends Repository implements StoreInterface
 
             foreach ($storeTypes as $type) {
 
-                $sheet2->setCellValue('A' . $rowStoreType, $type->store_type_name);
-                $sheet2->setCellValue('B' . $rowStoreType, $type->store_type_id);
+                $sheet2->setCellValue('A' . $rowStoreType, $type->store_type_id);
+
+                $sheet2->setCellValue(
+                    'B' . $rowStoreType,
+                    $type->store_type_name
+                );
 
                 $rowStoreType++;
             }
@@ -1882,12 +1862,10 @@ class StoreRepository extends Repository implements StoreInterface
         DB::beginTransaction();
 
         try {
-            $createdBy = $this->resolveCreatedBy($r);
-            $customerCode = $this->resolveCustomerCode($r);
-
-            if (empty($customerCode)) {
-                throw new Exception("customer_code user tidak ditemukan");
-            }
+            $createdBy = $r->input('created_by')
+                ?? $r->input('userid')
+                ?? optional(Auth::user())->fullname
+                ?? 'SYSTEM';
 
             if (!$r->hasFile('file')) {
                 throw new Exception("File wajib diupload");
@@ -1921,8 +1899,8 @@ class StoreRepository extends Repository implements StoreInterface
                 $storePhone = preg_replace('/[^0-9]/', '', (string)$row['D']);
                 $storeFax = preg_replace('/[^0-9]/', '', (string)$row['E']);
 
-                $storeTypeRaw = trim((string) $row['F']);
-                $subCabangRaw = trim((string) $row['G']);
+                $storeTypeId = trim($row['F']);
+                $subCabangId = trim($row['G']);
 
                 $owner = strtoupper(trim($row['H']));
 
@@ -1930,42 +1908,15 @@ class StoreRepository extends Repository implements StoreInterface
 
                 $emailOwner = trim($row['J']);
 
-                $storeTypeId = null;
-                if ($storeTypeRaw !== '') {
-                    if (is_numeric($storeTypeRaw)) {
-                        $storeTypeId = (int) $storeTypeRaw;
-                    } else {
-                        $storeTypeId = StoreType::whereRaw('LOWER(store_type_name) = ?', [strtolower($storeTypeRaw)])
-                            ->value('store_type_id');
-                    }
-                }
-
-                $subCabangId = null;
-                if ($subCabangRaw !== '') {
-                    if (is_numeric($subCabangRaw)) {
-                        $subCabangId = (int) $subCabangRaw;
-                    } else {
-                        $subCabangId = StoreCabang::where(function ($query) use ($subCabangRaw) {
-                            $normalizedSubCabang = strtolower($subCabangRaw);
-
-                            $query->whereRaw('LOWER(nama_cabang) = ?', [$normalizedSubCabang])
-                                ->orWhereRaw('LOWER(kode_cabang) = ?', [$normalizedSubCabang]);
-                        })
-                            ->value('id');
-                    }
-                }
-
                 if (
                     empty($storeName) ||
                     empty($storeAlias) ||
-                    empty($subCabangId) ||
-                    empty($storeTypeId)
+                    empty($subCabangId)
                 ) {
                     continue;
                 }
 
                 $exist = StoreInfoDistri::where('store_name', $storeName)
-                    ->where('customer_code', $customerCode)
                     ->whereNull('deleted_at')
                     ->first();
 
@@ -1976,7 +1927,6 @@ class StoreRepository extends Repository implements StoreInterface
                 if (!empty($storePhone)) {
 
                     $existPhone = StoreInfoDistri::where('store_phone', $storePhone)
-                        ->where('customer_code', $customerCode)
                         ->whereNull('deleted_at')
                         ->first();
 
@@ -1989,7 +1939,6 @@ class StoreRepository extends Repository implements StoreInterface
                 if (!empty($storeFax)) {
 
                     $existFax = StoreInfoDistri::where('store_fax', $storeFax)
-                        ->where('customer_code', $customerCode)
                         ->whereNull('deleted_at')
                         ->first();
 
@@ -2017,7 +1966,6 @@ class StoreRepository extends Repository implements StoreInterface
                     'subcabang_id' => $subCabangId,
                     'subcabang_idnew' => $subCabangId,
                     'store_code' => $storeCode,
-                    'customer_code' => $customerCode,
                     'active' => 1,
 
                     'created_by' => $createdBy,

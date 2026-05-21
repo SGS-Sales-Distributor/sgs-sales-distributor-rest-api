@@ -163,9 +163,9 @@ class StoreInfoDistriController extends Controller
     {
         return $this->storeInterface->getAllOutletPaginate($request);
     }
-    public function exportTemplateStore()
+    public function exportTemplateStore(Request $request)
     {
-        return $this->storeInterface->exportTemplateStore();
+        return $this->storeInterface->exportTemplateStore($request);
     }
 
     public function uploadStore(Request $request)

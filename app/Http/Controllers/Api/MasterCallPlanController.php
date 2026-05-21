@@ -36,9 +36,10 @@ class MasterCallPlanController extends Controller
         return $this->masterCallPlanInterface->updateOneData($request, $id);
     }
 
-    public function notVisitedUser(Request $request, int $userId): JsonResponse {
+    public function notVisitedUser(Request $request, int $userId): JsonResponse
+    {
         return $this->masterCallPlanInterface->notVisitedUsers($request, $userId);
-    } 
+    }
 
     public function removeOne(int $id): JsonResponse
     {
@@ -54,7 +55,7 @@ class MasterCallPlanController extends Controller
     {
         return $this->masterCallPlanInterface->getCoverage_planWeeklySummary($request);
     }
-    
+
     public function getCallPlanJoin(Request $request): JsonResponse
     {
         return $this->masterCallPlanInterface->getCallPlanJoin($request);
@@ -79,7 +80,6 @@ class MasterCallPlanController extends Controller
             msg: "Successfully fetch master call plan detail {$id}.",
             resource: $data,
         );
-
     }
 
     public function updateDetail(Request $request, $id)
@@ -129,5 +129,25 @@ class MasterCallPlanController extends Controller
             success: true,
             msg: "Successfully remove master call plan {$id} and it's detail.",
         );
+    }
+
+    public function downloadTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $headers = ['Content-Type' => 'text/csv'];
+        $filename = 'template_call_plan.csv';
+
+        $callback = function () {
+            $file = fopen('php://output', 'w');
+            // Header kolom
+            fputcsv($file, ['user_id', 'store_id', 'date']);
+            // Contoh data
+            fputcsv($file, ['101', '5001', '2025-06-02']);
+            fputcsv($file, ['101', '5002', '2025-06-03']);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, array_merge($headers, [
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ]));
     }
 }
