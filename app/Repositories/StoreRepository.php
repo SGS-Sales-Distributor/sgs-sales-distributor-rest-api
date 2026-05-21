@@ -1665,6 +1665,12 @@ class StoreRepository extends Repository implements StoreInterface
                 '=',
                 'store_info_distri.store_id'
             )
+            ->where('store_info_distri.customer_code', function ($query) use ($userId) {
+                $query->select('customer_code')
+                    ->from('user_info')
+                    ->where('user_id', $userId)
+                    ->limit(1);
+            })
             ->whereIn('store_info_distri.subcabang_id', function ($query) use ($userId) {
                 $query->select('cabang_id')
                     ->from('user_info_cabang')

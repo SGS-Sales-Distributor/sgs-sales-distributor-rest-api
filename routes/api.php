@@ -86,6 +86,9 @@ Route::group(['prefix' => 'sgs',], function () {
     Route::get('/store_type/{store_type_name}', [StoreTypeController::class, 'show']);
     Route::put('/store_type/{store_type_id}', [StoreTypeController::class, 'update']);
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
+    Route::get('/store-cabangs', [StoreInfoDistriController::class, 'getStoreCabangs']);
+    Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
+
 
     // // CRUD untuk Product Info Do
     Route::get('/getMasterProduk', [ProductController::class, 'getAllBasic']);
