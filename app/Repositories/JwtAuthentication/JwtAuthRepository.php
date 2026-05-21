@@ -51,20 +51,16 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
         }
 
         # search user.
-        $user = User::whereRaw('LOWER(email) = ?', [$normalizedEmail])
-        // ->firstOrFail();
-        ->first();
+        $user = User::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
 
         if (!$user) {
             return $this->ErrorResponse(
                 statusCode: 401,
                 success: false,
-                // msg: "Failed to authorized.",
                 msg: "User Email Belum Terdaftar!",
             );
         }
-        
-        
+
         # credential for auth attempt.
         $credentials = [
             'email' => $normalizedEmail,
@@ -75,12 +71,10 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             return $this->clientErrorResponse(
                 statusCode: 401,
                 success: false,
-                // msg: "Failed to authorized.",
                 msg: "Email atau Password Salah!",
             );
-        } 
+        }
 
-            
         # generate tokens.
         $jwt = $this->jwtAuthToken->generateToken($user);
         $refreshToken = $this->jwtAuthToken->generateRefreshToken($user);
@@ -104,8 +98,7 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            // 'number' => ['nullable', 'string', 'max:10'],
-            // 'nik' => ['required', 'string', 'max:20'],
+            'customer_code' => ['required', 'string', 'max:20', 'exists:mst_customer,customer_code'], 
             'area' => ['nullable', 'integer'],
             'fullname' => ['required', 'string', 'max:200'],
             'phone' => ['required', 'string', 'max:20', 'unique:user_info,phone'],
@@ -130,32 +123,31 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             $lastId = User::orderBy('user_id', 'desc')->first()->user_id;
             $setLastId = $lastId + 1;
 
-            //generate NIK
             $month = date('m');
             $year = date('y');
             $generateNik = '06' . $request->input('kode_lokasi.kode_lokasi') . $month . $year . sprintf('%05d', $setLastId);
 
             $user = User::create([
-                // 'number' => $request->number,
-                'number' => sprintf('%06d', $setLastId),
-                'nik' => $generateNik,
-                'fullname' => $request->fullname,
-                'phone' => $request->phone,
-                'email' => $request->email,
-                'name' => $request->fullname,
-                'password' => $request->password,
-                'type_id' => 2,
-                'status' => 1,
-                'jabatan_id' =>$request->jobdesk,
-                'created_by' => $request->fullname
+                'number'        => sprintf('%06d', $setLastId),
+                'nik'           => $generateNik,
+                'customer_code' => $request->customer_code, 
+                'fullname'      => $request->fullname,
+                'phone'         => $request->phone,
+                'email'         => $request->email,
+                'name'          => $request->fullname,
+                'password'      => $request->password,
+                'type_id'       => 2,
+                'status'        => 1,
+                'jabatan_id'    => $request->jobdesk,
+                'cabang_id'    => $request->input('kode_lokasi.cabangId'),
+                'created_by'    => $request->fullname,
             ]);
 
             $LastIdUserNew = $user->user_id;
 
             $userInfoCabang = UserInfoCabang::create([
-                // 'id',
-                'user_id' => $LastIdUserNew,
-                'cabang_id' => $request->input('kode_lokasi.cabangId') ,
+                'user_id'    => $LastIdUserNew,
+                'cabang_id'  => $request->input('kode_lokasi.cabangId'),
                 'created_by' => $user->name,
                 'updated_by' => $user->name,
             ]);
@@ -170,28 +162,13 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             DB::rollBack();
-
-            return $this->errorResponse(
-                statusCode: $e->getStatusCode(),
-                success: false,
-                msg: $e->getMessage(),
-            );
+            return $this->errorResponse(statusCode: $e->getStatusCode(), success: false, msg: $e->getMessage());
         } catch (\Error $e) {
             DB::rollBack();
-
-            return $this->errorResponse(
-                statusCode: 500,
-                success: false,
-                msg: $e->getMessage(),
-            );
+            return $this->errorResponse(statusCode: 500, success: false, msg: $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return $this->errorResponse(
-                statusCode: 500,
-                success: false,
-                msg: $e->getMessage(),
-            );
+            return $this->errorResponse(statusCode: 500, success: false, msg: $e->getMessage());
         }
     }
 
@@ -201,11 +178,9 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
 
         $decryptUser = $this->jwtAuthToken->decryptUserData($jwt['user']);
 
-        # convert into datetime with tz from env.
         $currentTime = new DateTimeImmutable(timezone: new DateTimeZone(env('APP_TIMEZONE')));
         $tokenExpTime = Carbon::createFromTimestamp($jwt['exp'], env('APP_TIMEZONE'));
 
-        # just return your shit.
         return $this->successResponse(
             statusCode: 200,
             success: true,
@@ -222,7 +197,6 @@ class JwtAuthRepository extends Repository implements JwtAuthInterface
 
     public function refreshToken(Request $request): JsonResponse
     {
-
         $validator = Validator::make(
             $request->all(),
             [

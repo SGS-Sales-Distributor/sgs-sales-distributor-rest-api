@@ -59,41 +59,30 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $filterByYear = $this->dateRangeFilter->parseYear($searchByDateQuery);
 
         $masterCallPlanByDateFilterCache = Cache::remember(
-            'masterCallPlanByDateFilter_' . $searchByDateQuery, // ✅ FIX CACHE
+            'masterCallPlanByDateFilter_' . $searchByDateQuery,
             $this::DEFAULT_CACHE_TTL,
             function () use ($filterByDateRange, $filterByDate, $filterByYearRange, $filterByYear) {
 
                 $query = MasterCallPlan::with(['user', 'details']);
 
-                // ✅ DATE RANGE
                 if ($filterByDateRange) {
                     $query->whereHas('details', function ($q) use ($filterByDateRange) {
                         $q->whereBetween('date', $filterByDateRange);
                     });
-                }
-
-                // ✅ SINGLE DATE
-                elseif ($filterByDate) {
+                } elseif ($filterByDate) {
                     $query->whereHas('details', function ($q) use ($filterByDate) {
                         $q->whereDate('date', $filterByDate);
                     });
-                }
-
-                // ✅ YEAR RANGE
-                elseif ($filterByYearRange) {
+                } elseif ($filterByYearRange) {
                     $query->whereHas('details', function ($q) use ($filterByYearRange) {
                         $q->whereBetween('date', $filterByYearRange);
                     });
-                }
-
-                // ✅ SINGLE YEAR
-                elseif ($filterByYear) {
+                } elseif ($filterByYear) {
                     $query->whereHas('details', function ($q) use ($filterByYear) {
                         $q->whereYear('date', $filterByYear);
                     });
                 }
 
-                // 🔥 DEFAULT (WAJIB ADA)
                 return $query
                     ->orderBy('id', 'asc')
                     ->paginate(10);
@@ -158,10 +147,8 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         }
 
         try {
-            // master call header
             DB::beginTransaction();
 
-            // mengambil id header user, bulan, & tahun
             $IdHeader = MasterCallPlan::where('user_id', '=', $request->user_id)
                 ->where('month_plan', '=', $request->month_plan)
                 ->where('year_plan', '=', $request->year_plan)
@@ -182,7 +169,6 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 $setLastId = $masterCallPlan->id;
             }
 
-            // master call plan detail
             DB::beginTransaction();
 
 
@@ -414,100 +400,88 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
     public function getCoverage_plan(Request $request): JsonResponse
     {
-        $URL = URL::current();
+        $URL           = URL::current();
+        $searchByQuery = trim((string) $request->query('search', ''));
+        $tanggalfr     = $request->query('tanggalfr');
+        $tanggalto     = $request->query('tanggalto');
+        $customerCode  = $request->query('customer_code');
+        $userId        = trim((string) $request->query('user_id', ''));
 
-        $searchByQuery = $request->query(key: 'search');
-        $tanggalfr = $request->query(key: 'tanggalfr');
-        $tanggalto = $request->query(key: 'tanggalto');
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
+            $URL,
+            $request->limit,
+            $request->offset,
+            $searchByQuery,
+            $tanggalfr,
+            $tanggalto
+        );
 
-        if (!isset($searchByQuery) && !isset($tanggalfr) && !isset($tanggalto)) {
-            $count = (new ProfilVisit())->count();
-            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
-                $URL,
-                $request->limit,
-                $request->offset,
-                $searchByQuery,
-                $tanggalfr,
-                $tanggalto
-            );
-            // DB::enableQueryLog();
-            $data = DB::table('master_call_plan')
-                ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
-            (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
-                ->join('master_call_plan_detail', 'master_call_plan_detail.call_plan_id', '=', 'master_call_plan.id')
-                // ->where('master_call_plan_detail.date', '=', $chooseTgl)
-                ->groupBy('master_call_plan.user_id')
-                ->groupBy('master_call_plan_detail.date');
+        $query = DB::table('master_call_plan as mcp')
+            ->join('master_call_plan_detail as mcpd', 'mcpd.call_plan_id', '=', 'mcp.id')
+            ->join('user_info as ui', 'ui.user_id', '=', 'mcp.user_id')
+            ->leftJoin('mst_customer as mc', 'mc.customer_code', '=', 'ui.customer_code')
+            ->leftJoin('store_info_distri as sid', 'sid.store_id', '=', 'mcpd.store_id')
+            ->leftJoin('store_cabang as sc', 'sc.id', '=', 'sid.subcabang_id')
+            ->selectRaw("
+                mcp.user_id,
+                mcpd.date AS tanggal,
+                COALESCE(MAX(sc.kode_cabang), '-') as kode_cabang,
+                ui.fullname,
+                mc.customer_name,
+                COUNT(DISTINCT sid.store_id) as jml_coverage,
+                COUNT(mcpd.id) as plan_day_in,
+                (
+                    SELECT COUNT(pv.id)
+                    FROM profil_visit pv
+                    WHERE pv.\"user\" = mcp.user_id
+                    AND pv.tanggal_visit = mcpd.date
+                ) as day_in_terpenuhi,
+                COUNT(mcpd.id) - (
+                    SELECT COUNT(pv.id)
+                    FROM profil_visit pv
+                    WHERE pv.\"user\" = mcp.user_id
+                    AND pv.tanggal_visit = mcpd.date
+                ) AS day_in_tidak_terpenuhi
+            ")
+            ->when(!empty($tanggalfr) && !empty($tanggalto), function ($q) use ($tanggalfr, $tanggalto) {
+                $q->whereBetween('mcpd.date', [$tanggalfr, $tanggalto]);
+            })
+            ->when(!empty($customerCode), function ($q) use ($customerCode) {
+                $q->where('ui.customer_code', $customerCode);
+            })
+            ->when($userId !== '', function ($q) use ($userId) {
+                $q->where('mcp.user_id', $userId);
+            })
+            ->when($searchByQuery !== '', function ($q) use ($searchByQuery) {
+                $q->where(function ($sub) use ($searchByQuery) {
+                    $sub->where('ui.fullname', 'ILIKE', '%' . $searchByQuery . '%')
+                        ->orWhere('sc.kode_cabang', 'ILIKE', '%' . $searchByQuery . '%')
+                        ->orWhere('mc.customer_name', 'ILIKE', '%' . $searchByQuery . '%');
+                });
+            })
+            ->groupBy(
+                'mcp.user_id',
+                'mcpd.date',
+                'ui.fullname',
+                'mc.customer_name'
+            )
+            ->orderBy('mcpd.date', 'asc');
 
-            $dataA = DB::query()
-                ->selectRaw('store_cabang.kode_cabang,user_info.fullname,count(store_info_distri.store_id) as jml_coverage,a.user_id,a.tanggal,a.plan_day_in,a.day_in_terpenuhi,a.day_in_tidak_terpenuhi')
-                ->fromSub($data, 'a')
-                ->join('user_info', 'user_info.user_id', '=', 'a.user_id')
-                ->join('store_cabang', 'store_cabang.id', 'user_info.cabang_id')
-                ->join('store_info_distri', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
-                ->groupBy('a.user_id')
-                ->groupBy('user_info.fullname')
-                ->groupBy('a.tanggal')
-                ->groupBy('a.plan_day_in')
-                ->groupBy('a.day_in_terpenuhi')
-                ->groupBy('store_cabang.kode_cabang')
-                ->groupBy('a.day_in_tidak_terpenuhi')
-                ->orderBy('a.tanggal', 'asc')
-                ->limit($arr_pagination['limit'])
-                ->offset($arr_pagination['offset'])
-                ->get();
-        } else {
-            $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
-                $URL,
-                $request->limit,
-                $request->offset,
-                $searchByQuery,
-                $tanggalfr,
-                $tanggalto
-            );
-            $data = DB::table('master_call_plan')
-                ->selectRaw('master_call_plan.user_id,master_call_plan_detail.date AS tanggal,count(master_call_plan_detail.id) as plan_day_in,(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) as day_in_terpenuhi,
-                (count(master_call_plan_detail.id))-(select count(id) FROM profil_visit pv where pv."user" ="user_id" and pv.tanggal_visit =master_call_plan_detail.date) AS day_in_tidak_terpenuhi')
-                ->join('master_call_plan_detail', 'master_call_plan_detail.call_plan_id', '=', 'master_call_plan.id')
-                ->whereBetween('master_call_plan_detail.date', [$tanggalfr, $tanggalto])
-                ->groupBy('master_call_plan.user_id')
-                ->groupBy('master_call_plan_detail.date');
+        $count = DB::query()->fromSub($query, 'coverage_rows')->count();
 
-            $dataA = DB::query()
-                ->selectRaw('store_cabang.kode_cabang,user_info.fullname,count(store_info_distri.store_id) as jml_coverage,a.user_id,a.tanggal,a.plan_day_in,a.day_in_terpenuhi,a.day_in_tidak_terpenuhi')
-                ->fromSub($data, 'a')
-                ->join('user_info', 'user_info.user_id', '=', 'a.user_id')
-                ->join('store_cabang', 'store_cabang.id', 'user_info.cabang_id')
-                ->join('store_info_distri', 'store_info_distri.subcabang_id', '=', 'store_cabang.id')
-                ->where('user_info.fullname', 'LIKE', '%' . $searchByQuery . '%')
-                ->orWhere('store_cabang.kode_cabang', 'LIKE', '%' . $searchByQuery . '%')
-                ->groupBy('a.user_id')
-                ->groupBy('user_info.fullname')
-                ->groupBy('a.tanggal')
-                ->groupBy('a.plan_day_in')
-                ->groupBy('a.day_in_terpenuhi')
-                ->groupBy('store_cabang.kode_cabang')
-                ->groupBy('a.day_in_tidak_terpenuhi')
-                ->orderBy('a.tanggal', 'asc')
-                // ->limit($arr_pagination['limit'])
-                // ->offset($arr_pagination['offset'])
-                ->get();
+        $dataA = (clone $query)
+            ->limit($arr_pagination['limit'])
+            ->offset($arr_pagination['offset'])
+            ->get();
 
-            $count = $dataA->count();
-        }
-        // $log = DB::getQueryLog();
-        // dd($log);
-
-        if (count($dataA) == 0) {
+        if ($count == 0) {
             return response()->json(
                 (new PublicModel())->array_respon_200_table_tr([], 0, $arr_pagination),
                 200
             );
         }
 
-
         return response()->json(
-            // (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             (new PublicModel())->array_respon_200_table_tr($dataA, $count, $arr_pagination),
             200
         );
@@ -515,9 +489,11 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
 
     public function getCoverage_planWeeklySummary(Request $request): JsonResponse
     {
-        $tanggalfr = $request->query(key: 'tanggalfr');
-        $tanggalto = $request->query(key: 'tanggalto');
-        $searchByQuery = $request->query(key: 'search');
+        $tanggalfr     = $request->query('tanggalfr');
+        $tanggalto     = $request->query('tanggalto');
+        $searchByQuery = $request->query('search');
+        $customerCode  = $request->query('customer_code');
+        $userId        = $request->query('user_id');
 
         if (empty($tanggalfr) || empty($tanggalto)) {
             return $this->clientErrorResponse(
@@ -531,12 +507,19 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             ->join('master_call_plan as mcp', 'mcp.id', '=', 'mcpd.call_plan_id')
             ->join('user_info as ui', 'ui.user_id', '=', 'mcp.user_id')
             ->join('store_info_distri as sid', 'sid.store_id', '=', 'mcpd.store_id')
+            ->leftJoin('mst_customer as mc', 'mc.customer_code', '=', 'ui.customer_code')
             ->leftJoin('profil_visit as pv', function ($join) {
                 $join->on('pv.user', '=', 'mcp.user_id')
                     ->on('pv.tanggal_visit', '=', 'mcpd.date')
                     ->on('pv.store_id', '=', 'mcpd.store_id');
             })
             ->whereBetween('mcpd.date', [$tanggalfr, $tanggalto])
+            ->when(!empty($customerCode), function ($q) use ($customerCode) {
+                $q->where('ui.customer_code', $customerCode);
+            })
+            ->when(!empty($userId), function ($q) use ($userId) {
+                $q->where('mcp.user_id', $userId);
+            })
             ->when($searchByQuery, function ($query) use ($searchByQuery) {
                 $query->where(function ($subQuery) use ($searchByQuery) {
                     $subQuery->where('ui.fullname', 'LIKE', '%' . $searchByQuery . '%')
@@ -545,19 +528,22 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 });
             })
             ->selectRaw("
-                mcp.user_id as user_id,
-                ui.fullname as nama_sales,
-                sid.store_code as kode_toko,
-                sid.store_name as nama_toko,
-                mcpd.date as tanggal_plan,
-                CASE
-                    WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 1 AND 7 THEN 1
-                    WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 8 AND 14 THEN 2
-                    WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 15 AND 21 THEN 3
-                    ELSE 4
-                END as week_num,
-                pv.ket as ket_visit
-            ")
+            mcp.user_id as user_id,
+            ui.fullname as nama_sales,
+            ui.customer_code as customer_code,
+            mc.customer_name as customer_name,
+            sid.store_code as kode_toko,
+            sid.store_name as nama_toko,
+            mcpd.date as tanggal_plan,
+            CASE
+                WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 1 AND 7 THEN 1
+                WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 8 AND 14 THEN 2
+                WHEN EXTRACT(DAY FROM mcpd.date) BETWEEN 15 AND 21 THEN 3
+                ELSE 4
+            END as week_num,
+            pv.ket as ket_visit,
+            pv.keterangan_out as ket_out_visit
+        ")
             ->orderBy('ui.fullname', 'asc')
             ->orderBy('sid.store_code', 'asc')
             ->orderBy('mcpd.date', 'asc')
@@ -570,39 +556,49 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
         $formatted = collect();
 
         foreach ($groupedStores as $storeRows) {
-            $firstRow = $storeRows->first();
+            $firstRow   = $storeRows->first();
             $weekGroups = $storeRows->groupBy('week_num');
-            $weekKet = [];
+            $weekKet    = [];
 
             for ($week = 1; $week <= 4; $week++) {
-                $weekRows = $weekGroups->get($week, collect());
+                $weekRows  = $weekGroups->get($week, collect());
                 $weekCount = $weekRows->count();
-                $weekKetValues = $weekRows
-                    ->pluck('ket_visit')
-                    ->filter(function ($value) {
-                        return !empty(trim((string) $value));
-                    })
-                    ->map(function ($value) {
-                        return trim((string) $value);
-                    })
+
+                $weekKetValues = $weekRows->map(function ($row) {
+                    $parts  = [];
+                    $ketIn  = trim((string) ($row->ket_visit ?? ''));
+                    $ketOut = trim((string) ($row->ket_out_visit ?? ''));
+
+                    if ($ketIn  !== '') $parts[] = "In: {$ketIn}";
+                    if ($ketOut !== '') $parts[] = "Out: {$ketOut}";
+
+                    return implode(', ', $parts);
+                })
+                    ->filter(fn($v) => $v !== '')
                     ->unique()
                     ->values();
 
-                $weekKet["week_{$week}"] = $weekKetValues->isNotEmpty()
+                $weekKet["week_{$week}"]       = $weekKetValues->isNotEmpty()
                     ? $weekKetValues->implode(' | ')
                     : '-';
                 $weekKet["week_{$week}_count"] = $weekCount;
             }
 
             $formatted->push([
-                'nama_sales' => $firstRow->nama_sales,
-                'kode_toko' => $firstRow->kode_toko,
-                'nama_toko' => $firstRow->nama_toko,
-                'week_1' => $weekKet['week_1_count'],
-                'week_2' => $weekKet['week_2_count'],
-                'week_3' => $weekKet['week_3_count'],
-                'week_4' => $weekKet['week_4_count'],
-                'ket' => 'Week 1: ' . $weekKet['week_1'] . ' | Week 2: ' . $weekKet['week_2'] . ' | Week 3: ' . $weekKet['week_3'] . ' | Week 4: ' . $weekKet['week_4'],
+                'nama_sales'    => $firstRow->nama_sales,
+                'customer_name' => $firstRow->customer_name ?? '-', 
+                'kode_toko'     => $firstRow->kode_toko,
+                'nama_toko'     => $firstRow->nama_toko,
+                'week_1'        => $weekKet['week_1_count'],
+                'week_2'        => $weekKet['week_2_count'],
+                'week_3'        => $weekKet['week_3_count'],
+                'week_4'        => $weekKet['week_4_count'],
+                'ket' => implode("\n", array_filter([
+                    $weekKet['week_1_count'] > 0 ? "W1: {$weekKet['week_1']}" : null,
+                    $weekKet['week_2_count'] > 0 ? "W2: {$weekKet['week_2']}" : null,
+                    $weekKet['week_3_count'] > 0 ? "W3: {$weekKet['week_3']}" : null,
+                    $weekKet['week_4_count'] > 0 ? "W4: {$weekKet['week_4']}" : null,
+                ])),
                 'total' => $storeRows->count(),
             ]);
         }
@@ -620,9 +616,10 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             success: true,
             msg: 'Successfully fetch weekly summary visit report.',
             resource: [
-                'rows' => $formatted->values(),
-                'grand_total' => $grandTotal,
-                'week_totals' => $weekTotals,
+                'rows'          => $formatted->values(),
+                'grand_total'   => $grandTotal,
+                'week_totals'   => $weekTotals,
+                'customer_name' => $detailRows->first()?->customer_name ?? '-',
             ],
         );
     }
@@ -635,9 +632,12 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
                 ->join('user_info as u', 'mcp.user_id', '=', 'u.user_id')
                 ->join('store_info_distri as sid', 'mcpd.store_id', '=', 'sid.store_id')
                 ->join('store_info_distri_person as sidp', 'sid.store_id', '=', 'sidp.store_id')
+                ->leftJoin('mst_customer as mc', 'mc.customer_code', '=', 'u.customer_code')
                 ->select(
                     'u.fullname',
                     'u.email',
+                    'u.customer_code',
+                    'mc.customer_name',
                     'mcp.user_id',
                     'mcp.month_plan',
                     'mcp.year_plan',
@@ -651,28 +651,119 @@ class MasterCallPlanRepository extends Repository implements MasterCallPlanInter
             if ($request->month) {
                 $query->where('mcp.month_plan', $request->month);
             }
-
             if ($request->year) {
                 $query->where('mcp.year_plan', $request->year);
             }
+            // ← TAMBAH filter customer
+            if ($request->customer_code) {
+                $query->where('u.customer_code', $request->customer_code);
+            }
+            // ← TAMBAH filter user_id (opsional)
+            if ($request->user_id) {
+                $query->where('mcp.user_id', $request->user_id);
+            }
 
-            $data = $query
-                ->orderBy('mcp.id', 'asc')
-                ->get();
+            $data = $query->orderBy('mcp.id', 'asc')->get();
 
             return response()->json([
-                'status' => 200,
+                'status'  => 200,
                 'success' => true,
                 'message' => 'Success get call plan with user',
-                'data' => $data
+                'data'    => $data
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 500,
+                'status'  => 500,
                 'success' => false,
                 'message' => 'Error get data',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ]);
+        }
+    }
+
+    public function importCallPlan(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+
+        try {
+            $file = $request->file('file');
+            $path = $file->getRealPath();
+
+            // Baca file CSV/Excel sederhana
+            $data = array_map('str_getcsv', file($path));
+            $header = array_shift($data); // buang baris header
+
+            // Header template: user_id | store_id | date (YYYY-MM-DD)
+            $inserted = 0;
+            $errors   = [];
+
+            DB::beginTransaction();
+
+            foreach ($data as $lineNum => $row) {
+                if (count($row) < 3) continue;
+
+                $userId  = trim($row[0]);
+                $storeId = trim($row[1]);
+                $date    = trim($row[2]);
+
+                // Validasi format tanggal
+                if (!Carbon::hasFormat($date, 'Y-m-d')) {
+                    $errors[] = "Baris " . ($lineNum + 2) . ": Format tanggal salah ($date), harus YYYY-MM-DD";
+                    continue;
+                }
+
+                // Ambil atau buat header call plan
+                $callPlan = MasterCallPlan::firstOrCreate(
+                    [
+                        'user_id'    => $userId,
+                        'month_plan' => Carbon::parse($date)->month,
+                        'year_plan'  => Carbon::parse($date)->year,
+                    ],
+                    ['created_by' => $request->created_by ?? 1]
+                );
+
+                // Cek duplikat detail
+                $exists = MasterCallPlanDetail::where('call_plan_id', $callPlan->id)
+                    ->where('store_id', $storeId)
+                    ->where('date', $date)
+                    ->exists();
+
+                if ($exists) {
+                    $errors[] = "Baris " . ($lineNum + 2) . ": Duplikat (user=$userId, store=$storeId, date=$date)";
+                    continue;
+                }
+
+                MasterCallPlanDetail::create([
+                    'call_plan_id' => $callPlan->id,
+                    'store_id'     => $storeId,
+                    'date'         => $date,
+                    'created_by'   => $request->created_by ?? 1,
+                ]);
+
+                $inserted++;
+            }
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 201,
+                success: true,
+                msg: "Import selesai. $inserted data berhasil dimasukkan." . (count($errors) ? " " . count($errors) . " baris dilewati." : ""),
+                resource: ['inserted' => $inserted, 'errors' => $errors],
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse(statusCode: 500, success: false, msg: $e->getMessage());
         }
     }
 }

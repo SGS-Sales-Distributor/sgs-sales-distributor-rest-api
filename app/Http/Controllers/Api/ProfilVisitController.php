@@ -17,20 +17,27 @@ class ProfilVisitController extends Controller
 {
 	public function getAll(Request $request): JsonResponse
 	{
-		$URL = URL::current();
+		$URL          = URL::current();
+		$searchByQuery = $request->query('search');
+		$tanggalfr    = $request->query('tanggalfr');
+		$tanggalto    = $request->query('tanggalto');
+		$depcode      = $request->query('depcode');
+		$customerCode = $request->query('customer_code');
+		$userId       = $request->query('user_id');
 
-		$searchByQuery = $request->query(key: 'search');
-		$tanggalfr = $request->query(key: 'tanggalfr');
-		$tanggalto = $request->query(key: 'tanggalto');
-		$depcode = $request->query(key: 'depcode');
+		// Jika customer atau tanggal belum diisi, return kosong
+		if (!$customerCode || !$tanggalfr || !$tanggalto) {
+			return response()->json(
+				(new PublicModel())->array_respon_200_table_tr(collect([]), 0, [
+					'limit'  => 10,
+					'offset' => 0,
+				]),
+				200
+			);
+		}
 
-
-		if (!isset($request->search) & !isset($tanggalfr) & !isset($tanggalto)) {
-			$count = (new ProfilVisit())->count();
-			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset, $depcode, $tanggalfr, $tanggalto,);
-			// DB::enableQueryLog();
-			// $visits = ProfilVisit::with(['user', 'store', 'masterPlanDtl'])
-			$visits = DB::table('master_call_plan_detail')
+		$baseQuery = function () use ($searchByQuery, $tanggalfr, $tanggalto, $customerCode, $userId) {
+			return DB::table('master_call_plan_detail')
 				->select([
 					'profil_visit.id as id',
 					'store_info_distri.store_id AS idToko',
@@ -55,109 +62,64 @@ class ProfilVisitController extends Controller
 					'profil_visit.ket as keterangan',
 					'profil_visit.keterangan_out as keterangan_out',
 					'profil_visit.approval as approval',
-					'profil_visit.ket as keterangan',
 					'master_call_plan_detail.date as tanggal_plan',
 					'user_info.fullname as userSalesman',
+					'user_info.customer_code as customer_code',
+					'mst_customer.customer_name as customer_name',
 					'profil_notvisit.id as idNotVisit',
 					'profil_notvisit.ket as ketNotVisit',
 				])
 				->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
 				->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
 				->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
+				->leftJoin('mst_customer', 'mst_customer.customer_code', '=', 'user_info.customer_code')
 				->leftJoin('profil_visit', function ($leftJoin) {
 					$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
 						->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
 						->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
 				})
-				->leftJoin('profil_notvisit', function ($leftJoin2) {
-					$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
+				->leftJoin('profil_notvisit', function ($lj) {
+					$lj->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
 				})
-				->when($searchByQuery, function (Builder $query) use ($searchByQuery) {
-					$query->where('user', 'LIKE', '%' . $searchByQuery . '%');
-				})->orderBy('master_call_plan_detail.date', 'asc')
-				->limit($arr_pagination['limit'])
-				->offset($arr_pagination['offset'])
-				->get();
-			// $log = DB::getQueryLog();
-			// dd($log);
-
-		} else {
-			// DB::enableQueryLog();
-			// $count = (new ProfilVisit())->count();
-			$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset);
-			$visits = DB::table('master_call_plan_detail')
-				->select([
-					'profil_visit.id as id',
-					'store_info_distri.store_id as idToko',
-					'store_info_distri.store_name as nama_toko',
-					'store_info_distri.store_alias as alias_toko',
-					'store_info_distri.store_address as alamat_toko',
-					'store_info_distri.store_phone as nomor_telepon_toko',
-					'store_info_distri.store_fax as nomor_fax_toko',
-					'store_info_distri.store_type_id',
-					'store_info_distri.subcabang_id',
-					'store_info_distri.active as status_toko',
-					'store_info_distri.store_code as kode_toko',
-					'profil_visit.id as visit_id',
-					'profil_visit.user as nama_salesman',
-					'profil_visit.tanggal_visit as tanggal_visit',
-					'profil_visit.time_in as waktu_masuk',
-					'profil_visit.time_out as waktu_keluar',
-					'profil_visit.photo_visit as photo_visit',
-					'profil_visit.photo_visit_in_second as photo_visit_in_second',
-					'profil_visit.photo_visit_out as photo_visit_out',
-					'profil_visit.photo_visit_out_second as photo_visit_out_second',
-					'profil_visit.ket as keterangan',
-					'profil_visit.keterangan_out as keterangan_out',
-					'profil_visit.approval as approval',
-					'profil_visit.ket as keterangan',
-					'master_call_plan_detail.date as tanggal_plan',
-					'user_info.fullname as userSalesman',
-					'profil_notvisit.id as idNotVisit',
-					'profil_notvisit.ket as ketNotVisit',
-				])
-				->join('store_info_distri', 'store_info_distri.store_id', '=', 'master_call_plan_detail.store_id')
-				->join('master_call_plan', 'master_call_plan.id', '=', 'master_call_plan_detail.call_plan_id')
-				->join('user_info', 'user_info.user_id', '=', 'master_call_plan.user_id')
-				->leftJoin('profil_visit', function ($leftJoin) {
-					$leftJoin->on('profil_visit.user', '=', 'master_call_plan.user_id')
-						->on('profil_visit.tanggal_visit', '=', 'master_call_plan_detail.date')
-						->on('profil_visit.store_id', '=', 'master_call_plan_detail.store_id');
-				})
-				->leftJoin('profil_notvisit', function ($leftJoin2) {
-					$leftJoin2->on('profil_notvisit.id_master_call_plan_detail', '=', 'master_call_plan_detail.id');
-				})
+				// WAJIB
+				->where('user_info.customer_code', $customerCode)
 				->whereBetween('master_call_plan_detail.date', [$tanggalfr, $tanggalto])
-				->where('user_info.fullname', 'LIKE', '%' . $searchByQuery . '%')
-				->orderBy('master_call_plan_detail.date', 'asc')
-				// ->limit($arr_pagination['limit'])
-				// ->offset($arr_pagination['offset'])
-				->get();
-			// $log = DB::getQueryLog();
-			// dd($log);
-			$count = $visits->count();
-		}
+				// OPSIONAL: spesifik salesman
+				->when($userId, fn($q) => $q->where('master_call_plan.user_id', $userId))
+				// OPSIONAL: search by nama
+				->when($searchByQuery, fn($q) => $q->where('user_info.fullname', 'LIKE', '%' . $searchByQuery . '%'))
+				->orderBy('master_call_plan_detail.date', 'asc');
+		};
 
-		if (count($visits) == 0) {
+		$arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery(
+			$URL,
+			$request->limit,
+			$request->offset,
+			$depcode,
+			$tanggalfr,
+			$tanggalto
+		);
+
+		$visits = $baseQuery()
+			->limit($arr_pagination['limit'])
+			->offset($arr_pagination['offset'])
+			->get();
+
+		$count = $baseQuery()->count();
+
+		if ($visits->isEmpty()) {
 			return $this->errorResponse(
 				statusCode: 500,
 				success: false,
 				msg: 'Data Kosong',
 			);
 		}
-		// return $this->successResponse(
-		// 	statusCode: 200,
-		// 	success: true,
-		// 	msg: "Successfully fetch visits data.",
-		// 	resource: $visits,
-		// );
+
 		return response()->json(
-			// (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
 			(new PublicModel())->array_respon_200_table_tr($visits, $count, $arr_pagination),
 			200
 		);
 	}
-
 
 	// public function index()
 	// {
@@ -185,12 +147,18 @@ class ProfilVisitController extends Controller
 	public function getOne(int $id): JsonResponse
 	{
 		$visit = DB::table('profil_visit')
-			->select('profil_visit.*', 'store_info_distri.store_name', 'user_info.*')
-			->join('store_info_distri', 'profil_visit.store_id', '=', 'store_info_distri.store_id')
+			->select(
+				'profil_visit.*',
+				'store_info_distri.store_name',
+				'store_info_distri.store_address as alamat_toko',
+				'user_info.fullname',
+				'user_info.phone',
+				'user_info.email',
+			)
+			->leftJoin('store_info_distri', 'profil_visit.store_id', '=', 'store_info_distri.store_id') // ← leftJoin
 			->join('user_info', 'profil_visit.user', '=', 'user_info.user_id')
-			->where('id', $id)
+			->where('profil_visit.id', $id)
 			->first();
-
 
 		if (!$visit) {
 			return $this->clientErrorResponse(
@@ -509,6 +477,23 @@ class ProfilVisitController extends Controller
 					'grand_total' => $totalW1 + $totalW2 + $totalW3 + $totalW4
 				]
 			]
+		);
+	}
+
+	public function getCustomerOptions(): JsonResponse
+	{
+		$customers = DB::table('mst_customer')
+			->select('customer_code', 'customer_name')
+			->whereNull('deleted_at')
+			->where('status', 1)
+			->orderBy('customer_name')
+			->get();
+
+		return $this->successResponse(
+			statusCode: 200,
+			success: true,
+			msg: 'Successfully fetch customer options.',
+			resource: $customers,
 		);
 	}
 }

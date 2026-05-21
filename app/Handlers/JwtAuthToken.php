@@ -36,6 +36,7 @@ class JwtAuthToken
             "username" => $user->name,
             "status" => $user->status,
             "jabatan_id" => $user->jabatan_id,
+            "customer_code" => $user->customer_code,
         ];
 
         $payload = [

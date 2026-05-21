@@ -27,4 +27,5 @@ interface MasterCallPlanInterface
     
     public function getCallPlanJoin(Request $request): JsonResponse;
 
+    public function importCallPlan(Request $request): JsonResponse;
 }

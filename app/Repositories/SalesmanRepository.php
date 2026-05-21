@@ -38,12 +38,12 @@ class SalesmanRepository extends Repository implements SalesmanInterface
         $depcode = $request->query(key: 'depcode');
         $start = $request->query(key: 'start');
         $end = $request->query(key: 'end');
-        
-        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset,$depcode,$start,$end);
+
+        $arr_pagination = (new PublicModel())->paginateDataWithoutSearchQuery($URL, $request->limit, $request->offset, $depcode, $start, $end);
 
         $salesmenCache = Cache::remember(
             "salesmenCache",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($searchByQuery, $arr_pagination) {
                 return User::with([
                     'status',
@@ -75,7 +75,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
     {
         $salesmanCache = Cache::remember(
             "salesmen:{$userNumber}",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($userNumber) {
                 return User::withWhereHas('masterCallPlanDetails', function ($query) {
                     $query->where('date', '=', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
@@ -83,10 +83,10 @@ class SalesmanRepository extends Repository implements SalesmanInterface
                             $query->with('visits');
                         });
                 })->with([
-                            'status',
-                            'type',
-                            'masterCallPlans',
-                        ])
+                    'status',
+                    'type',
+                    'masterCallPlans',
+                ])
                     ->where('number', $userNumber)
                     ->firstOrFail();
             }
@@ -104,7 +104,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
     {
         $salesmanVisitsCache = Cache::remember(
             "salesmen:{$userNumber}:visits",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($userNumber) {
                 return ProfilVisit::whereHas("user", function (Builder $query) use ($userNumber) {
                     $query->where('number', $userNumber);
@@ -126,7 +126,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
     {
         $salesmanVisitCache = Cache::remember(
             "salesmen:{$userNumber}:visits:{$visitId}",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($userNumber, $visitId) {
                 return ProfilVisit::whereHas("user", function (Builder $query) use ($userNumber, $visitId) {
                     $query->where('number', $userNumber);
@@ -149,7 +149,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
 
         $salesmanCallPlansCache = Cache::remember(
             "salesmen:{$userNumber}:callPlans",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($userNumber, $searchByQuery) {
                 return MasterCallPlan::withWhereHas('details', function ($query) use ($searchByQuery) {
                     $query->where('date', '=', Carbon::now(env('APP_TIMEZONE'))->format('Y-m-d'))
@@ -179,7 +179,7 @@ class SalesmanRepository extends Repository implements SalesmanInterface
     {
         $salesmanCallPlanCache = Cache::remember(
             "salesmen:{$userNumber}:callPlans:{$callPlanId}",
-                $this::DEFAULT_CACHE_TTL,
+            $this::DEFAULT_CACHE_TTL,
             function () use ($userNumber, $callPlanId) {
                 return MasterCallPlan::whereHas('user', function (Builder $query) use ($userNumber) {
                     $query->where('number', $userNumber);
@@ -722,6 +722,41 @@ class SalesmanRepository extends Repository implements SalesmanInterface
             success: true,
             msg: "Successfully fetch salesman.",
             resource: $salesmanUserOne,
+        );
+    }
+
+    public function getUserByCustomerCode(Request $request): JsonResponse
+    {
+        $customerCode = $request->query('customer_code');
+
+        if (!$customerCode) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: 'customer_code wajib diisi',
+            );
+        }
+
+        $users = DB::table('user_info')
+            ->select('user_id', 'fullname', 'nik', 'customer_code')
+            ->where('customer_code', $customerCode)
+            ->whereNull('deleted_at')
+            ->orderBy('fullname', 'asc')
+            ->get();
+
+        if ($users->isEmpty()) {
+            return $this->clientErrorResponse(
+                statusCode: 404,
+                success: false,
+                msg: 'Tidak ada user untuk customer ini.',
+            );
+        }
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: 'Successfully fetch users by customer code.',
+            resource: $users,
         );
     }
 }

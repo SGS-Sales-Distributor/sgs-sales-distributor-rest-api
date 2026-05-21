@@ -29,6 +29,7 @@ class StoreInfoDistri extends Model
         'subcabang_id',
         'store_code',
         'active',
+        'customer_code',
         'subcabang_idnew',
         'created_by',
         'updated_by'

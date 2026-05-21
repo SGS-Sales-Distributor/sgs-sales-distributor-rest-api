@@ -32,6 +32,12 @@ use App\Repositories\StoreCabangRepository;
 use App\Repositories\StoreCabangInterface;
 use App\Repositories\OrderCustomerSalesInterface;
 use App\Repositories\OrderCustomerSalesRepository;
+use App\Repositories\MasterCustomerInterface;
+use App\Repositories\MasterCustomerRepository;
+use App\Repositories\OutletRequestInterface;
+use App\Repositories\OutletRequestRepository;
+use App\Repositories\CabangRequestInterface;
+use App\Repositories\CabangRequestRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -56,6 +62,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProfilNotvisitInterface::class,ProfilNotvisitRepository::class);
         $this->app->bind(StoreCabangInterface::class,StoreCabangRepository::class);
         $this->app->bind(orderCustomerSalesInterface::class, OrderCustomerSalesRepository::class);
+        $this->app->bind(MasterCustomerInterface::class, MasterCustomerRepository::class);
+        $this->app->bind(OutletRequestInterface::class, OutletRequestRepository::class);
+        $this->app->bind(CabangRequestInterface::class, CabangRequestRepository::class);
     }
 
     /**
