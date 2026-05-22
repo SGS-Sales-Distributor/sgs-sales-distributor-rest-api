@@ -70,4 +70,8 @@ interface StoreInterface
     public function uploadStore(Request $request);
 
     public function getStoreTypesDropdown(Request $request): JsonResponse;
+
+    public function updateStore(Request $request, int $id): JsonResponse;
+
+    public function deleteStore(int $id): JsonResponse;
 }
