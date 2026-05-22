@@ -172,4 +172,9 @@ class StoreInfoDistriController extends Controller
     {
         return $this->storeInterface->uploadStore($request);
     }
+
+    public function getStoreTypesDropdown(Request $request): JsonResponse
+    {
+        return $this->storeInterface->getStoreTypesDropdown($request);
+    }
 }

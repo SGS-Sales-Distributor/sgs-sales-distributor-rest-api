@@ -1738,6 +1738,7 @@ class StoreRepository extends Repository implements StoreInterface
             );
         }
     }
+
     public function exportTemplateStore(Request $request = null)
     {
         ini_set('max_execution_time', 0);
@@ -1747,15 +1748,8 @@ class StoreRepository extends Repository implements StoreInterface
 
             $spreadSheet = new Spreadsheet();
 
-            /*
-        |--------------------------------------------------------------------------
-        | SHEET 1 - WORKSHEET
-        |--------------------------------------------------------------------------
-        */
-
             $sheet = $spreadSheet->getActiveSheet();
             $sheet->setTitle('Worksheet');
-
             $sheet->getDefaultColumnDimension()->setWidth(25);
 
             $headers = [
@@ -1776,17 +1770,11 @@ class StoreRepository extends Repository implements StoreInterface
                 $sheet->getStyle($cell)->getFont()->setBold(true);
             }
 
+            // SHEET MASTER
             $sheet2 = $spreadSheet->createSheet();
             $sheet2->setTitle('Master Data');
 
-            /*
-        |--------------------------------------------------------------------------
-        | MASTER CABANG
-        |--------------------------------------------------------------------------
-        */
-
             $sheet2->setCellValue('A1', 'MASTER SUBCABANG');
-
             $sheet2->setCellValue('A2', 'SUBCABANG_NAME');
             $sheet2->setCellValue('B2', 'KODE_CABANG');
             $sheet2->setCellValue('C2', 'ID');
@@ -1800,30 +1788,20 @@ class StoreRepository extends Repository implements StoreInterface
             $rowCabang = 3;
 
             foreach ($cabangs as $cabang) {
-
                 $sheet2->setCellValue('A' . $rowCabang, $cabang->nama_cabang);
                 $sheet2->setCellValue('B' . $rowCabang, $cabang->kode_cabang);
                 $sheet2->setCellValue('C' . $rowCabang, $cabang->id);
-
                 $rowCabang++;
             }
-
-            /*
-        |--------------------------------------------------------------------------
-        | MASTER STORE TYPE
-        |--------------------------------------------------------------------------
-        */
 
             $startStoreType = $rowCabang + 2;
 
             $sheet2->setCellValue('A' . $startStoreType, 'MASTER STORE TYPE');
-
             $sheet2->setCellValue('A' . ($startStoreType + 1), 'STORE_TYPE_NAME');
             $sheet2->setCellValue('B' . ($startStoreType + 1), 'ID');
 
             $sheet2->getStyle(
-                'A' . $startStoreType .
-                    ':B' . ($startStoreType + 1)
+                'A' . $startStoreType . ':B' . ($startStoreType + 1)
             )->getFont()->setBold(true);
 
             $storeTypes = StoreType::whereNull('deleted_at')
@@ -1833,19 +1811,12 @@ class StoreRepository extends Repository implements StoreInterface
             $rowStoreType = $startStoreType + 2;
 
             foreach ($storeTypes as $type) {
-
                 $sheet2->setCellValue('A' . $rowStoreType, $type->store_type_name);
                 $sheet2->setCellValue('B' . $rowStoreType, $type->store_type_id);
-
                 $rowStoreType++;
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | SAVE FILE
-        |--------------------------------------------------------------------------
-        */
-
+            // folder
             if (!File::isDirectory(public_path('excel'))) {
                 File::makeDirectory(public_path('excel'));
             }
@@ -1854,15 +1825,25 @@ class StoreRepository extends Repository implements StoreInterface
                 File::makeDirectory(public_path('excel/store'));
             }
 
-            $writer = new Xls($spreadSheet);
+            // filename customer
+            $customerName = strtoupper(
+                preg_replace(
+                    '/[^A-Za-z0-9]/',
+                    '_',
+                    $request->customer_name ?? 'OUTLET'
+                )
+            );
 
-            $path = public_path('excel/store/template_store.xls');
+            $fileName = "Template_Import_Outlet_{$customerName}.xls";
+
+            $writer = new Xls($spreadSheet);
+            $path = public_path("excel/store/{$fileName}");
 
             $writer->save($path);
 
             $this->return = [
                 'status' => true,
-                'data' => url('excel/store/template_store.xls'),
+                'data' => url("excel/store/{$fileName}"),
                 'code' => 200
             ];
         } catch (\Throwable $e) {
@@ -1888,11 +1869,15 @@ class StoreRepository extends Repository implements StoreInterface
         DB::beginTransaction();
 
         try {
+
             $createdBy = $this->resolveCreatedBy($r);
-            $customerCode = $this->resolveCustomerCode($r);
+
+            $customerCode =
+                $r->customer_code
+                ?: $this->resolveCustomerCode($r);
 
             if (empty($customerCode)) {
-                throw new Exception("customer_code user tidak ditemukan");
+                throw new Exception("customer_code tidak ditemukan");
             }
 
             if (!$r->hasFile('file')) {
@@ -1902,169 +1887,214 @@ class StoreRepository extends Repository implements StoreInterface
             $file = $r->file('file');
 
             $spreadsheet = IOFactory::load($file);
-
             $sheet = $spreadsheet->getActiveSheet();
-
             $rows = $sheet->toArray(null, true, true, true);
 
             unset($rows[1]);
 
             $lastId = StoreInfoDistri::max('store_id') ?? 0;
-
             $runningNumber = 1;
+
+            $inserted = 0;
+            $updated = 0;
+            $skipped = 0;
 
             foreach ($rows as $row) {
 
-                if (empty($row['A'])) {
+                if (empty(trim($row['A'] ?? ''))) {
                     continue;
                 }
 
+                $storeName = strtoupper(trim($row['A'] ?? ''));
+                $storeAlias = strtoupper(trim($row['B'] ?? ''));
+                $storeAddress = trim($row['C'] ?? '');
+                $storePhone = preg_replace('/[^0-9]/', '', (string)($row['D'] ?? ''));
+                $storeFax = preg_replace('/[^0-9]/', '', (string)($row['E'] ?? ''));
+                $storeTypeRaw = trim((string)($row['F'] ?? ''));
+                $subCabangRaw = trim((string)($row['G'] ?? ''));
+                $owner = strtoupper(trim($row['H'] ?? ''));
+                $nikOwner = preg_replace('/[^0-9]/', '', (string)($row['I'] ?? ''));
+                $emailOwner = trim($row['J'] ?? '');
 
-                $storeName = strtoupper(trim($row['A']));
-                $storeAlias = strtoupper(trim($row['B']));
-                $storeAddress = trim($row['C']);
-
-                $storePhone = preg_replace('/[^0-9]/', '', (string)$row['D']);
-                $storeFax = preg_replace('/[^0-9]/', '', (string)$row['E']);
-
-                $storeTypeRaw = trim((string) $row['F']);
-                $subCabangRaw = trim((string) $row['G']);
-
-                $owner = strtoupper(trim($row['H']));
-
-                $nikOwner = preg_replace('/[^0-9]/', '', (string)$row['I']);
-
-                $emailOwner = trim($row['J']);
-
+                // STORE TYPE
                 $storeTypeId = null;
+
                 if ($storeTypeRaw !== '') {
-                    if (is_numeric($storeTypeRaw)) {
-                        $storeTypeId = (int) $storeTypeRaw;
-                    } else {
-                        $storeTypeId = StoreType::whereRaw('LOWER(store_type_name) = ?', [strtolower($storeTypeRaw)])
-                            ->value('store_type_id');
-                    }
+
+                    $storeTypeId = is_numeric($storeTypeRaw)
+                        ? (int)$storeTypeRaw
+                        : StoreType::whereRaw(
+                            'LOWER(TRIM(store_type_name)) = ?',
+                            [strtolower(trim($storeTypeRaw))]
+                        )->value('store_type_id');
                 }
 
+                // SUBCABANG
                 $subCabangId = null;
-                if ($subCabangRaw !== '') {
-                    if (is_numeric($subCabangRaw)) {
-                        $subCabangId = (int) $subCabangRaw;
-                    } else {
-                        $subCabangId = StoreCabang::where(function ($query) use ($subCabangRaw) {
-                            $normalizedSubCabang = strtolower($subCabangRaw);
 
-                            $query->whereRaw('LOWER(nama_cabang) = ?', [$normalizedSubCabang])
-                                ->orWhereRaw('LOWER(kode_cabang) = ?', [$normalizedSubCabang]);
-                        })
-                            ->value('id');
-                    }
+                if ($subCabangRaw !== '') {
+
+                    $n = strtolower(trim($subCabangRaw));
+
+                    $subCabangId = is_numeric($subCabangRaw)
+                        ? (int)$subCabangRaw
+                        : StoreCabang::where(function ($q) use ($n) {
+
+                            $q->whereRaw(
+                                'LOWER(TRIM(nama_cabang)) = ?',
+                                [$n]
+                            )
+                                ->orWhereRaw(
+                                    'LOWER(TRIM(kode_cabang)) = ?',
+                                    [$n]
+                                );
+                        })->value('id');
                 }
 
+                // skip invalid
                 if (
                     empty($storeName) ||
                     empty($storeAlias) ||
                     empty($subCabangId) ||
                     empty($storeTypeId)
                 ) {
+                    $skipped++;
                     continue;
                 }
 
-                $exist = StoreInfoDistri::where('store_name', $storeName)
-                    ->where('customer_code', $customerCode)
+                $exist = StoreInfoDistri::where(
+                    'store_name',
+                    $storeName
+                )
+                    ->where(
+                        'customer_code',
+                        $customerCode
+                    )
                     ->whereNull('deleted_at')
                     ->first();
 
                 if ($exist) {
-                    continue;
+
+                    $exist->update([
+                        'store_alias' => $storeAlias,
+                        'store_address' => $storeAddress,
+                        'store_phone' => $storePhone ?: null,
+                        'store_fax' => $storeFax ?: null,
+                        'store_type_id' => $storeTypeId,
+                        'subcabang_id' => $subCabangId,
+                        'subcabang_idnew' => $subCabangId,
+                        'updated_by' => $createdBy,
+                    ]);
+
+                    StoreInfoDistriPerson::updateOrCreate(
+                        ['store_id' => $exist->store_id],
+                        [
+                            'owner' => $owner,
+                            'nik_owner' => $nikOwner ?: null,
+                            'email_owner' => $emailOwner ?: null,
+                            'updated_by' => $createdBy,
+                        ]
+                    );
+
+                    $updated++;
+                } else {
+
+                    $newId = $lastId + $runningNumber;
+
+                    $storeCode =
+                        'OS'
+                        . sprintf('%03d', $subCabangId)
+                        . '-'
+                        . sprintf('%04d', $newId);
+
+                    $store = StoreInfoDistri::create([
+                        'store_name' => $storeName,
+                        'store_alias' => $storeAlias,
+                        'store_address' => $storeAddress,
+                        'store_phone' => $storePhone ?: null,
+                        'store_fax' => $storeFax ?: null,
+                        'store_type_id' => $storeTypeId,
+                        'subcabang_id' => $subCabangId,
+                        'subcabang_idnew' => $subCabangId,
+                        'store_code' => $storeCode,
+                        'customer_code' => $customerCode,
+                        'active' => 1,
+                        'created_by' => $createdBy,
+                        'updated_by' => $createdBy,
+                    ]);
+
+                    StoreInfoDistriPerson::create([
+                        'store_id' => $store->store_id,
+                        'owner' => $owner,
+                        'nik_owner' => $nikOwner ?: null,
+                        'email_owner' => $emailOwner ?: null,
+                        'ktp_owner' => '',
+                        'photo_other' => '',
+                        'created_by' => $createdBy,
+                        'updated_by' => $createdBy,
+                    ]);
+
+                    $runningNumber++;
+                    $inserted++;
                 }
-
-                if (!empty($storePhone)) {
-
-                    $existPhone = StoreInfoDistri::where('store_phone', $storePhone)
-                        ->where('customer_code', $customerCode)
-                        ->whereNull('deleted_at')
-                        ->first();
-
-                    if ($existPhone) {
-                        continue;
-                    }
-                }
-
-
-                if (!empty($storeFax)) {
-
-                    $existFax = StoreInfoDistri::where('store_fax', $storeFax)
-                        ->where('customer_code', $customerCode)
-                        ->whereNull('deleted_at')
-                        ->first();
-
-                    if ($existFax) {
-                        continue;
-                    }
-                }
-
-
-                $newId = $lastId + $runningNumber;
-
-                $storeCode = 'OS'
-                    . sprintf('%03d', $subCabangId)
-                    . "-"
-                    . sprintf('%04d', $newId);
-
-
-                $store = StoreInfoDistri::create([
-                    'store_name' => $storeName,
-                    'store_alias' => $storeAlias,
-                    'store_address' => $storeAddress,
-                    'store_phone' => $storePhone ?: null,
-                    'store_fax' => $storeFax ?: null,
-                    'store_type_id' => $storeTypeId,
-                    'subcabang_id' => $subCabangId,
-                    'subcabang_idnew' => $subCabangId,
-                    'store_code' => $storeCode,
-                    'customer_code' => $customerCode,
-                    'active' => 1,
-
-                    'created_by' => $createdBy,
-                    'updated_by' => $createdBy,
-                ]);
-
-
-                StoreInfoDistriPerson::create([
-                    'store_id' => $store->store_id,
-                    'owner' => $owner,
-                    'nik_owner' => $nikOwner,
-                    'email_owner' => $emailOwner,
-
-                    'created_by' => $createdBy,
-                    'updated_by' => $createdBy,
-                ]);
-
-                $runningNumber++;
             }
 
             DB::commit();
 
-            $this->return = [
+            return response()->json([
                 'status' => true,
-                'message' => 'Import store berhasil',
+                'message' => 'Import selesai',
+                'inserted' => $inserted,
+                'updated' => $updated,
+                'skipped' => $skipped,
                 'code' => 200
-            ];
+            ]);
         } catch (\Throwable $e) {
 
             DB::rollBack();
 
-            $this->return = [
+            return response()->json([
                 'status' => false,
                 'message' => $e->getMessage(),
                 'code' => 500
-            ];
+            ], 500);
         }
+    }
 
-        return response()->json(
-            $this->return,
-            $this->return['code']
+    public function getStoreTypesDropdown(Request $request): JsonResponse
+    {
+        $searchByQuery = $request->query('q');
+
+        $storeTypesCache = Cache::remember(
+            'storeTypesDropdown',
+            $this::DEFAULT_CACHE_TTL,
+            function () use ($searchByQuery) {
+
+                return StoreType::query()
+                    ->select([
+                        'store_type_id',
+                        'store_type_name'
+                    ])
+                    ->when(
+                        $searchByQuery,
+                        function (EloquentBuilder $query) use ($searchByQuery) {
+                            $query->where(
+                                'store_type_name',
+                                'LIKE',
+                                '%' . $searchByQuery . '%'
+                            );
+                        }
+                    )
+                    ->orderBy('store_type_name', 'asc')
+                    ->get();
+            }
+        );
+
+        return $this->successResponse(
+            statusCode: 200,
+            success: true,
+            msg: "Successfully fetch store type dropdown",
+            resource: $storeTypesCache,
         );
     }
 }
