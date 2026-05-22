@@ -68,4 +68,6 @@ interface StoreInterface
     public function exportTemplateStore();
 
     public function uploadStore(Request $request);
+
+    public function getStoreTypesDropdown(Request $request): JsonResponse;
 }

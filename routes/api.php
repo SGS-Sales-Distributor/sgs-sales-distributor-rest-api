@@ -49,7 +49,7 @@ Route::group(['prefix' => 'sgs',], function () {
     Route::get('/profil_notvisitOne/{id}', [ProfilNotvisit::class, 'getOneData']);
 
     //kodelokasi route
-    // Route::get('/area', [KodeLokasiController::class, 'getAll']);
+    Route::get('/area', [KodeLokasiController::class, 'getAll']);
 
     // CRUD untuk Customer (mst_customer)
     Route::get('/customers', [MasterCustomerController::class, 'getAll']);
@@ -88,6 +88,7 @@ Route::group(['prefix' => 'sgs',], function () {
     Route::delete('/store_type/{store_type_id}', [StoreTypeController::class, 'destroy']);
     Route::get('/store-cabangs', [StoreInfoDistriController::class, 'getStoreCabangs']);
     Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
+    Route::get('/store-types-dropdown',  [StoreInfoDistriController::class, 'getStoreTypesDropdown']);
 
 
     // // CRUD untuk Product Info Do
@@ -134,6 +135,7 @@ Route::group(['prefix' => 'sgs',], function () {
 
     // GET semua store → export Excel
     Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']);
+    Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
 
     // GET store-types → dropdown master store type
     Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
