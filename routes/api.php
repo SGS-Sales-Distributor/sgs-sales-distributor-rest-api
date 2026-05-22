@@ -136,6 +136,8 @@ Route::group(['prefix' => 'sgs',], function () {
     // GET semua store → export Excel
     Route::get('/stores', [StoreInfoDistriController::class, 'getAllWithoutCallPlans']);
     Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
+    Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
+    Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'deleteStore']);
 
     // GET store-types → dropdown master store type
     Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);

@@ -2097,4 +2097,118 @@ class StoreRepository extends Repository implements StoreInterface
             resource: $storeTypesCache,
         );
     }
+
+    public function updateStore(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'store_name' => ['required', 'string', 'max:100'],
+            'store_alias' => ['required', 'string', 'max:200'],
+            'store_address' => ['required', 'string'],
+            'store_phone' => ['nullable', 'string', 'max:20', "unique:store_info_distri,store_phone,{$id},store_id"],
+            'store_fax' => ['nullable', 'string', 'max:20', "unique:store_info_distri,store_fax,{$id},store_id"],
+            'store_type_id' => ['required', 'integer'],
+            'subcabang_id' => ['required', 'integer'],
+            'owner' => ['required', 'string', 'max:255'],
+            'nik_owner' => ['nullable', 'string', 'max:20'],
+            'email_owner' => ['nullable', 'string', 'email', 'max:100'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->clientErrorResponse(
+                statusCode: 422,
+                success: false,
+                msg: $validator->errors()->first(),
+            );
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $store = StoreInfoDistri::where('store_id', $id)->firstOrFail();
+
+            $updatedBy = $request->userFullname
+                ?? $request->updated_by
+                ?? 'SYSTEM';
+
+            $store->update([
+                'store_name' => $request->store_name,
+                'store_alias' => $request->store_alias,
+                'store_address' => $request->store_address,
+                'store_phone' => $request->filled('store_phone')
+                    ? $request->store_phone
+                    : null,
+                'store_fax' => $request->filled('store_fax')
+                    ? $request->store_fax
+                    : null,
+                'store_type_id' => $request->store_type_id,
+                'subcabang_id' => $request->subcabang_id,
+                'subcabang_idnew' => $request->subcabang_id,
+                'updated_by' => $updatedBy,
+            ]);
+
+            StoreInfoDistriPerson::updateOrCreate(
+                ['store_id' => $id],
+                [
+                    'owner' => $request->owner,
+                    'nik_owner' => $request->filled('nik_owner')
+                        ? $request->nik_owner
+                        : null,
+                    'email_owner' => $request->filled('email_owner')
+                        ? $request->email_owner
+                        : null,
+                    'updated_by' => $updatedBy,
+                ]
+            );
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 200,
+                success: true,
+                msg: "Successfully update outlet {$id}.",
+                resource: $store
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
+
+    public function deleteStore(int $id): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $store = StoreInfoDistri::where('store_id', $id)
+                ->firstOrFail();
+
+            // soft delete owner dulu
+            StoreInfoDistriPerson::where('store_id', $id)
+                ->delete();
+
+            // soft delete store
+            $store->delete();
+
+            DB::commit();
+
+            return $this->successResponse(
+                statusCode: 200,
+                success: true,
+                msg: "Successfully remove outlet {$id}."
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->errorResponse(
+                statusCode: 500,
+                success: false,
+                msg: $e->getMessage(),
+            );
+        }
+    }
 }
