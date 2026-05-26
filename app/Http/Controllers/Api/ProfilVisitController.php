@@ -450,7 +450,6 @@ class ProfilVisitController extends Controller
 				'profil_visit.lat_out',
 				'profil_visit.long_out',
 				'profil_visit.approval',
-
 				DB::raw("
                 CASE
                     WHEN profil_visit.tanggal_visit = master_call_plan_detail.date
@@ -466,10 +465,10 @@ class ProfilVisitController extends Controller
                     ELSE 'Belum Visit'
                 END as status_visit
             "),
-
 				DB::raw("
                 CASE
                     WHEN profil_visit.approval = 1 THEN 'Approved'
+                    WHEN profil_visit.approval = 2 THEN 'Rejected'
                     WHEN profil_visit.time_in IS NOT NULL
                          AND profil_visit.time_out IS NOT NULL
                         THEN 'Menunggu Approval'
@@ -503,21 +502,68 @@ class ProfilVisitController extends Controller
 
 		$sanitize = fn(string $s) => preg_replace('/[^A-Za-z0-9_\-]/', '_', $s);
 
-		$fileName = "ProfilVisit_" .
-			$sanitize($customerName) . "_" .
-			($salesmanName ? $sanitize($salesmanName) : 'Semua_Salesman') . "_" .
-			($tanggalFr && $tanggalTo
+		$fileName = 'ProfilVisit_'
+			. $sanitize($customerName) . '_'
+			. ($salesmanName ? $sanitize($salesmanName) : 'Semua_Salesman') . '_'
+			. ($tanggalFr && $tanggalTo
 				? $sanitize($tanggalFr) . '_sd_' . $sanitize($tanggalTo)
-				: 'Semua_Periode') .
-			".xlsx";
+				: 'Semua_Periode')
+			. '.xlsx';
 
 		$baseImageUrl = 'https://absen.lspsgs.co.id:8087/images/';
 
 		$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-		$sheet = $spreadsheet->getActiveSheet();
+		$sheet       = $spreadsheet->getActiveSheet();
 		$sheet->setTitle('Profil Visit');
 
-		$lastCol = 'S';
+		$purple    = 'FF6F47BD';
+		$white     = 'FFFFFFFF';
+		$linkColor = 'FF1155CC';
+		$dashColor = 'FF888888';
+		$black     = 'FF000000';
+		$solidFill = \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID;
+		$underline = \PhpOffice\PhpSpreadsheet\Style\Font::UNDERLINE_SINGLE;
+		$center    = \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER;
+		$left      = \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT;
+		$vcenter   = \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER;
+
+		$thinBorder = [
+			'borders' => [
+				'allBorders' => [
+					'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+					'color'       => ['argb' => 'FFCCCCCC'],
+				],
+			],
+		];
+
+		$sheet->mergeCells('A1:S1');
+		$sheet->setCellValue('A1', 'CUSTOMER : ' . strtoupper($customerName));
+		$sheet->getStyle('A1')->applyFromArray([
+			'font'      => ['bold' => true, 'size' => 12, 'color' => ['argb' => $white], 'name' => 'Arial'],
+			'fill'      => ['fillType' => $solidFill, 'startColor' => ['argb' => $purple]],
+			'alignment' => ['horizontal' => $left, 'vertical' => $vcenter],
+		]);
+		$sheet->getRowDimension(1)->setRowHeight(22);
+
+		$sheet->mergeCells('A2:S2');
+		$periodeText = 'PERIODE : ' . $tanggalFr . ' s/d ' . $tanggalTo;
+		if ($salesmanName) {
+			$periodeText .= '   |   SALESMAN : ' . strtoupper($salesmanName);
+		}
+		$sheet->setCellValue('A2', $periodeText);
+		$sheet->getStyle('A2')->applyFromArray([
+			'font'      => ['bold' => true, 'size' => 11, 'color' => ['argb' => $white], 'name' => 'Arial'],
+			'fill'      => ['fillType' => $solidFill, 'startColor' => ['argb' => $purple]],
+			'alignment' => ['horizontal' => $left, 'vertical' => $vcenter],
+		]);
+		$sheet->getRowDimension(2)->setRowHeight(20);
+
+		foreach ([3, 4] as $rn) {
+			$sheet->mergeCells("A{$rn}:S{$rn}");
+			$sheet->getStyle("A{$rn}:S{$rn}")->getFill()
+				->setFillType($solidFill)->getStartColor()->setARGB('FFF3EEFF');
+			$sheet->getRowDimension($rn)->setRowHeight(6);
+		}
 
 		$headers = [
 			'A' => 'NO',
@@ -541,125 +587,195 @@ class ProfilVisitController extends Controller
 			'S' => 'STATUS APPROVAL',
 		];
 
-		$headerRow = 5;
-
 		foreach ($headers as $col => $label) {
-			$sheet->setCellValue("{$col}{$headerRow}", $label);
+			$sheet->setCellValue("{$col}5", $label);
 		}
 
-		$writeFotoCell = function ($ws, $cell, $filename, $baseUrl) {
+		$sheet->getStyle('A5:S5')->applyFromArray(array_merge([
+			'font'      => ['bold' => true, 'size' => 10, 'color' => ['argb' => $white], 'name' => 'Arial'],
+			'fill'      => ['fillType' => $solidFill, 'startColor' => ['argb' => $purple]],
+			'alignment' => ['horizontal' => $center, 'vertical' => $vcenter, 'wrapText' => true],
+		], $thinBorder));
+		$sheet->getRowDimension(5)->setRowHeight(30);
+
+		$writeFotoCell = function ($ws, $cell, $filename, $baseUrl)
+		use ($linkColor, $dashColor, $underline, $center, $vcenter, $thinBorder, $solidFill) {
 			if (!$filename) {
 				$ws->setCellValue($cell, '-');
+				$ws->getStyle($cell)->applyFromArray(array_merge([
+					'font'      => ['color' => ['argb' => $dashColor], 'name' => 'Arial', 'size' => 10],
+					'alignment' => ['horizontal' => $center, 'vertical' => $vcenter],
+				], $thinBorder));
 				return;
 			}
-
-			$url = $baseUrl . $filename;
-
 			$ws->setCellValue($cell, 'Lihat Foto');
-			$ws->getCell($cell)->getHyperlink()->setUrl($url);
-
-			$ws->getStyle($cell)->applyFromArray([
-				'font' => [
-					'color' => ['argb' => 'FF1155CC'],
-					'underline' => \PhpOffice\PhpSpreadsheet\Style\Font::UNDERLINE_SINGLE
-				]
-			]);
+			$ws->getCell($cell)->getHyperlink()->setUrl($baseUrl . $filename);
+			$ws->getStyle($cell)->applyFromArray(array_merge([
+				'font'      => ['color' => ['argb' => $linkColor], 'underline' => $underline, 'name' => 'Arial', 'size' => 10],
+				'alignment' => ['horizontal' => $center, 'vertical' => $vcenter],
+			], $thinBorder));
 		};
 
-		$writeLocationCell = function ($ws, $cell, $lat, $long) {
-			if (
-				$lat === null || $lat === '' ||
-				$long === null || $long === ''
-			) {
+		$writeLocationCell = function ($ws, $cell, $lat, $long)
+		use ($linkColor, $dashColor, $underline, $center, $vcenter, $thinBorder, $solidFill) {
+			if ($lat === null || $lat === '' || $long === null || $long === '') {
 				$ws->setCellValue($cell, '-');
+				$ws->getStyle($cell)->applyFromArray(array_merge([
+					'font'      => ['color' => ['argb' => $dashColor], 'name' => 'Arial', 'size' => 10],
+					'alignment' => ['horizontal' => $center, 'vertical' => $vcenter],
+				], $thinBorder));
 				return;
 			}
-
-			$coord = "{$lat}, {$long}";
-			$url = "https://maps.google.com/?q={$lat},{$long}";
-
-			$ws->setCellValue($cell, $coord);
-
-			$ws->getCell($cell)
-				->getHyperlink()
-				->setUrl($url);
-
-			$ws->getStyle($cell)->applyFromArray([
-				'font' => [
-					'color' => ['argb' => 'FF1155CC'],
-					'underline' => \PhpOffice\PhpSpreadsheet\Style\Font::UNDERLINE_SINGLE
-				]
-			]);
+			$ws->setCellValue($cell, 'Lihat Lokasi');
+			$ws->getCell($cell)->getHyperlink()->setUrl("https://maps.google.com/?q={$lat},{$long}");
+			$ws->getStyle($cell)->applyFromArray(array_merge([
+				'font'      => ['color' => ['argb' => $linkColor], 'underline' => $underline, 'name' => 'Arial', 'size' => 10],
+				'alignment' => ['horizontal' => $center, 'vertical' => $vcenter],
+			], $thinBorder));
 		};
+
+		$statusColors = [
+			'Terpenuhi'       => 'FF17A2B8',
+			'Tidak Terpenuhi' => 'FFDC3545',
+			'Tidak Check Out' => 'FFFFC107',
+			'Belum Visit'     => 'FF6C757D',
+		];
+		$approvalColors = [
+			'Approved'          => 'FF28A745',
+			'Rejected'          => 'FFDC3545',
+			'Menunggu Approval' => 'FFFF8C00',
+		];
+		$leftCols = ['B', 'E', 'F', 'N', 'O'];
 
 		$startRow = 6;
 
 		foreach ($rows as $i => $row) {
+			$r        = $startRow + $i;
+			$fillArgb = ($i % 2 === 0) ? 'FFFFFFFF' : 'FFF7F4FF';
 
-			$r = $startRow + $i;
+			$plainCells = [
+				'A' => $i + 1,
+				'B' => $row->nama_salesman,
+				'C' => $row->nik ?? '-',
+				'D' => $row->tanggal_plan ?? '-',
+				'E' => $row->nama_toko,
+				'F' => $row->alamat_toko ?? '-',
+				'G' => $row->tanggal_visit ?? '-',
+				'H' => $row->time_in ?? 'Belum Check In',
+				'I' => $row->time_out ?? 'Belum Check Out',
+				'N' => $row->keterangan_in ?? '-',
+				'O' => $row->keterangan_out ?? '-',
+			];
 
-			$sheet->setCellValue("A$r", $i + 1);
-			$sheet->setCellValue("B$r", $row->nama_salesman);
-			$sheet->setCellValue("C$r", $row->nik ?? '-');
-			$sheet->setCellValue("D$r", $row->tanggal_plan ?? '-');
-			$sheet->setCellValue("E$r", $row->nama_toko);
-			$sheet->setCellValue("F$r", $row->alamat_toko ?? '-');
-			$sheet->setCellValue("G$r", $row->tanggal_visit ?? '-');
-			$sheet->setCellValue("H$r", $row->time_in ?? 'Belum Check In');
-			$sheet->setCellValue("I$r", $row->time_out ?? 'Belum Check Out');
+			foreach ($plainCells as $col => $val) {
+				$isDash = ($val === '-' || $val === null);
+				$sheet->setCellValue("{$col}{$r}", $val);
+				$sheet->getStyle("{$col}{$r}")->applyFromArray(array_merge([
+					'font'      => [
+						'name'  => 'Arial',
+						'size'  => 10,
+						'color' => ['argb' => $isDash ? $dashColor : $black],
+					],
+					'fill'      => ['fillType' => $solidFill, 'startColor' => ['argb' => $fillArgb]],
+					'alignment' => [
+						'horizontal' => in_array($col, $leftCols) ? $left : $center,
+						'vertical'   => $vcenter,
+						'wrapText'   => in_array($col, ['F', 'N', 'O']),
+					],
+				], $thinBorder));
+			}
 
-			$writeFotoCell($sheet, "J$r", $row->foto_in_1, $baseImageUrl);
-			$writeFotoCell($sheet, "K$r", $row->foto_in_2, $baseImageUrl);
-			$writeFotoCell($sheet, "L$r", $row->foto_out_1, $baseImageUrl);
-			$writeFotoCell($sheet, "M$r", $row->foto_out_2, $baseImageUrl);
+			foreach (
+				[
+					'J' => $row->foto_in_1,
+					'K' => $row->foto_in_2,
+					'L' => $row->foto_out_1,
+					'M' => $row->foto_out_2,
+				] as $col => $foto
+			) {
+				$sheet->getStyle("{$col}{$r}")->getFill()
+					->setFillType($solidFill)->getStartColor()->setARGB($fillArgb);
+				$writeFotoCell($sheet, "{$col}{$r}", $foto, $baseImageUrl);
+			}
 
-			$sheet->setCellValue("N$r", $row->keterangan_in ?? '-');
-			$sheet->setCellValue("O$r", $row->keterangan_out ?? '-');
+			foreach (
+				[
+					'P' => [$row->lat_in,  $row->long_in],
+					'Q' => [$row->lat_out, $row->long_out],
+				] as $col => [$lat, $long]
+			) {
+				$sheet->getStyle("{$col}{$r}")->getFill()
+					->setFillType($solidFill)->getStartColor()->setARGB($fillArgb);
+				$writeLocationCell($sheet, "{$col}{$r}", $lat, $long);
+			}
 
-			// FIX LONG LAT + LINK MAPS
-			$writeLocationCell($sheet, "P$r", $row->lat_in, $row->long_in);
-			$writeLocationCell($sheet, "Q$r", $row->lat_out, $row->long_out);
+			$statusVal = $row->status_visit;
+			$statusBg  = $statusColors[$statusVal] ?? 'FF6C757D';
+			$statusFg  = ($statusVal === 'Tidak Check Out') ? $black : $white;
+			$sheet->setCellValue("R{$r}", $statusVal);
+			$sheet->getStyle("R{$r}")->applyFromArray(array_merge([
+				'font'      => ['bold' => true, 'size' => 10, 'color' => ['argb' => $statusFg], 'name' => 'Arial'],
+				'fill'      => ['fillType' => $solidFill, 'startColor' => ['argb' => $statusBg]],
+				'alignment' => ['horizontal' => $center, 'vertical' => $vcenter],
+			], $thinBorder));
 
-			$sheet->setCellValue("R$r", $row->status_visit);
-			$sheet->setCellValue("S$r", $row->status_approval);
+			$approvalVal = $row->status_approval;
+			$approvalBg  = $approvalColors[$approvalVal] ?? $fillArgb;
+			$approvalFg  = isset($approvalColors[$approvalVal]) ? $white : $dashColor;
+			$sheet->setCellValue("S{$r}", $approvalVal);
+			$sheet->getStyle("S{$r}")->applyFromArray(array_merge([
+				'font'      => [
+					'bold'  => isset($approvalColors[$approvalVal]),
+					'size'  => 10,
+					'color' => ['argb' => $approvalFg],
+					'name'  => 'Arial',
+				],
+				'fill'      => ['fillType' => $solidFill, 'startColor' => ['argb' => $approvalBg]],
+				'alignment' => ['horizontal' => $center, 'vertical' => $vcenter],
+			], $thinBorder));
+
+			$sheet->getRowDimension($r)->setRowHeight(18);
 		}
 
-		$widths = [
-			'A' => 5,
-			'B' => 22,
-			'C' => 14,
-			'D' => 14,
-			'E' => 25,
-			'F' => 30,
-			'G' => 14,
-			'H' => 14,
-			'I' => 14,
-			'J' => 14,
-			'K' => 14,
-			'L' => 14,
-			'M' => 14,
-			'N' => 28,
-			'O' => 28,
-			'P' => 35,
-			'Q' => 35,
-			'R' => 18,
-			'S' => 18
-		];
-
-		foreach ($widths as $c => $w) {
+		foreach (
+			[
+				'A' => 5,
+				'B' => 22,
+				'C' => 16,
+				'D' => 14,
+				'E' => 25,
+				'F' => 32,
+				'G' => 14,
+				'H' => 12,
+				'I' => 12,
+				'J' => 12,
+				'K' => 12,
+				'L' => 12,
+				'M' => 12,
+				'N' => 28,
+				'O' => 28,
+				'P' => 14,
+				'Q' => 14,
+				'R' => 18,
+				'S' => 20,
+			] as $c => $w
+		) {
 			$sheet->getColumnDimension($c)->setWidth($w);
 		}
 
 		$sheet->freezePane('A6');
 
-		$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-
-		return response()->streamDownload(
-			fn() => $writer->save('php://output'),
-			$fileName,
-			[
-				'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-			]
+		$writer   = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+		$response = new \Symfony\Component\HttpFoundation\StreamedResponse(
+			function () use ($writer) {
+				$writer->save('php://output');
+			}
 		);
+		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		$response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+		$response->headers->set('Cache-Control', 'max-age=0');
+		$response->headers->set('Pragma', 'public');
+
+		return $response;
 	}
 }
