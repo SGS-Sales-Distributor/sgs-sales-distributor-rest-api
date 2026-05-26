@@ -39,6 +39,7 @@ Route::group(['prefix' => 'sgs',], function () {
     // visit's routes
     Route::get('/profil-visit/export-weekly', [ProfilVisitController::class, 'exportWeekly']);
     Route::get('profil_visit_customer_options', [ProfilVisitController::class, 'getCustomerOptions']);
+    Route::get('profil_visit/export', [ProfilVisitController::class, 'exportProfilVisit']);
     Route::get('/profil_visit', [ProfilVisitController::class, 'getAll']);
     Route::get('/profil_visit/{id}', [ProfilVisitController::class, 'getOne']);
     Route::put('/profil_visit/{id}', [ProfilVisitController::class, 'updateOne']);
