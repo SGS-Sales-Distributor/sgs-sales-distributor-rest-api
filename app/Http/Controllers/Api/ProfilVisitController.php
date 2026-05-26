@@ -412,7 +412,7 @@ class ProfilVisitController extends Controller
 		);
 	}
 
-	public function exportProfilVisit(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse|JsonResponse
+	public function exportProfilVisit(Request $request): JsonResponse
 	{
 		$customerCode = $request->query('customer_code');
 		$userId       = $request->query('user_id');
@@ -505,9 +505,7 @@ class ProfilVisitController extends Controller
 		$fileName = 'ProfilVisit_'
 			. $sanitize($customerName) . '_'
 			. ($salesmanName ? $sanitize($salesmanName) : 'Semua_Salesman') . '_'
-			. ($tanggalFr && $tanggalTo
-				? $sanitize($tanggalFr) . '_sd_' . $sanitize($tanggalTo)
-				: 'Semua_Periode')
+			. $sanitize($tanggalFr) . '_sd_' . $sanitize($tanggalTo)
 			. '.xlsx';
 
 		$baseImageUrl = 'https://absen.lspsgs.co.id:8087/images/';
@@ -765,17 +763,14 @@ class ProfilVisitController extends Controller
 
 		$sheet->freezePane('A6');
 
-		$writer   = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-		$response = new \Symfony\Component\HttpFoundation\StreamedResponse(
-			function () use ($writer) {
-				$writer->save('php://output');
-			}
-		);
-		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		$response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
-		$response->headers->set('Cache-Control', 'max-age=0');
-		$response->headers->set('Pragma', 'public');
+		$dir = base_path('public/excel/profil_visit/');
+		if (!\Illuminate\Support\Facades\File::isDirectory($dir)) {
+			\Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true, true);
+		}
 
-		return $response;
+		$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+		$writer->save($dir . $fileName);
+
+		return response()->json(['data' => url('excel/profil_visit/' . $fileName)]);
 	}
 }
