@@ -139,12 +139,14 @@ Route::group(['prefix' => 'sgs',], function () {
     Route::post('/stores', [StoreInfoDistriController::class, 'storeOne']);
     Route::put('/stores/{id}', [StoreInfoDistriController::class, 'updateOne']);
     Route::delete('/stores/{id}', [StoreInfoDistriController::class, 'deleteStore']);
+    Route::get('/stores/by-cabang/{idCab}', [StoreInfoDistriController::class, 'getStoreByCbg']);
 
     // GET store-types → dropdown master store type
     Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
 
     // GET cabangs → dropdown master cabang
     Route::get('/cabangs', [StoreCabangController::class, 'paging']);
+    Route::get('/cabangs/by-user/{userId}', [StoreCabangController::class, 'getCabangByUser']);
 
     // GET users by customer_code → dropdown salesman filter
     Route::get('/user_info', [SalesmanController::class, 'getUserByCustomerCode']);
