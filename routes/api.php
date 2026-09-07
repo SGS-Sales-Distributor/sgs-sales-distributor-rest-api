@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ProfilNotvisit;
 use App\Http\Controllers\Api\OutletRequestController;
 use App\Http\Controllers\Api\CabangRequestController;
 use App\Http\Controllers\Api\StoreCabangController;
+use App\Http\Controllers\Api\UserCabangController;
 use App\Http\Controllers\AttendeeController;
 use App\Http\Controllers\StsJabatanController;
 use App\Http\Middleware\JwtAuthMiddleware;
@@ -145,8 +146,14 @@ Route::group(['prefix' => 'sgs',], function () {
     Route::get('/store-types', [StoreInfoDistriController::class, 'getStoreTypes']);
 
     // GET cabangs → dropdown master cabang
-    Route::get('/cabangs', [StoreCabangController::class, 'paging']);
+    Route::get('/cabangs/all', [StoreCabangController::class, 'getAll']);
     Route::get('/cabangs/by-user/{userId}', [StoreCabangController::class, 'getCabangByUser']);
+    Route::get('/cabangs', [StoreCabangController::class, 'paging']);
+
+    // CRUD untuk User Cabang
+    Route::get('/user-cabang', [UserCabangController::class, 'index']);
+    Route::post('/user-cabang', [UserCabangController::class, 'store']);
+    Route::delete('/user-cabang/{id}', [UserCabangController::class, 'destroy']);
 
     // GET users by customer_code → dropdown salesman filter
     Route::get('/user_info', [SalesmanController::class, 'getUserByCustomerCode']);
